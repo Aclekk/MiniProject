@@ -74,4 +74,5 @@ dependencies {
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
     implementation("com.google.android.material:material:1.11.0")
     implementation("com.google.code.gson:gson:2.10.1")
+    implementation("com.google.android.material:material:1.11.0") // Already added
 }

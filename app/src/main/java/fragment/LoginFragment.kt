@@ -15,6 +15,7 @@ import com.example.miniproject.model.LoginRequest
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import com.example.miniproject.MainActivity
 
 class LoginFragment : Fragment() {
 
@@ -46,12 +47,8 @@ class LoginFragment : Fragment() {
         }
 
         binding.tvRegister.setOnClickListener {
-            // Navigate to RegisterFragment
-            val registerFragment = RegisterFragment()
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, registerFragment)
-                .addToBackStack(null)
-                .commit()
+            // TODO: Navigate to register fragment (for now just show toast)
+            Toast.makeText(requireContext(), "Register feature coming soon", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -81,7 +78,7 @@ class LoginFragment : Fragment() {
                     val authResponse = response.body()
                     if (authResponse?.success == true && authResponse.user != null) {
                         // Save user data to SharedPreferences
-                        saveUserData(authResponse.user.id, authResponse.user.username, authResponse.user.role)
+                        saveUserData(authResponse.user!!.id, authResponse.user!!.username, authResponse.user!!.role)
 
                         // Navigate to products fragment
                         navigateToProducts()
@@ -119,10 +116,7 @@ class LoginFragment : Fragment() {
     }
 
     private fun navigateToProducts() {
-        val productsFragment = ProductsFragment()
-        parentFragmentManager.beginTransaction()
-            .replace(R.id.fragment_container, productsFragment)
-            .commit()
+        (requireActivity() as MainActivity).onLoginSuccess()
     }
 
     override fun onDestroyView() {

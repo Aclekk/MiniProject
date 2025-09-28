@@ -17,6 +17,7 @@ import com.example.miniproject.model.ProductListResponse
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import com.example.miniproject.model.ProductResponse
 
 class ProductsFragment : Fragment() {
 
@@ -85,8 +86,9 @@ class ProductsFragment : Fragment() {
     private fun loadProducts() {
         showLoading(true)
 
-        ApiClient.apiService.getAllProducts().enqueue(object : Callback<ProductListResponse> {
-            override fun onResponse(call: Call<ProductListResponse>, response: Response<ProductListResponse>) {
+        val call = ApiClient.apiService.getAllProducts()
+        call.enqueue(object : retrofit2.Callback<ProductResponse> {
+            override fun onResponse(call: retrofit2.Call<ProductResponse>, response: retrofit2.Response<ProductResponse>) {
                 showLoading(false)
                 binding.swipeRefresh.isRefreshing = false
 
@@ -94,7 +96,7 @@ class ProductsFragment : Fragment() {
                     val productResponse = response.body()
                     if (productResponse?.success == true && productResponse.data != null) {
                         products.clear()
-                        products.addAll(productResponse.data) // List<Product> → addAll()
+                        products.addAll(productResponse.data)
                         productAdapter.notifyDataSetChanged()
                     } else {
                         Toast.makeText(requireContext(), productResponse?.message ?: "Failed to load products", Toast.LENGTH_SHORT).show()
@@ -104,7 +106,7 @@ class ProductsFragment : Fragment() {
                 }
             }
 
-            override fun onFailure(call: Call<ProductListResponse>, t: Throwable) {
+            override fun onFailure(call: retrofit2.Call<ProductResponse>, t: Throwable) {
                 showLoading(false)
                 binding.swipeRefresh.isRefreshing = false
                 Toast.makeText(requireContext(), "Network error: ${t.message}", Toast.LENGTH_LONG).show()

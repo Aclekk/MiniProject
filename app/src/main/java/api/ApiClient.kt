@@ -7,7 +7,7 @@ import retrofit2.converter.moshi.MoshiConverterFactory
 
 object ApiClient {
 
-    private const val BASE_URL = "http://192.168.100.18/projectmini_api/"
+    private const val BASE_URL = "http://192.168.100.23/projectmini_api/"
 
     private val moshi = Moshi.Builder()
         .add(KotlinJsonAdapterFactory())

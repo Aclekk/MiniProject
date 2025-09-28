@@ -15,7 +15,7 @@ interface ApiService {
 
     // Products endpoints
     @GET("products.php")
-    fun getAllProducts(): Call<ProductListResponse>
+    fun getAllProducts(): Call<ProductResponse>  // Ganti dari ProductListResponse
 
     @GET("products.php")
     fun getProductById(@Query("id") id: Int): Call<ProductResponse>

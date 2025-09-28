@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import com.example.miniproject.MainActivity
 import com.example.miniproject.R
 import com.example.miniproject.api.ApiClient
 import com.example.miniproject.databinding.FragmentAddProductBinding
@@ -36,7 +37,6 @@ class AddProductFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         loadCategories()
         setupClickListeners()
     }
@@ -44,46 +44,34 @@ class AddProductFragment : Fragment() {
     private fun loadCategories() {
         ApiClient.apiService.getAllCategories().enqueue(object : Callback<CategoryResponse> {
             override fun onResponse(call: Call<CategoryResponse>, response: Response<CategoryResponse>) {
-                println("DEBUG: Response code: ${response.code()}")
-                println("DEBUG: Response body: ${response.body()}")
-
                 if (response.isSuccessful && response.body()?.success == true) {
                     response.body()?.data?.let { categoryList ->
-                        println("DEBUG: Categories loaded: ${categoryList.size}")
-                        categoryList.forEach { category ->
-                            println("DEBUG: Category - ID: ${category.id}, Name: ${category.categoryName}")
-                        }
-
                         categories.clear()
                         categories.addAll(categoryList)
 
                         val categoryNames = categories.map { it.categoryName }
-                        println("DEBUG: Category names for spinner: $categoryNames")
-
-                        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, categoryNames)
+                        val adapter = ArrayAdapter(
+                            requireContext(),
+                            android.R.layout.simple_spinner_item,
+                            categoryNames
+                        )
                         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
                         binding.spinnerCategory.adapter = adapter
                     }
                 } else {
-                    println("DEBUG: Response failed - Success: ${response.body()?.success}")
+                    Toast.makeText(requireContext(), "Failed to load categories", Toast.LENGTH_SHORT).show()
                 }
             }
 
             override fun onFailure(call: Call<CategoryResponse>, t: Throwable) {
-                println("DEBUG: API call failed: ${t.message}")
-                Toast.makeText(requireContext(), "Failed to load categories", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Network error: ${t.message}", Toast.LENGTH_SHORT).show()
             }
         })
     }
 
     private fun setupClickListeners() {
-        binding.btnSaveProduct.setOnClickListener {
-            saveProduct()
-        }
-
-        binding.btnCancel.setOnClickListener {
-            goBackToProducts()
-        }
+        binding.btnSaveProduct.setOnClickListener { saveProduct() }
+        binding.btnCancel.setOnClickListener { goBackToProducts() }
     }
 
     private fun saveProduct() {
@@ -94,13 +82,11 @@ class AddProductFragment : Fragment() {
         val stockStr = binding.etProductStock.text.toString().trim()
         val selectedCategoryPos = binding.spinnerCategory.selectedItemPosition
 
-        if (!validateInput(name, priceStr, stockStr, selectedCategoryPos)) {
-            return
-        }
+        if (!validateInput(name, priceStr, stockStr, selectedCategoryPos)) return
 
         val price = priceStr.toDouble()
         val stock = stockStr.toInt()
-        val categoryId = categories[selectedCategoryPos].id
+        val categoryId = categories.getOrNull(selectedCategoryPos)?.id ?: return
 
         val productRequest = ProductRequest(
             name = name,
@@ -121,7 +107,8 @@ class AddProductFragment : Fragment() {
                     Toast.makeText(requireContext(), "Product added successfully!", Toast.LENGTH_SHORT).show()
                     goBackToProducts()
                 } else {
-                    Toast.makeText(requireContext(), response.body()?.message ?: "Failed to add product", Toast.LENGTH_SHORT).show()
+                    val errorMsg = response.body()?.message ?: response.errorBody()?.string() ?: "Failed to add product"
+                    Toast.makeText(requireContext(), errorMsg, Toast.LENGTH_SHORT).show()
                 }
             }
 
@@ -135,16 +122,13 @@ class AddProductFragment : Fragment() {
     private fun validateInput(name: String, price: String, stock: String, categoryPos: Int): Boolean {
         return when {
             name.isEmpty() -> {
-                binding.etProductName.error = "Name required"
-                false
+                binding.etProductName.error = "Name required"; false
             }
             price.isEmpty() -> {
-                binding.etProductPrice.error = "Price required"
-                false
+                binding.etProductPrice.error = "Price required"; false
             }
             stock.isEmpty() -> {
-                binding.etProductStock.error = "Stock required"
-                false
+                binding.etProductStock.error = "Stock required"; false
             }
             categoryPos < 0 -> {
                 Toast.makeText(requireContext(), "Please select a category", Toast.LENGTH_SHORT).show()
@@ -152,9 +136,7 @@ class AddProductFragment : Fragment() {
             }
             else -> {
                 try {
-                    price.toDouble()
-                    stock.toInt()
-                    true
+                    price.toDouble(); stock.toInt(); true
                 } catch (e: NumberFormatException) {
                     Toast.makeText(requireContext(), "Invalid price or stock format", Toast.LENGTH_SHORT).show()
                     false
@@ -169,6 +151,8 @@ class AddProductFragment : Fragment() {
     }
 
     private fun goBackToProducts() {
+        Toast.makeText(requireContext(), "Product added! Switch to Categories tab to see updates", Toast.LENGTH_LONG).show()
+
         parentFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, ProductsFragment())
             .commit()

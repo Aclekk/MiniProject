@@ -8,12 +8,13 @@ data class Product(
     val name: String,
     val price: Double,
     val description: String?,
-    @field:Json(name = "image_url") val imageUrl: String?,
-    @field:Json(name = "category_id") val categoryId: Int?,
+    @Json(name = "image_url") val imageUrl: String?,
+    @Json(name = "category_id") val categoryId: Int?,
     val stock: Int,
-    @field:Json(name = "category_name") val categoryName: String?, // 🔥 ini penting
-    @field:Json(name = "created_at") val createdAt: String?
+    @Json(name = "category_name") val categoryName: String?,
+    @Json(name = "created_at") val createdAt: String?
 )
+
 
 data class ProductRequest(
     val name: String,
