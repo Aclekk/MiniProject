@@ -27,7 +27,7 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:src="@android:drawable/ic_input_add"
-            android:visibility="gone"
+            android:visibility="visible"
             app:backgroundTint="@android:color/white"
             app:tint="@color/design_default_color_primary"
             app:fabSize="mini" />

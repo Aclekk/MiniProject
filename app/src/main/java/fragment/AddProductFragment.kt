@@ -1,6 +1,7 @@
 package com.example.miniproject.fragment
 
 import android.os.Bundle
+import android.util.Log // <-- TAMBAHKAN IMPORT INI
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -48,6 +49,8 @@ class AddProductFragment : Fragment() {
                     response.body()?.data?.let { categoryList ->
                         categories.clear()
                         categories.addAll(categoryList)
+                        // Log untuk melihat kategori yang dimuat
+                        Log.d("AddProductFragment", "Categories loaded: $categories")
 
                         val categoryNames = categories.map { it.categoryName }
                         val adapter = ArrayAdapter(
@@ -86,7 +89,19 @@ class AddProductFragment : Fragment() {
 
         val price = priceStr.toDouble()
         val stock = stockStr.toInt()
-        val categoryId = categories.getOrNull(selectedCategoryPos)?.id ?: return
+        
+        // Ambil kategori yang dipilih
+        val selectedCategory = categories.getOrNull(selectedCategoryPos)
+        if (selectedCategory == null) {
+            Toast.makeText(requireContext(), "Selected category not found.", Toast.LENGTH_SHORT).show()
+            // Log jika kategori yang dipilih tidak ditemukan di list 'categories'
+            Log.w("AddProductFragment", "Selected category at position $selectedCategoryPos is null. Spinner count: ${binding.spinnerCategory.count}, Categories list size: ${categories.size}")
+            return
+        }
+        val categoryId = selectedCategory.id
+
+        // Log categoryId yang akan dikirim
+        Log.d("AddProductFragment", "Attempting to save product with categoryId: $categoryId (Selected: ${selectedCategory.categoryName}, Position: $selectedCategoryPos)")
 
         val productRequest = ProductRequest(
             name = name,
@@ -105,16 +120,19 @@ class AddProductFragment : Fragment() {
 
                 if (response.isSuccessful && response.body()?.success == true) {
                     Toast.makeText(requireContext(), "Product added successfully!", Toast.LENGTH_SHORT).show()
+                    Log.d("AddProductFragment", "Product added successfully. Response: ${response.body()}")
                     goBackToProducts()
                 } else {
                     val errorMsg = response.body()?.message ?: response.errorBody()?.string() ?: "Failed to add product"
                     Toast.makeText(requireContext(), errorMsg, Toast.LENGTH_SHORT).show()
+                    Log.e("AddProductFragment", "Failed to add product: $errorMsg. Response: ${response.raw()}")
                 }
             }
 
             override fun onFailure(call: Call<ProductResponse>, t: Throwable) {
                 showLoading(false)
                 Toast.makeText(requireContext(), "Network error: ${t.message}", Toast.LENGTH_LONG).show()
+                Log.e("AddProductFragment", "Network error on saveProduct: ${t.message}", t)
             }
         })
     }
@@ -130,8 +148,9 @@ class AddProductFragment : Fragment() {
             stock.isEmpty() -> {
                 binding.etProductStock.error = "Stock required"; false
             }
-            categoryPos < 0 -> {
+            categoryPos < 0 -> { // AdapterView.INVALID_POSITION usually -1
                 Toast.makeText(requireContext(), "Please select a category", Toast.LENGTH_SHORT).show()
+                Log.w("AddProductFragment", "Validation failed: No category selected (position: $categoryPos)")
                 false
             }
             else -> {
@@ -139,6 +158,7 @@ class AddProductFragment : Fragment() {
                     price.toDouble(); stock.toInt(); true
                 } catch (e: NumberFormatException) {
                     Toast.makeText(requireContext(), "Invalid price or stock format", Toast.LENGTH_SHORT).show()
+                    Log.w("AddProductFragment", "Validation failed: Invalid number format for price or stock.", e)
                     false
                 }
             }
@@ -151,7 +171,9 @@ class AddProductFragment : Fragment() {
     }
 
     private fun goBackToProducts() {
-        Toast.makeText(requireContext(), "Product added! Switch to Categories tab to see updates", Toast.LENGTH_LONG).show()
+        // Toast message di sini sedikit membingungkan jika kategori tidak tersimpan dengan benar.
+        // Mungkin lebih baik: "Product add attempt finished. Check Categories tab."
+        Toast.makeText(requireContext(), "Product add attempt finished. Check Categories tab for updates.", Toast.LENGTH_LONG).show()
 
         parentFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, ProductsFragment())

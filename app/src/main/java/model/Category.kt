@@ -8,10 +8,6 @@ data class Category(
     @field:Json(name = "created_at") val createdAt: String
 )
 
-data class CategoryRequest(
-    @field:Json(name = "category_name") val categoryName: String
-)
-
 data class CategoryResponse(
     val success: Boolean,
     val message: String,
@@ -23,3 +19,4 @@ data class ProductListResponse(
     val message: String?,
     val data: List<Product>?
 )
+
