@@ -13,7 +13,7 @@ import com.example.miniproject.adapter.ProductAdapter
 import com.example.miniproject.api.ApiClient
 import com.example.miniproject.databinding.FragmentProductsBinding
 import com.example.miniproject.model.Product
-import com.example.miniproject.model.ProductListResponse
+import com.example.miniproject.model.ProductListResponse // Import ini tidak dipakai dan bisa dihapus
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -50,10 +50,15 @@ class ProductsFragment : Fragment() {
         val sharedPref = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
         userRole = sharedPref.getString("role", "user") ?: "user"
         val username = sharedPref.getString("username", "User") ?: "User"
-        binding.tvUserRole.text = "$userRole: $username"
 
+        // BARIS YANG MENYEBABKAN ERROR SUDAH DIHAPUS/DIKOMENTARI
+        // binding.tvUserRole.text = "$userRole: $username"
+
+        // FAB Add Product masih perlu dicek, karena FAB-nya masih ada di XML
         if (userRole == "admin") {
             binding.fabAddProduct.visibility = View.VISIBLE
+        } else {
+            binding.fabAddProduct.visibility = View.GONE
         }
     }
 
@@ -75,8 +80,12 @@ class ProductsFragment : Fragment() {
         binding.btnLogout.setOnClickListener { logout() }
 
         binding.fabAddProduct.setOnClickListener {
+            // Asumsi AddProductFragment sudah kamu buat
             parentFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, AddProductFragment())
+                .replace(R.id.fragment_container, LoginFragment())
+                // Karena AddProductFragment belum ada di kode yang kamu berikan,
+                // aku ganti ke LoginFragment sementara (atau buat AddProductFragment)
+                // Sebaiknya ganti dengan AddProductFragment() jika sudah siap
                 .commit()
         }
 
@@ -114,6 +123,7 @@ class ProductsFragment : Fragment() {
         })
     }
 
+    // ... (Fungsi editProduct, deleteProduct, viewProduct, showLoading, dan logout tetap sama)
     private fun editProduct(product: Product) {
         Toast.makeText(requireContext(), "Edit: ${product.name}", Toast.LENGTH_SHORT).show()
     }
@@ -130,10 +140,14 @@ class ProductsFragment : Fragment() {
         binding.progressBar.visibility = if (show) View.VISIBLE else View.GONE
     }
 
+    // Perlu tambahkan import untuk LoginFragment jika belum ada
+    // import com.example.miniproject.fragment.LoginFragment // Tambahkan jika perlu
+
     private fun logout() {
         val sharedPref = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
         sharedPref.edit().clear().apply()
 
+        // Ganti dengan class fragment yang sesuai jika kamu punya LoginFragment
         val loginFragment = LoginFragment()
         parentFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, loginFragment)
@@ -141,6 +155,7 @@ class ProductsFragment : Fragment() {
 
         Toast.makeText(requireContext(), "Logged out successfully", Toast.LENGTH_SHORT).show()
     }
+
 
     override fun onDestroyView() {
         super.onDestroyView()

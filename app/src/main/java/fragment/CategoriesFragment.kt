@@ -1,12 +1,10 @@
 package com.example.miniproject.fragment
 
-import android.app.AlertDialog // Ditambahkan
 import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.EditText // Ditambahkan
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
@@ -19,11 +17,11 @@ import com.example.miniproject.adapter.CategoryAdapter
 import com.example.miniproject.adapter.ProductAdapter
 import com.example.miniproject.api.ApiClient
 import com.example.miniproject.model.Category
-import com.example.miniproject.model.CategoryRequest // Ditambahkan
+// import com.example.miniproject.model.CategoryRequest // Dihapus karena tidak dipakai
 import com.example.miniproject.model.CategoryResponse
 import com.example.miniproject.model.Product
 import com.example.miniproject.model.ProductResponse
-import com.google.android.material.floatingactionbutton.FloatingActionButton // Ditambahkan
+// import com.google.android.material.floatingactionbutton.FloatingActionButton // Dihapus
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -35,7 +33,7 @@ class CategoriesFragment : Fragment() {
     private lateinit var tvCategoryTitle: TextView
     private lateinit var progressBar: ProgressBar
     private lateinit var llProductsSection: View
-    private lateinit var fabAddCategory: FloatingActionButton // Ditambahkan
+    // private lateinit var fabAddCategory: FloatingActionButton // Dihapus
 
     private lateinit var categoryAdapter: CategoryAdapter
     private lateinit var productAdapter: ProductAdapter
@@ -51,6 +49,7 @@ class CategoriesFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
+        // Asumsi: Kamu juga sudah menghapus FAB dari file layout 'fragment_categories.xml'
         return inflater.inflate(R.layout.fragment_categories, container, false)
     }
 
@@ -63,14 +62,7 @@ class CategoriesFragment : Fragment() {
         loadCategories()
         loadAllProducts()
 
-        // Setup FAB click listener
-        fabAddCategory.setOnClickListener {
-            if (userRole == "admin") { // Hanya admin yang bisa tambah kategori
-                showAddCategoryDialog()
-            } else {
-                Toast.makeText(requireContext(), "Only admins can add categories.", Toast.LENGTH_SHORT).show()
-            }
-        }
+        // Listener untuk fabAddCategory sudah Dihapus
     }
 
     private fun initViews(view: View) {
@@ -79,7 +71,7 @@ class CategoriesFragment : Fragment() {
         tvCategoryTitle = view.findViewById(R.id.tvCategoryTitle)
         progressBar = view.findViewById(R.id.progressBar)
         llProductsSection = view.findViewById(R.id.llProductsSection)
-        fabAddCategory = view.findViewById(R.id.fabAddCategory) // Ditambahkan
+        // fabAddCategory = view.findViewById(R.id.fabAddCategory) // Baris ini Dihapus
     }
 
     private fun getUserData() {
@@ -134,53 +126,8 @@ class CategoriesFragment : Fragment() {
         })
     }
 
-    // Fungsi baru untuk menampilkan dialog tambah kategori
-    private fun showAddCategoryDialog() {
-        val builder = AlertDialog.Builder(requireContext())
-        builder.setTitle("Add New Category")
-
-        val input = EditText(requireContext())
-        input.hint = "Enter category name"
-        builder.setView(input)
-
-        builder.setPositiveButton("Save") { dialog, _ ->
-            val categoryName = input.text.toString().trim()
-            if (categoryName.isNotEmpty()) {
-                addCategoryToApi(categoryName)
-            } else {
-                Toast.makeText(requireContext(), "Category name cannot be empty", Toast.LENGTH_SHORT).show()
-            }
-            dialog.dismiss()
-        }
-        builder.setNegativeButton("Cancel") { dialog, _ ->
-            dialog.cancel()
-        }
-        builder.show()
-    }
-
-    // Fungsi baru untuk mengirim kategori ke API
-    private fun addCategoryToApi(categoryName: String) {
-        showLoading(true)
-        val categoryRequest = CategoryRequest(categoryName = categoryName)
-        ApiClient.apiService.createCategory(categoryRequest).enqueue(object : Callback<CategoryResponse> {
-            override fun onResponse(call: Call<CategoryResponse>, response: Response<CategoryResponse>) {
-                showLoading(false)
-                if (response.isSuccessful && response.body()?.success == true) {
-                    Toast.makeText(requireContext(), "Category added successfully", Toast.LENGTH_SHORT).show()
-                    loadCategories() // Muat ulang daftar kategori
-                } else {
-                    val errorMessage = response.body()?.message ?: response.message() ?: "Failed to add category"
-                    Toast.makeText(requireContext(), "Error: $errorMessage", Toast.LENGTH_LONG).show()
-                }
-            }
-
-            override fun onFailure(call: Call<CategoryResponse>, t: Throwable) {
-                showLoading(false)
-                Toast.makeText(requireContext(), "Network error: ${t.message}", Toast.LENGTH_SHORT).show()
-            }
-        })
-    }
-
+    // Fungsi showAddCategoryDialog() sudah Dihapus
+    // Fungsi addCategoryToApi() sudah Dihapus
 
     private fun loadAllProducts() {
         val call = ApiClient.apiService.getAllProducts()
@@ -206,7 +153,7 @@ class CategoriesFragment : Fragment() {
 
         val filteredProducts = allProducts.filter { product ->
             // Logika filter produk berdasarkan kategori (sesuaikan jika perlu)
-             product.categoryName?.equals(category.categoryName, ignoreCase = true) == true || product.categoryId == category.id
+            product.categoryName?.equals(category.categoryName, ignoreCase = true) == true || product.categoryId == category.id
         }
 
         products.clear()
