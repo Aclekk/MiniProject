@@ -47,11 +47,11 @@ class LoginFragment : Fragment() {
         }
 
         binding.tvRegister.setOnClickListener {
-            // TODO: Navigate to register fragment (for now just show toast)
-            Toast.makeText(requireContext(), "Register feature coming soon", Toast.LENGTH_SHORT).show()
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, RegisterFragment())
+                .commit()
         }
     }
-
     private fun validateInput(username: String, password: String): Boolean {
         return when {
             username.isEmpty() -> {

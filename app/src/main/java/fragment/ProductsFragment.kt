@@ -80,12 +80,8 @@ class ProductsFragment : Fragment() {
         binding.btnLogout.setOnClickListener { logout() }
 
         binding.fabAddProduct.setOnClickListener {
-            // Asumsi AddProductFragment sudah kamu buat
             parentFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, LoginFragment())
-                // Karena AddProductFragment belum ada di kode yang kamu berikan,
-                // aku ganti ke LoginFragment sementara (atau buat AddProductFragment)
-                // Sebaiknya ganti dengan AddProductFragment() jika sudah siap
+                .replace(R.id.fragment_container, AddProductFragment())
                 .commit()
         }
 
