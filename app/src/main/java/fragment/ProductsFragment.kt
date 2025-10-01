@@ -13,7 +13,6 @@ import com.example.miniproject.adapter.ProductAdapter
 import com.example.miniproject.api.ApiClient
 import com.example.miniproject.databinding.FragmentProductsBinding
 import com.example.miniproject.model.Product
-import com.example.miniproject.model.ProductListResponse // Import ini tidak dipakai dan bisa dihapus
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -51,7 +50,6 @@ class ProductsFragment : Fragment() {
         userRole = sharedPref.getString("role", "user") ?: "user"
         val username = sharedPref.getString("username", "User") ?: "User"
 
-        // FAB Add Product masih perlu dicek, karena FAB-nya masih ada di XML
         if (userRole == "admin") {
             binding.fabAddProduct.visibility = View.VISIBLE
         } else {
@@ -77,9 +75,9 @@ class ProductsFragment : Fragment() {
         binding.btnLogout.setOnClickListener { logout() }
 
         binding.fabAddProduct.setOnClickListener {
-            // PERBAIKAN DI SINI: Ganti LoginFragment() menjadi AddProductFragment()
             parentFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, AddProductFragment()) // <-- Ini baris yang benar
+                .replace(R.id.fragment_container, AddProductFragment()) 
+                .addToBackStack(null) // Optional: Add to back stack
                 .commit()
         }
 
@@ -117,17 +115,19 @@ class ProductsFragment : Fragment() {
         })
     }
 
-    // ... (Fungsi editProduct, deleteProduct, viewProduct, showLoading, dan logout tetap sama)
     private fun editProduct(product: Product) {
         Toast.makeText(requireContext(), "Edit: ${product.name}", Toast.LENGTH_SHORT).show()
+        // Implement navigation to an edit product screen or show a dialog
     }
 
     private fun deleteProduct(product: Product) {
         Toast.makeText(requireContext(), "Delete: ${product.name}", Toast.LENGTH_SHORT).show()
+        // Implement delete logic, possibly with a confirmation dialog
     }
 
     private fun viewProduct(product: Product) {
         Toast.makeText(requireContext(), "View: ${product.name}", Toast.LENGTH_SHORT).show()
+        // Implement navigation to a product detail screen
     }
 
     private fun showLoading(show: Boolean) {
@@ -138,7 +138,6 @@ class ProductsFragment : Fragment() {
         val sharedPref = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
         sharedPref.edit().clear().apply()
 
-        // Asumsi LoginFragment sudah kamu buat
         val loginFragment = LoginFragment()
         parentFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, loginFragment)
@@ -146,7 +145,6 @@ class ProductsFragment : Fragment() {
 
         Toast.makeText(requireContext(), "Logged out successfully", Toast.LENGTH_SHORT).show()
     }
-
 
     override fun onDestroyView() {
         super.onDestroyView()

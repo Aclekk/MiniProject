@@ -5,8 +5,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ProgressBar
-import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
@@ -16,24 +14,20 @@ import com.example.miniproject.R
 import com.example.miniproject.adapter.CategoryAdapter
 import com.example.miniproject.adapter.ProductAdapter
 import com.example.miniproject.api.ApiClient
+import com.example.miniproject.databinding.FragmentCategoriesBinding // Added ViewBinding import
 import com.example.miniproject.model.Category
-// import com.example.miniproject.model.CategoryRequest // Dihapus karena tidak dipakai
 import com.example.miniproject.model.CategoryResponse
 import com.example.miniproject.model.Product
 import com.example.miniproject.model.ProductResponse
-// import com.google.android.material.floatingactionbutton.FloatingActionButton // Dihapus
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
 class CategoriesFragment : Fragment() {
 
-    private lateinit var rvCategories: RecyclerView
-    private lateinit var rvCategoryProducts: RecyclerView
-    private lateinit var tvCategoryTitle: TextView
-    private lateinit var progressBar: ProgressBar
-    private lateinit var llProductsSection: View
-    // private lateinit var fabAddCategory: FloatingActionButton // Dihapus
+    private var _binding: FragmentCategoriesBinding? = null // Added ViewBinding
+    private val binding get() = _binding!! // Added ViewBinding
 
     private lateinit var categoryAdapter: CategoryAdapter
     private lateinit var productAdapter: ProductAdapter
@@ -48,35 +42,33 @@ class CategoriesFragment : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        // Asumsi: Kamu juga sudah menghapus FAB dari file layout 'fragment_categories.xml'
-        return inflater.inflate(R.layout.fragment_categories, container, false)
+    ): View {
+        _binding = FragmentCategoriesBinding.inflate(inflater, container, false) // Changed to ViewBinding
+        return binding.root // Changed to ViewBinding
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        initViews(view)
+        // initViews(view) // No longer needed with ViewBinding
         getUserData()
         setupRecyclerViews()
+        setupClickListeners() // Added call to setupClickListeners
         loadCategories()
         loadAllProducts()
-
-        // Listener untuk fabAddCategory sudah Dihapus
     }
 
-    private fun initViews(view: View) {
-        rvCategories = view.findViewById(R.id.rvCategories)
-        rvCategoryProducts = view.findViewById(R.id.rvCategoryProducts)
-        tvCategoryTitle = view.findViewById(R.id.tvCategoryTitle)
-        progressBar = view.findViewById(R.id.progressBar)
-        llProductsSection = view.findViewById(R.id.llProductsSection)
-        // fabAddCategory = view.findViewById(R.id.fabAddCategory) // Baris ini Dihapus
-    }
+    // initViews is no longer needed with ViewBinding
 
     private fun getUserData() {
         val sharedPref = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
         userRole = sharedPref.getString("role", "user") ?: "user"
+
+        if (userRole == "admin") {
+            binding.fabAddCategory.visibility = View.VISIBLE
+        } else {
+            binding.fabAddCategory.visibility = View.GONE
+        }
     }
 
     private fun setupRecyclerViews() {
@@ -84,7 +76,7 @@ class CategoriesFragment : Fragment() {
         categoryAdapter = CategoryAdapter(categories) { category ->
             showProductsForCategory(category)
         }
-        rvCategories.apply {
+        binding.rvCategories.apply { // Changed to use binding
             layoutManager = GridLayoutManager(requireContext(), 2)
             adapter = categoryAdapter
         }
@@ -97,9 +89,18 @@ class CategoriesFragment : Fragment() {
                 "delete" -> Toast.makeText(requireContext(), "Delete: ${product.name}", Toast.LENGTH_SHORT).show()
             }
         }
-        rvCategoryProducts.apply {
+        binding.rvCategoryProducts.apply { // Changed to use binding
             layoutManager = LinearLayoutManager(requireContext())
             adapter = productAdapter
+        }
+    }
+
+    private fun setupClickListeners() { // Added this method
+        binding.fabAddCategory.setOnClickListener {
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, AddCategoryFragment()) 
+                .addToBackStack(null)
+                .commit()
         }
     }
 
@@ -126,9 +127,6 @@ class CategoriesFragment : Fragment() {
         })
     }
 
-    // Fungsi showAddCategoryDialog() sudah Dihapus
-    // Fungsi addCategoryToApi() sudah Dihapus
-
     private fun loadAllProducts() {
         val call = ApiClient.apiService.getAllProducts()
         call.enqueue(object : Callback<ProductResponse> {
@@ -148,11 +146,10 @@ class CategoriesFragment : Fragment() {
     }
 
     private fun showProductsForCategory(category: Category) {
-        tvCategoryTitle.text = "Products in ${category.categoryName}"
-        llProductsSection.visibility = View.VISIBLE
+        binding.tvCategoryTitle.text = "Products in ${category.categoryName}" // Changed to use binding
+        binding.llProductsSection.visibility = View.VISIBLE // Changed to use binding
 
         val filteredProducts = allProducts.filter { product ->
-            // Logika filter produk berdasarkan kategori (sesuaikan jika perlu)
             product.categoryName?.equals(category.categoryName, ignoreCase = true) == true || product.categoryId == category.id
         }
 
@@ -166,6 +163,11 @@ class CategoriesFragment : Fragment() {
     }
 
     private fun showLoading(show: Boolean) {
-        progressBar.visibility = if (show) View.VISIBLE else View.GONE
+        binding.progressBar.visibility = if (show) View.VISIBLE else View.GONE // Changed to use binding
+    }
+
+    override fun onDestroyView() { // Added onDestroyView for ViewBinding
+        super.onDestroyView()
+        _binding = null
     }
 }
