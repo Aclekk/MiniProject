@@ -51,9 +51,6 @@ class ProductsFragment : Fragment() {
         userRole = sharedPref.getString("role", "user") ?: "user"
         val username = sharedPref.getString("username", "User") ?: "User"
 
-        // BARIS YANG MENYEBABKAN ERROR SUDAH DIHAPUS/DIKOMENTARI
-        // binding.tvUserRole.text = "$userRole: $username"
-
         // FAB Add Product masih perlu dicek, karena FAB-nya masih ada di XML
         if (userRole == "admin") {
             binding.fabAddProduct.visibility = View.VISIBLE
@@ -80,8 +77,9 @@ class ProductsFragment : Fragment() {
         binding.btnLogout.setOnClickListener { logout() }
 
         binding.fabAddProduct.setOnClickListener {
+            // PERBAIKAN DI SINI: Ganti LoginFragment() menjadi AddProductFragment()
             parentFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, AddProductFragment())
+                .replace(R.id.fragment_container, AddProductFragment()) // <-- Ini baris yang benar
                 .commit()
         }
 
@@ -136,14 +134,11 @@ class ProductsFragment : Fragment() {
         binding.progressBar.visibility = if (show) View.VISIBLE else View.GONE
     }
 
-    // Perlu tambahkan import untuk LoginFragment jika belum ada
-    // import com.example.miniproject.fragment.LoginFragment // Tambahkan jika perlu
-
     private fun logout() {
         val sharedPref = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
         sharedPref.edit().clear().apply()
 
-        // Ganti dengan class fragment yang sesuai jika kamu punya LoginFragment
+        // Asumsi LoginFragment sudah kamu buat
         val loginFragment = LoginFragment()
         parentFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, loginFragment)
