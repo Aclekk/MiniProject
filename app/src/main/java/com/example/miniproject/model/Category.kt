@@ -14,9 +14,3 @@ data class CategoryResponse(
     val data: List<Category>? = null,
     @field:Json(name = "category_id") val categoryId: Int? = null
 )
-data class ProductListResponse(
-    val success: Boolean,
-    val message: String?,
-    val data: List<Product>?
-)
-

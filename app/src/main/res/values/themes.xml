@@ -1,19 +1,41 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-
-    <style name="Theme.MiniProject" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base Theme untuk NiagaTani -->
+    <style name="Base.Theme.NiagaTani" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="colorPrimary">@color/primary_green</item>
-        <item name="colorPrimaryVariant">@color/primary_green_dark</item>
-        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorPrimaryVariant">@color/primary_dark</item>
+        <item name="colorSecondary">@color/accent_yellow</item>
+
+        <item name="android:colorBackground">@color/background_light</item>
+        <item name="colorSurface">@color/surface_white</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+        <item name="colorOnSecondary">@color/text_primary</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:statusBarColor">@color/primary_dark</item>
+        <item name="android:navigationBarColor">@color/primary_dark</item>
     </style>
 
-    <style name="BottomNavTextActive" parent="TextAppearance.MaterialComponents.Caption">
+    <!-- Theme Utama NiagaTani -->
+    <style name="Theme.NiagaTani" parent="Base.Theme.NiagaTani" />
+
+    <!-- Theme NoActionBar untuk Splash/Login -->
+    <style name="Theme.NiagaTani.NoActionBar" parent="Base.Theme.NiagaTani">
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+    </style>
+
+    <!-- Gaya teks aktif dan non-aktif di BottomNavigation -->
+    <style name="BottomNavTextActive">
         <item name="android:textSize">12sp</item>
         <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/primary_green</item>
     </style>
 
-    <style name="BottomNavTextInactive" parent="TextAppearance.MaterialComponents.Caption">
-        <item name="android:textSize">11sp</item>
+    <style name="BottomNavTextInactive">
+        <item name="android:textSize">12sp</item>
+        <item name="android:textStyle">normal</item>
+        <item name="android:textColor">@color/text_secondary</item>
     </style>
 
 </resources>

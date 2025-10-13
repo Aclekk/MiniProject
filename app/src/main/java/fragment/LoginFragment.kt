@@ -1,26 +1,32 @@
 package com.example.miniproject.fragment
 
 import android.content.Context
+import android.graphics.RenderEffect
+import android.graphics.Shader
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.example.miniproject.R
-import com.example.miniproject.api.ApiClient
-import com.example.miniproject.databinding.FragmentLoginBinding
-import com.example.miniproject.model.AuthResponse
-import com.example.miniproject.model.LoginRequest
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 import com.example.miniproject.MainActivity
+import com.example.miniproject.databinding.FragmentLoginBinding
 
 class LoginFragment : Fragment() {
 
     private var _binding: FragmentLoginBinding? = null
     private val binding get() = _binding!!
+
+    private val dummyUsers = listOf(
+        DummyUser(1, "budi", "123456", "user"),
+        DummyUser(2, "admin", "123456", "admin"),
+        DummyUser(3, "siti", "123456", "user")
+    )
+
+    data class DummyUser(val id: Int, val username: String, val password: String, val role: String)
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -35,6 +41,7 @@ class LoginFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         setupClickListeners()
     }
+
 
     private fun setupClickListeners() {
         binding.btnLogin.setOnClickListener {
@@ -52,6 +59,7 @@ class LoginFragment : Fragment() {
                 .commit()
         }
     }
+
     private fun validateInput(username: String, password: String): Boolean {
         return when {
             username.isEmpty() -> {
@@ -69,35 +77,29 @@ class LoginFragment : Fragment() {
     private fun performLogin(username: String, password: String) {
         showLoading(true)
 
-        val loginRequest = LoginRequest(username, password)
-        ApiClient.apiService.login(loginRequest).enqueue(object : Callback<AuthResponse> {
-            override fun onResponse(call: Call<AuthResponse>, response: Response<AuthResponse>) {
-                showLoading(false)
+        val user = dummyUsers.find { it.username == username && it.password == password }
 
-                if (response.isSuccessful) {
-                    val authResponse = response.body()
-                    if (authResponse?.success == true && authResponse.user != null) {
-                        // Save user data to SharedPreferences
-                        saveUserData(authResponse.user!!.id, authResponse.user!!.username, authResponse.user!!.role)
+        if (user != null) {
+            showLoading(false)
+            saveUserData(user.id, user.username, user.role)
 
-                        // Navigate to products fragment
-                        navigateToProducts()
+            Toast.makeText(
+                requireContext(),
+                "✅ Selamat datang, ${user.username.capitalize()}!",
+                Toast.LENGTH_SHORT
+            ).show()
 
-                        Toast.makeText(requireContext(), "Login successful!", Toast.LENGTH_SHORT).show()
-                    } else {
-                        Toast.makeText(requireContext(), authResponse?.message ?: "Login failed", Toast.LENGTH_SHORT).show()
-                    }
-                } else {
-                    Toast.makeText(requireContext(), "Login failed: ${response.code()}", Toast.LENGTH_SHORT).show()
-                }
-            }
-
-            override fun onFailure(call: Call<AuthResponse>, t: Throwable) {
-                showLoading(false)
-                Toast.makeText(requireContext(), "Network error: ${t.message}", Toast.LENGTH_LONG).show()
-            }
-        })
+            navigateToProducts()
+        } else {
+            showLoading(false)
+            Toast.makeText(
+                requireContext(),
+                "❌ Username atau password salah!",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
     }
+
 
     private fun showLoading(show: Boolean) {
         binding.progressBar.visibility = if (show) View.VISIBLE else View.GONE

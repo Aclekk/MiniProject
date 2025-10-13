@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/welcome"
+    tools:context=".WelcomeActivity">
+
+    <!-- Tombol GET STARTED di pojok kanan atas -->
+    <Button
+        android:id="@+id/btnGetStarted"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Get Started"
+        android:textAllCaps="false"
+        android:textSize="14sp"
+        android:textColor="@android:color/white"
+        android:background="@drawable/btn_outline_white"
+        android:paddingHorizontal="20dp"
+        android:paddingVertical="8dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_margin="24dp"
+        android:elevation="6dp"
+        android:stateListAnimator="@null" />
+
+</RelativeLayout>

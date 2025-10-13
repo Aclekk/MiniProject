@@ -1,42 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Primary Colors - Green Theme (Agriculture) -->
+
+    <!-- 🌿 BRAND COLORS -->
     <color name="primary_green">#2E7D32</color>
-    <color name="primary_green_dark">#1B5E20</color>
-    <color name="primary_green_light">#4CAF50</color>
+    <color name="primary_dark">#1B5E20</color>
+    <color name="secondary_green">#A5D6A7</color>
+    <color name="accent_yellow">#FBC02D</color>
+    <color name="secondary_yellow">#FDD835</color>
 
-    <!-- Secondary Colors -->
-    <color name="secondary_yellow">#FBC02D</color>
-    <color name="secondary_yellow_dark">#F57F17</color>
-    <color name="accent_orange">#FF6F00</color>
-
-    <!-- Background Colors -->
-    <color name="background_main">#F5F5F5</color>
+    <!-- 🎨 NEUTRAL BACKGROUND -->
+    <color name="background_light">#F1F8E9</color>
     <color name="background_card">#FFFFFF</color>
-    <color name="background_light_green">#F1F8E9</color>
+    <color name="background_light_green">#C8E6C9</color>
+    <color name="background_main">#E8F5E9</color> <!-- 🌿 Tambahan ini! -->
 
-    <!-- Text Colors -->
-    <color name="text_primary">#212121</color>
+    <!-- 📝 TEXT COLORS -->
+    <color name="text_primary">#1B1B1B</color>
     <color name="text_secondary">#757575</color>
-    <color name="text_hint">#BDBDBD</color>
     <color name="text_white">#FFFFFF</color>
+    <color name="text_hint">#9E9E9E</color>
 
-    <!-- Status Colors -->
-    <color name="success_green">#4CAF50</color>
-    <color name="warning_yellow">#FFC107</color>
-    <color name="error_red">#F44336</color>
-    <color name="info_blue">#2196F3</color>
-
-    <!-- Stock Badge Colors -->
-    <color name="stock_high">#66BB6A</color>
-    <color name="stock_medium">#FFA726</color>
-    <color name="stock_low">#EF5350</color>
-
-    <!-- Legacy colors -->
-    <color name="purple_200">#BB86FC</color>
-    <color name="purple_500">#6200EE</color>
+    <!-- 🚨 STATUS COLORS -->
+    <color name="error_red">#D32F2F</color>
     <color name="purple_700">#3700B3</color>
-    <color name="teal_200">#03DAC5</color>
-    <color name="black">#000000</color>
+
+    <!-- ☁️ SURFACE -->
+    <color name="surface_white">#FFFFFF</color>
+
+    <!-- 🌈 GRADIENT -->
+    <color name="gradient_start">#1B5E20</color>
+    <color name="gradient_end">#4CAF50</color>
+
+    <!-- ⚙️ COMMON COLORS -->
     <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+
+    <!-- 🩶 GRAYSCALE VARIANTS -->
+    <color name="gray_extra_light">#EEEEEE</color>
+    <color name="gray_light">#BDBDBD</color>
+    <color name="gray">#9E9E9E</color> <!-- 🌟 ini gray utama -->
+    <color name="gray_medium">#757575</color>
+    <color name="gray_dark">#424242</color>
+
 </resources>

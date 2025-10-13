@@ -7,13 +7,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.example.miniproject.R
-import com.example.miniproject.api.ApiClient
 import com.example.miniproject.databinding.FragmentAddCategoryBinding
-import com.example.miniproject.model.CategoryRequest
-import com.example.miniproject.model.CategoryResponse
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 
 class AddCategoryFragment : Fragment() {
 
@@ -44,37 +38,21 @@ class AddCategoryFragment : Fragment() {
             return
         }
 
-        showLoading(true)
+        // DATA DUMMY - Simpan ke list global atau SharedPreferences
+        // Untuk sekarang, cukup tampilkan Toast dan kembali
+        Toast.makeText(requireContext(), "Category '$categoryName' added successfully", Toast.LENGTH_SHORT).show()
 
-        val categoryRequest = CategoryRequest(categoryName = categoryName)
-        ApiClient.apiService.createCategory(categoryRequest).enqueue(object : Callback<CategoryResponse> {
-            override fun onResponse(call: Call<CategoryResponse>, response: Response<CategoryResponse>) {
-                showLoading(false)
-                if (response.isSuccessful && response.body()?.success == true) {
-                    Toast.makeText(requireContext(), "Category added successfully", Toast.LENGTH_SHORT).show()
-                    navigateToCategoriesFragment()
-                } else {
-                    val errorMessage = response.body()?.message ?: "Failed to add category"
-                    Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_SHORT).show()
-                }
-            }
+        // Clear input
+        binding.etCategoryName.text?.clear()
 
-            override fun onFailure(call: Call<CategoryResponse>, t: Throwable) {
-                showLoading(false)
-                Toast.makeText(requireContext(), "Network error: ${t.message}", Toast.LENGTH_LONG).show()
-            }
-        })
-    }
-
-    private fun showLoading(isLoading: Boolean) {
-        binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
-        binding.btnSaveCategory.isEnabled = !isLoading
-        binding.btnCancel.isEnabled = !isLoading
+        // Kembali ke CategoriesFragment
+        navigateToCategoriesFragment()
     }
 
     private fun navigateToCategoriesFragment() {
         parentFragmentManager.beginTransaction()
-            .replace(R.id.fragment_container, CategoriesFragment()) // Pastikan CategoriesFragment ada
+            .replace(R.id.fragment_container, CategoriesFragment())
+            .addToBackStack(null)
             .commit()
     }
 

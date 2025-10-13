@@ -9,25 +9,17 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.example.miniproject.R
 import com.example.miniproject.adapter.CategoryAdapter
 import com.example.miniproject.adapter.ProductAdapter
-import com.example.miniproject.api.ApiClient
-import com.example.miniproject.databinding.FragmentCategoriesBinding // Added ViewBinding import
+import com.example.miniproject.databinding.FragmentCategoriesBinding
 import com.example.miniproject.model.Category
-import com.example.miniproject.model.CategoryResponse
 import com.example.miniproject.model.Product
-import com.example.miniproject.model.ProductResponse
-import com.google.android.material.floatingactionbutton.FloatingActionButton
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 
 class CategoriesFragment : Fragment() {
 
-    private var _binding: FragmentCategoriesBinding? = null // Added ViewBinding
-    private val binding get() = _binding!! // Added ViewBinding
+    private var _binding: FragmentCategoriesBinding? = null
+    private val binding get() = _binding!!
 
     private lateinit var categoryAdapter: CategoryAdapter
     private lateinit var productAdapter: ProductAdapter
@@ -43,22 +35,19 @@ class CategoriesFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        _binding = FragmentCategoriesBinding.inflate(inflater, container, false) // Changed to ViewBinding
-        return binding.root // Changed to ViewBinding
+        _binding = FragmentCategoriesBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // initViews(view) // No longer needed with ViewBinding
         getUserData()
         setupRecyclerViews()
-        setupClickListeners() // Added call to setupClickListeners
-        loadCategories()
-        loadAllProducts()
+        setupClickListeners()
+        loadDummyCategories()
+        loadDummyProducts()
     }
-
-    // initViews is no longer needed with ViewBinding
 
     private fun getUserData() {
         val sharedPref = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
@@ -76,7 +65,7 @@ class CategoriesFragment : Fragment() {
         categoryAdapter = CategoryAdapter(categories) { category ->
             showProductsForCategory(category)
         }
-        binding.rvCategories.apply { // Changed to use binding
+        binding.rvCategories.apply {
             layoutManager = GridLayoutManager(requireContext(), 2)
             adapter = categoryAdapter
         }
@@ -89,68 +78,139 @@ class CategoriesFragment : Fragment() {
                 "delete" -> Toast.makeText(requireContext(), "Delete: ${product.name}", Toast.LENGTH_SHORT).show()
             }
         }
-        binding.rvCategoryProducts.apply { // Changed to use binding
+        binding.rvCategoryProducts.apply {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = productAdapter
         }
     }
 
-    private fun setupClickListeners() { // Added this method
+    private fun setupClickListeners() {
         binding.fabAddCategory.setOnClickListener {
             parentFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, AddCategoryFragment()) 
+                .replace(R.id.fragment_container, AddCategoryFragment())
                 .addToBackStack(null)
                 .commit()
         }
     }
 
-    private fun loadCategories() {
-        showLoading(true)
-        ApiClient.apiService.getAllCategories().enqueue(object : Callback<CategoryResponse> {
-            override fun onResponse(call: Call<CategoryResponse>, response: Response<CategoryResponse>) {
-                showLoading(false)
-                if (response.isSuccessful && response.body()?.success == true) {
-                    response.body()?.data?.let { categoryList ->
-                        categories.clear()
-                        categories.addAll(categoryList)
-                        categoryAdapter.notifyDataSetChanged()
-                    }
-                } else {
-                    Toast.makeText(requireContext(), "Failed to load categories: ${response.message()}", Toast.LENGTH_SHORT).show()
-                }
-            }
+    private fun loadDummyCategories() {
+        // DUMMY DATA - Kategori
+        val dummyCategories = listOf(
+            Category(1, "Pertanian", "2025-01-01"),
+            Category(2, "Pupuk", "2025-01-01"),
+            Category(3, "Benih", "2025-01-01"),
+            Category(4, "Peralatan", "2025-01-01"),
+            Category(5, "Pestisida", "2025-01-01")
+        )
 
-            override fun onFailure(call: Call<CategoryResponse>, t: Throwable) {
-                showLoading(false)
-                Toast.makeText(requireContext(), "Network error: ${t.message}", Toast.LENGTH_SHORT).show()
-            }
-        })
+        categories.clear()
+        categories.addAll(dummyCategories)
+        categoryAdapter.notifyDataSetChanged()
     }
 
-    private fun loadAllProducts() {
-        val call = ApiClient.apiService.getAllProducts()
-        call.enqueue(object : Callback<ProductResponse> {
-            override fun onResponse(call: Call<ProductResponse>, response: Response<ProductResponse>) {
-                if (response.isSuccessful && response.body()?.success == true) {
-                    response.body()?.data?.let { productList ->
-                        allProducts.clear()
-                        allProducts.addAll(productList)
-                    }
-                }
-            }
+    private fun loadDummyProducts() {
+        // DUMMY DATA - Produk
+        val dummyProducts = listOf(
+            Product(
+                id = 1,
+                name = "Cangkul Premium",
+                price = 150000.0,
+                description = "Cangkul berkualitas tinggi untuk mengolah tanah",
+                imageUrl = "https://via.placeholder.com/300x200?text=Cangkul",
+                categoryId = 1,
+                stock = 50,
+                categoryName = "Pertanian",
+                createdAt = "2025-01-01"
+            ),
+            Product(
+                id = 2,
+                name = "Pupuk Organik 25kg",
+                price = 200000.0,
+                description = "Pupuk organik alami berkualitas tinggi",
+                imageUrl = "https://via.placeholder.com/300x200?text=Pupuk",
+                categoryId = 2,
+                stock = 30,
+                categoryName = "Pupuk",
+                createdAt = "2025-01-01"
+            ),
+            Product(
+                id = 3,
+                name = "Benih Padi Premium",
+                price = 50000.0,
+                description = "Benih padi unggul hasil seleksi",
+                imageUrl = "https://via.placeholder.com/300x200?text=Benih",
+                categoryId = 3,
+                stock = 100,
+                categoryName = "Benih",
+                createdAt = "2025-01-01"
+            ),
+            Product(
+                id = 4,
+                name = "Traktor Mini",
+                price = 5000000.0,
+                description = "Traktor mini untuk pertanian skala kecil",
+                imageUrl = "https://via.placeholder.com/300x200?text=Traktor",
+                categoryId = 4,
+                stock = 5,
+                categoryName = "Peralatan",
+                createdAt = "2025-01-01"
+            ),
+            Product(
+                id = 5,
+                name = "Pestisida Alami 500ml",
+                price = 75000.0,
+                description = "Pestisida ramah lingkungan",
+                imageUrl = "https://via.placeholder.com/300x200?text=Pestisida",
+                categoryId = 5,
+                stock = 60,
+                categoryName = "Pestisida",
+                createdAt = "2025-01-01"
+            ),
+            Product(
+                id = 6,
+                name = "Benih Jagung Hibrida",
+                price = 45000.0,
+                description = "Benih jagung hibrida tahan hama",
+                imageUrl = "https://via.placeholder.com/300x200?text=Jagung",
+                categoryId = 3,
+                stock = 80,
+                categoryName = "Benih",
+                createdAt = "2025-01-01"
+            ),
+            Product(
+                id = 7,
+                name = "Pupuk NPK",
+                price = 180000.0,
+                description = "Pupuk NPK lengkap untuk berbagai tanaman",
+                imageUrl = "https://via.placeholder.com/300x200?text=NPK",
+                categoryId = 2,
+                stock = 40,
+                categoryName = "Pupuk",
+                createdAt = "2025-01-01"
+            ),
+            Product(
+                id = 8,
+                name = "Sekop Tani Kuat",
+                price = 120000.0,
+                description = "Sekop berkualitas dengan gagang besi",
+                imageUrl = "https://via.placeholder.com/300x200?text=Sekop",
+                categoryId = 1,
+                stock = 25,
+                categoryName = "Pertanian",
+                createdAt = "2025-01-01"
+            )
+        )
 
-            override fun onFailure(call: Call<ProductResponse>, t: Throwable) {
-                // Silent fail for all products load
-            }
-        })
+        allProducts.clear()
+        allProducts.addAll(dummyProducts)
     }
 
     private fun showProductsForCategory(category: Category) {
-        binding.tvCategoryTitle.text = "Products in ${category.categoryName}" // Changed to use binding
-        binding.llProductsSection.visibility = View.VISIBLE // Changed to use binding
+        binding.tvCategoryTitle.text = "Products in ${category.categoryName}"
+        binding.llProductsSection.visibility = View.VISIBLE
 
         val filteredProducts = allProducts.filter { product ->
-            product.categoryName?.equals(category.categoryName, ignoreCase = true) == true || product.categoryId == category.id
+            product.categoryName?.equals(category.categoryName, ignoreCase = true) == true
         }
 
         products.clear()
@@ -162,11 +222,7 @@ class CategoriesFragment : Fragment() {
         }
     }
 
-    private fun showLoading(show: Boolean) {
-        binding.progressBar.visibility = if (show) View.VISIBLE else View.GONE // Changed to use binding
-    }
-
-    override fun onDestroyView() { // Added onDestroyView for ViewBinding
+    override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
     }

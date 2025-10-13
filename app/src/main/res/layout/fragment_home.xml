@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_main"
+    android:orientation="vertical"
+    android:padding="8dp"
+    tools:context=".fragment.HomeFragment">
+
+    <!-- 🔍 Search bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="8dp">
+
+        <EditText
+            android:id="@+id/etSearchHome"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:hint="Cari produk..."
+            android:paddingStart="12dp"
+            android:background="@drawable/bg_search"
+            android:inputType="text"
+            android:drawableStart="@android:drawable/ic_menu_search" />
+
+        <Button
+            android:id="@+id/btnFilterHome"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:layout_marginStart="8dp"
+            android:text="FILTER"
+            android:textAllCaps="true"
+            android:textColor="@android:color/white"
+            android:backgroundTint="@color/primary_green" />
+    </LinearLayout>
+
+    <!-- 🛒 RecyclerView Produk -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvHomeProducts"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="4dp"
+        android:clipToPadding="false"
+        android:scrollbars="vertical" />
+
+
+</LinearLayout>
