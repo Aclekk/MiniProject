@@ -41,5 +41,6 @@
     <color name="gray">#9E9E9E</color> <!-- 🌟 ini gray utama -->
     <color name="gray_medium">#757575</color>
     <color name="gray_dark">#424242</color>
+    <color name="teal_700">#00796B</color>
 
 </resources>

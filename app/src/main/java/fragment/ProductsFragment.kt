@@ -11,10 +11,14 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.miniproject.R
+import com.example.miniproject.adapter.CategoryAdapter
 import com.example.miniproject.adapter.ProductAdapter
 import com.example.miniproject.adapter.PromoAdapter
 import com.example.miniproject.databinding.FragmentProductsBinding
+import com.example.miniproject.model.Category
 import com.example.miniproject.model.Product
 import com.example.miniproject.model.Promo
 
@@ -25,7 +29,9 @@ class ProductsFragment : Fragment() {
 
     private lateinit var productAdapter: ProductAdapter
     private lateinit var promoAdapter: PromoAdapter
+    private lateinit var categoryAdapter: CategoryAdapter
     private val products = mutableListOf<Product>()
+    private val allProducts = mutableListOf<Product>()
     private var userRole = ""
 
     override fun onCreateView(
@@ -41,13 +47,16 @@ class ProductsFragment : Fragment() {
 
         getUserData()
         setupCarousel()
+        setupCategories()
         setupRecyclerView()
         setupClickListeners()
         setupSearchAndFilter()
         loadDummyProducts()
     }
 
-    // Ambil data role user
+    // ============================================================
+    // 🔹 LOGIN ROLE
+    // ============================================================
     private fun getUserData() {
         val sharedPref = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
         userRole = sharedPref.getString("role", "user") ?: "user"
@@ -55,34 +64,47 @@ class ProductsFragment : Fragment() {
             if (userRole == "admin") View.VISIBLE else View.GONE
     }
 
-    // Carousel promo dummy
+    // ============================================================
+    // 🔹 PROMO CAROUSEL
+    // ============================================================
     private fun setupCarousel() {
         val promos = listOf(
-            Promo(
-                id = 1,
-                title = "Diskon 30% Pupuk Organik",
-                description = "Dapatkan pupuk organik berkualitas dengan harga spesial",
-                imageResId = R.drawable.promo1
-            ),
-            Promo(
-                id = 2,
-                title = "Beli Cangkul Gratis Sekop",
-                description = "Penawaran terbatas untuk alat pertanian pilihan",
-                imageResId = R.drawable.promo2
-            ),
-            Promo(
-                id = 3,
-                title = "Flash Sale Benih Padi",
-                description = "Harga spesial untuk pembelian dalam jumlah banyak",
-                imageResId = R.drawable.promo3
-            )
+            Promo(1, "Diskon 30% Pupuk Organik",
+                "Dapatkan pupuk organik berkualitas dengan harga spesial", R.drawable.promo1),
+            Promo(2, "Beli Cangkul Gratis Sekop",
+                "Penawaran terbatas untuk alat pertanian pilihan", R.drawable.promo2),
+            Promo(3, "Flash Sale Benih Padi",
+                "Harga spesial untuk pembelian dalam jumlah banyak", R.drawable.promo3)
         )
         promoAdapter = PromoAdapter(promos)
         binding.viewPagerPromo.adapter = promoAdapter
         binding.dotsIndicator.attachTo(binding.viewPagerPromo)
     }
 
-    // RecyclerView setup
+    // ============================================================
+    // 🔹 KATEGORI PRODUK
+    // ============================================================
+    private fun setupCategories() {
+        val categories = listOf(
+            Category(1, "Peralatan", "2025-01-01"),
+            Category(2, "Pupuk", "2025-01-01"),
+            Category(3, "Benih", "2025-01-01"),
+            Category(4, "Alat Pertanian", "2025-01-01")
+        )
+
+        categoryAdapter = CategoryAdapter(categories) { selectedCategory ->
+            filterByCategory(selectedCategory.categoryName)
+        }
+
+        binding.rvCategories.apply {
+            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+            adapter = categoryAdapter
+        }
+    }
+
+    // ============================================================
+    // 🔹 RECYCLER VIEW PRODUK (Grid 4 kolom ke bawah)
+    // ============================================================
     private fun setupRecyclerView() {
         productAdapter = ProductAdapter(products, userRole) { product, action ->
             when (action) {
@@ -92,19 +114,21 @@ class ProductsFragment : Fragment() {
             }
         }
 
+        val gridLayout = GridLayoutManager(requireContext(), 4, RecyclerView.VERTICAL, false)
+
         binding.rvProducts.apply {
-            layoutManager = GridLayoutManager(requireContext(), 2)
+            layoutManager = gridLayout
             adapter = productAdapter
             setHasFixedSize(true)
             clipToPadding = false
-            setPadding(16, 16, 16, 16)
+            isNestedScrollingEnabled = false
         }
     }
 
-    // Listener tombol
+    // ============================================================
+    // 🔹 CLICK HANDLERS
+    // ============================================================
     private fun setupClickListeners() {
-        binding.btnLogout.setOnClickListener { logout() }
-
         binding.fabAddProduct.setOnClickListener {
             parentFragmentManager.beginTransaction()
                 .replace(R.id.fragment_container, AddProductFragment())
@@ -115,7 +139,9 @@ class ProductsFragment : Fragment() {
         binding.swipeRefresh.setOnRefreshListener { loadDummyProducts() }
     }
 
-    // Load dummy data produk
+    // ============================================================
+    // 🔹 LOAD DUMMY DATA PRODUK
+    // ============================================================
     private fun loadDummyProducts() {
         showLoading(true)
 
@@ -126,11 +152,11 @@ class ProductsFragment : Fragment() {
                 price = 150000.0,
                 description = "Cangkul berkualitas tinggi untuk mengolah tanah",
                 imageUrl = null,
-                imageResId = R.drawable.cangkul,
                 categoryId = 1,
                 stock = 50,
-                categoryName = "Pertanian",
-                createdAt = "2025-01-01"
+                categoryName = "Peralatan",
+                createdAt = "2025-01-01",
+                imageResId = R.drawable.cangkul
             ),
             Product(
                 id = 2,
@@ -138,11 +164,11 @@ class ProductsFragment : Fragment() {
                 price = 200000.0,
                 description = "Pupuk organik alami berkualitas tinggi",
                 imageUrl = null,
-                imageResId = R.drawable.pupuk,
                 categoryId = 2,
                 stock = 30,
                 categoryName = "Pupuk",
-                createdAt = "2025-01-01"
+                createdAt = "2025-01-01",
+                imageResId = R.drawable.pupuk
             ),
             Product(
                 id = 3,
@@ -150,11 +176,11 @@ class ProductsFragment : Fragment() {
                 price = 50000.0,
                 description = "Benih padi unggul hasil seleksi",
                 imageUrl = null,
-                imageResId = R.drawable.benih,
                 categoryId = 3,
                 stock = 100,
                 categoryName = "Benih",
-                createdAt = "2025-01-01"
+                createdAt = "2025-01-01",
+                imageResId = R.drawable.benih
             ),
             Product(
                 id = 4,
@@ -162,57 +188,74 @@ class ProductsFragment : Fragment() {
                 price = 5000000.0,
                 description = "Traktor mini untuk pertanian skala kecil",
                 imageUrl = null,
-                imageResId = R.drawable.traktor,
                 categoryId = 4,
                 stock = 5,
-                categoryName = "Peralatan",
-                createdAt = "2025-01-01"
+                categoryName = "Alat Pertanian",
+                createdAt = "2025-01-01",
+                imageResId = R.drawable.traktor
             )
         )
 
+        allProducts.clear()
+        allProducts.addAll(dummyProducts)
         products.clear()
         products.addAll(dummyProducts)
         productAdapter.notifyDataSetChanged()
         showLoading(false)
         binding.swipeRefresh.isRefreshing = false
-        Toast.makeText(requireContext(), "Products loaded", Toast.LENGTH_SHORT).show()
+        Toast.makeText(requireContext(), "Produk dimuat", Toast.LENGTH_SHORT).show()
     }
 
-    // SEARCH & FILTER
+    // ============================================================
+    // 🔹 SEARCH & FILTER
+    // ============================================================
     private fun setupSearchAndFilter() {
-        // SEARCH listener
         binding.etSearch.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 val searchText = s?.toString()?.lowercase().orEmpty()
-                val filtered = products.filter {
-                    it.name?.lowercase()?.contains(searchText) == true ||
+                val filtered = allProducts.filter {
+                    it.name.lowercase().contains(searchText) ||
                             it.categoryName?.lowercase()?.contains(searchText) == true
                 }
-                productAdapter.updateList(filtered)
+                products.clear()
+                products.addAll(filtered)
+                productAdapter.notifyDataSetChanged()
             }
             override fun afterTextChanged(s: Editable?) {}
         })
 
-        // FILTER kategori
         binding.btnFilter.setOnClickListener {
-            val categories = products.mapNotNull { it.categoryName }.distinct()
+            val categories = allProducts.mapNotNull { it.categoryName }.distinct()
             val dialog = AlertDialog.Builder(requireContext())
                 .setTitle("Filter Produk")
                 .setItems(categories.toTypedArray()) { _, which ->
                     val selected = categories[which]
-                    val filtered = products.filter { it.categoryName == selected }
-                    productAdapter.updateList(filtered)
+                    val filtered = allProducts.filter { it.categoryName == selected }
+                    products.clear()
+                    products.addAll(filtered)
+                    productAdapter.notifyDataSetChanged()
                 }
                 .setNegativeButton("Tampilkan Semua") { _, _ ->
-                    productAdapter.updateList(products)
+                    products.clear()
+                    products.addAll(allProducts)
+                    productAdapter.notifyDataSetChanged()
                 }
                 .create()
             dialog.show()
         }
     }
 
-    // Edit / Delete / View actions
+    // ============================================================
+    // 🔹 UTILITAS
+    // ============================================================
+    private fun filterByCategory(category: String) {
+        val filtered = allProducts.filter { it.categoryName == category }
+        products.clear()
+        products.addAll(filtered)
+        productAdapter.notifyDataSetChanged()
+    }
+
     private fun editProduct(product: Product) {
         Toast.makeText(requireContext(), "Edit: ${product.name}", Toast.LENGTH_SHORT).show()
     }
@@ -225,21 +268,17 @@ class ProductsFragment : Fragment() {
         Toast.makeText(requireContext(), "View: ${product.name}", Toast.LENGTH_SHORT).show()
     }
 
-    // Loading progress
     private fun showLoading(show: Boolean) {
         binding.progressBar.visibility = if (show) View.VISIBLE else View.GONE
     }
 
-    // Logout user
     private fun logout() {
         val sharedPref = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
         sharedPref.edit().clear().apply()
-
         parentFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, LoginFragment())
             .commit()
-
-        Toast.makeText(requireContext(), "Logged out successfully", Toast.LENGTH_SHORT).show()
+        Toast.makeText(requireContext(), "Logout berhasil", Toast.LENGTH_SHORT).show()
     }
 
     override fun onDestroyView() {

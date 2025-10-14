@@ -5,7 +5,8 @@ import com.squareup.moshi.Json
 data class Category(
     val id: Int,
     @field:Json(name = "category_name") val categoryName: String,
-    @field:Json(name = "created_at") val createdAt: String
+    @field:Json(name = "created_at") val createdAt: String,
+    val icon: Int? = null  // ← TAMBAH INI
 )
 
 data class CategoryResponse(

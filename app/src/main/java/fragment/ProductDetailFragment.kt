@@ -14,8 +14,9 @@ import com.example.miniproject.adapter.ReviewAdapter
 import com.example.miniproject.data.CartManager
 import com.example.miniproject.databinding.FragmentProductDetailBinding
 import com.example.miniproject.model.Product
-import com.example.miniproject.model.Review
+import com.example.miniproject.data.Review
 import com.example.miniproject.ui.CheckoutActivity
+
 
 class ProductDetailFragment : Fragment() {
 
@@ -43,71 +44,72 @@ class ProductDetailFragment : Fragment() {
             setupProductDetail(product)
             setupQuantityButtons()
             setupAddToCartButton()
-            setupBuyNowButton() // ✅ Tambahan tombol Beli Sekarang
+            setupBuyNowButton()
         }
     }
 
     private fun setupProductDetail(product: Product) {
-        // Nama produk
         binding.tvProductName.text = product.name
-
-        // Kategori
         binding.tvProductCategory.text = product.categoryName ?: "Tanpa Kategori"
-
-        // Harga
         binding.tvProductPrice.text = "Rp ${String.format("%,d", product.price.toInt())}"
-
-        // Stock
         binding.tvProductStock.text = "Stok tersedia: ${product.stock}"
-
-        // Deskripsi
         binding.tvProductDescription.text =
             product.description ?: "Tidak ada deskripsi untuk produk ini"
 
-        // Gambar produk
         when {
-            product.imageResId != null -> {
-                binding.ivProductImage.setImageResource(product.imageResId)
-            }
-            !product.imageUrl.isNullOrEmpty() -> {
-                Glide.with(requireContext())
-                    .load(product.imageUrl)
-                    .placeholder(R.drawable.bg_card)
-                    .error(R.drawable.bg_card)
-                    .into(binding.ivProductImage)
-            }
-            else -> {
-                binding.ivProductImage.setImageResource(R.drawable.bg_card)
-            }
+            product.imageResId != null -> binding.ivProductImage.setImageResource(product.imageResId)
+            !product.imageUrl.isNullOrEmpty() -> Glide.with(requireContext())
+                .load(product.imageUrl)
+                .placeholder(R.drawable.bg_card)
+                .error(R.drawable.bg_card)
+                .into(binding.ivProductImage)
+            else -> binding.ivProductImage.setImageResource(R.drawable.bg_card)
         }
 
-        // Setup reviews
         setupReviews()
-
-        // Tombol kembali
-        binding.btnBack.setOnClickListener {
-            parentFragmentManager.popBackStack()
-        }
+        binding.btnBack.setOnClickListener { parentFragmentManager.popBackStack() }
     }
 
     private fun setupReviews() {
-        // Dummy reviews
-        val dummyReviews = listOf(
-            Review(1, 101, "Budi Santoso", 5f, "Produk sangat bagus, kualitas terjamin dan pengiriman cepat!", "2025-01-10"),
-            Review(2, 102, "Siti Nurhaliza", 4.5f, "Cukup puas, hanya pengemasan kurang rapi", "2025-01-09"),
-            Review(3, 103, "Ahmad Gunawan", 5f, "Seller responsif, produk bagus, recommended!", "2025-01-08"),
-            Review(4, 104, "Eka Putri", 4f, "Produk sesuai deskripsi, tapi agak mahal", "2025-01-07"),
-            Review(5, 105, "Rendra Wijaya", 5f, "Terbaik! Sudah beli 3x dan selalu puas. Worth it!", "2025-01-06")
-        )
+        val productId = currentProduct?.id ?: return
 
-        val avgRating = dummyReviews.map { it.rating }.average().toFloat()
+        // Ambil review dari CartManager (kalau ada)
+        val reviews = CartManager.getReviewsByProduct(productId)
+
+        // Kalau belum ada review, tampilkan dummy
+        val allReviews: List<Review> = if (reviews.isNotEmpty()) {
+            reviews
+        } else {
+            listOf(
+                Review(
+                    productId = productId,
+                    userName = "Budi Santoso",
+                    rating = 5f,
+                    comment = "Produk sangat bagus, kualitas terjamin dan pengiriman cepat!",
+                    createdAt = "2025-01-10"
+                ),
+                Review(
+                    productId = productId,
+                    userName = "Siti Nurhaliza",
+                    rating = 4.5f,
+                    comment = "Cukup puas, tapi pengemasan kurang rapi.",
+                    createdAt = "2025-01-09"
+                )
+            )
+        }
+
+        // Hitung rata-rata rating
+        val avgRating = allReviews.map { it.rating }.average().toFloat()
         binding.rbRating.rating = avgRating
-        binding.tvReviewCount.text = "(${dummyReviews.size} review)"
+        binding.tvReviewCount.text = "(${allReviews.size} review)"
 
-        val reviewAdapter = ReviewAdapter(dummyReviews)
+        // Set adapter
+        val reviewAdapter = ReviewAdapter(allReviews)
         binding.rvReviews.layoutManager = LinearLayoutManager(requireContext())
         binding.rvReviews.adapter = reviewAdapter
     }
+
+
 
     private fun setupQuantityButtons() {
         binding.btnMinus.setOnClickListener {
@@ -128,14 +130,19 @@ class ProductDetailFragment : Fragment() {
     }
 
     private fun setupAddToCartButton() {
-        // 🛒 Tombol Tambah ke Keranjang (bisa di layout baru, atau sementara gunakan ImageView)
         binding.btnAddToCart.setOnClickListener {
-            addToCart()
+            currentProduct?.let { product ->
+                repeat(quantity) { CartManager.addToCart(product) }
+                Toast.makeText(
+                    requireContext(),
+                    "Menambahkan ${quantity}x ${product.name} ke keranjang...",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
         }
     }
 
     private fun setupBuyNowButton() {
-        // 💸 Tombol Beli Sekarang
         binding.btnBuyNow.setOnClickListener {
             currentProduct?.let { product ->
                 val intent = Intent(requireContext(), CheckoutActivity::class.java)
@@ -146,28 +153,9 @@ class ProductDetailFragment : Fragment() {
         }
     }
 
-    private fun addToCart() {
-        currentProduct?.let {
-            val message = "Menambahkan ${quantity}x ${it.name} ke keranjang..."
-            Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
-
-            currentProduct?.let { product ->
-                repeat(quantity) {
-                    CartManager.addToCart(product)
-                }
-            }
-
-
-            // Bisa navigate ke CartFragment nanti
-            // parentFragmentManager.beginTransaction()
-            //     .replace(R.id.fragment_container, CartFragment())
-            //     .addToBackStack(null)
-            //     .commit()
-        }
-    }
-
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
     }
 }
+

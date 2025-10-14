@@ -2,17 +2,36 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Izin Internet -->
+    <!-- 🌐 INTERNET & NETWORK -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- 📸 CAMERA -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="29" />
+
+    <!-- 📍 GEOLOCATION -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <!-- 🔔 NOTIFICATIONS -->
+    <uses-permission
+        android:name="android.permission.POST_NOTIFICATIONS"
+        tools:targetApi="33" />
+
+    <!-- ⚙️ Hardware declaration -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <application
         android:allowBackup="true"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/Theme.NiagaTani">
+        android:theme="@style/Theme.NiagaTani"
+        tools:replace="android:label">
 
-        <!-- Splash sebagai launcher -->
+        <!-- 🟢 Splash sebagai launcher -->
         <activity
             android:name=".SplashActivity"
             android:exported="true"
@@ -23,22 +42,33 @@
             </intent-filter>
         </activity>
 
-        <!-- Welcome Screen -->
+        <!-- 🟢 Welcome Screen -->
         <activity
             android:name=".WelcomeActivity"
             android:exported="true"
             android:theme="@style/Theme.NiagaTani.NoActionBar" />
 
-        <!-- Main -->
+        <!-- 🟢 Main -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:theme="@style/Theme.NiagaTani.NoActionBar" />
-        <activity android:name=".ui.CheckoutActivity" />
 
+        <!-- 🟢 Checkout -->
+        <activity
+            android:name=".ui.CheckoutActivity"
+            android:exported="true" />
+
+        <!-- 🟢 Provider untuk kamera -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-
 
 </manifest>

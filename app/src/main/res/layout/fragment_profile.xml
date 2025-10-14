@@ -1,0 +1,69 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    android:padding="24dp"
+    android:background="@color/background_main">
+
+    <!-- Foto Profil -->
+    <ImageView
+        android:id="@+id/imgProfile"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:src="@drawable/ic_person"
+        android:background="@drawable/circle_background"
+        android:scaleType="centerCrop"
+        android:contentDescription="Foto Profil" />
+
+    <!-- Tombol ambil/ubah foto -->
+    <Button
+        android:id="@+id/btnTakePhoto"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Ambil Foto"
+        android:layout_marginTop="12dp"
+        android:backgroundTint="@color/primary_green"
+        android:textColor="@color/text_white" />
+
+    <!-- Data Profil -->
+    <EditText
+        android:id="@+id/etName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Nama"
+        android:layout_marginTop="24dp" />
+
+    <EditText
+        android:id="@+id/etEmail"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Email" />
+
+    <EditText
+        android:id="@+id/etAddress"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Alamat" />
+
+    <!-- Tombol Logout -->
+    <Button
+        android:id="@+id/btnLogout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Logout"
+        android:layout_marginTop="32dp"
+        android:backgroundTint="@color/error_red"
+        android:textColor="@color/text_white" />
+    <Button
+        android:id="@+id/btnSaveProfile"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Simpan Profil"
+        android:layout_marginTop="16dp"
+        android:layout_marginHorizontal="24dp"
+        android:backgroundTint="@color/teal_700"
+        android:textColor="@android:color/white" />
+
+</LinearLayout>

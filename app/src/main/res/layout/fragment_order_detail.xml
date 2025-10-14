@@ -50,5 +50,24 @@
             android:layout_marginTop="12dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
+        <Button
+            android:id="@+id/btnRateNow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Beri Penilaian"
+            android:backgroundTint="@color/primary_green"
+            android:textColor="@android:color/white"
+            android:layout_marginTop="16dp"
+            android:visibility="gone" />
+
+        <Button
+            android:id="@+id/btnNextStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Ubah Status Pesanan"
+            android:layout_marginTop="12dp"
+            android:backgroundTint="@color/primary_green"
+            android:textColor="@color/text_white" />
+
     </LinearLayout>
 </ScrollView>

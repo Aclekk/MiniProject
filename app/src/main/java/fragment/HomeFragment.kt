@@ -122,7 +122,57 @@ class HomeFragment : Fragment() {
                 stock = 5,
                 categoryName = "Peralatan",
                 createdAt = "2025-01-01"
+            ),
+            // --- Produk Dummy Baru ---
+            Product(
+                id = 5,
+                name = "Rotavator Tangan",
+                price = 950000.0,
+                description = "Alat putar penggembur tanah manual atau elektrik",
+                imageUrl = null,
+                imageResId = R.drawable.rotavator, // Pastikan resource ada
+                categoryId = 1,
+                stock = 7,
+                categoryName = "Peralatan",
+                createdAt = "2025-01-02"
+            ),
+            Product(
+                id = 6,
+                name = "Sekop Kebun",
+                price = 85000.0,
+                description = "Sekop multifungsi untuk menggali dan memindahkan material",
+                imageUrl = null,
+                imageResId = R.drawable.sekop, // Pastikan resource ada
+                categoryId = 1,
+                stock = 35,
+                categoryName = "Peralatan",
+                createdAt = "2025-01-02"
+            ),
+            Product(
+                id = 7,
+                name = "Selang Irigasi 20m",
+                price = 120000.0,
+                description = "Selang elastis kualitas premium untuk sistem penyiraman",
+                imageUrl = null,
+                imageResId = R.drawable.selang, // Pastikan resource ada
+                categoryId = 1,
+                stock = 40,
+                categoryName = "Peralatan",
+                createdAt = "2025-01-02"
+            ),
+            Product(
+                id = 8,
+                name = "Arit Tajam",
+                price = 55000.0,
+                description = "Arit berbahan baja untuk memotong rumput dan panen padi",
+                imageUrl = null,
+                imageResId = R.drawable.arit, // Pastikan resource ada
+                categoryId = 1,
+                stock = 20,
+                categoryName = "Peralatan",
+                createdAt = "2025-01-02"
             )
+            // -------------------------
         )
 
         allProducts.clear()

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -56,17 +57,26 @@
         android:layout_marginTop="12dp"
         android:layout_marginBottom="8dp" />
 
-    <!-- Riwayat Pesanan -->
+    <!-- Tabs Pesanan -->
     <TextView
-        android:text="🧾 Riwayat Pesanan"
+        android:text="📦 Pesanan Saya"
         android:textStyle="bold"
         android:textSize="18sp"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"/>
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvOrderHistory"
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tabLayoutOrders"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"/>
+        app:tabTextColor="@color/black"
+        app:tabIndicatorColor="@color/primary_green"/>
+
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/viewPagerOrders"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"/>
+
 </LinearLayout>
