@@ -10,9 +10,13 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.miniproject.R
+import com.example.miniproject.adapter.CategoryAdapter
 import com.example.miniproject.adapter.ProductAdapter
+import com.example.miniproject.data.CategoryRepository
 import com.example.miniproject.databinding.FragmentHomeBinding
+import com.example.miniproject.model.Category
 import com.example.miniproject.model.Product
 import com.google.android.material.slider.RangeSlider
 
@@ -24,6 +28,9 @@ class HomeFragment : Fragment() {
     private lateinit var productAdapter: ProductAdapter
     private val allProducts = mutableListOf<Product>() // ✅ Data asli
     private val displayProducts = mutableListOf<Product>() // ✅ Data tampil
+
+    private lateinit var categoryAdapter: CategoryAdapter
+    private val categories = mutableListOf<Category>()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -38,10 +45,40 @@ class HomeFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         Log.d("HomeFragment", "🟢 onViewCreated mulai setup")
 
-        setupRecyclerView()
+        setupCategories()
+        setupRecyclerView() // ini daftar produk yang sudah ada
         loadDummyProducts()
         setupSearch()
         setupFilter()
+    }
+
+    private fun setupCategories() {
+        categoryAdapter = CategoryAdapter(categories) { category ->
+            // klik kategori → filter produk di Home (opsional, biar useful)
+            filterProductsByCategory(category.categoryName)
+        }
+        binding.rvCategoriesHome.apply {
+            // PAKAI BENTUK LAMA HOME:
+            // - Kalau dulu horizontal chips:
+            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+            // - Kalau dulu grid 2 kolom, pakai ini:
+            // layoutManager = GridLayoutManager(requireContext(), 2)
+            adapter = categoryAdapter
+            setHasFixedSize(true)
+        }
+
+        // Isi dari repo → jumlahnya 5 (termasuk Pestisida), match dengan Categories page
+        val fromRepo = CategoryRepository.getCategories()
+        categories.clear()
+        categories.addAll(fromRepo)
+        categoryAdapter.notifyDataSetChanged()
+    }
+
+    private fun filterProductsByCategory(name: String) {
+        val filtered = allProducts.filter { it.categoryName.equals(name, ignoreCase = true) }
+        displayProducts.clear()
+        displayProducts.addAll(filtered)
+        productAdapter.notifyDataSetChanged()
     }
 
     // ✅ PERBAIKAN: semua logika klik pindah ke sini
@@ -123,7 +160,7 @@ class HomeFragment : Fragment() {
                 categoryName = "Peralatan",
                 createdAt = "2025-01-01"
             ),
-            // --- Produk Dummy Baru ---
+            // --- Produk Dummy Baru -- -
             Product(
                 id = 5,
                 name = "Rotavator Tangan",

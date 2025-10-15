@@ -6,12 +6,12 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
-import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.miniproject.R
 import com.example.miniproject.adapter.CategoryAdapter
 import com.example.miniproject.adapter.ProductAdapter
+import com.example.miniproject.data.CategoryRepository
 import com.example.miniproject.databinding.FragmentCategoriesBinding
 import com.example.miniproject.model.Category
 import com.example.miniproject.model.Product
@@ -42,11 +42,29 @@ class CategoriesFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        (activity as? AppCompatActivity)?.setSupportActionBar(binding.toolbar)
+
         getUserData()
         setupRecyclerViews()
         setupClickListeners()
         loadDummyCategories()
         loadDummyProducts()
+
+        val argId = arguments?.getInt("category_id", -1) ?: -1
+        val argName = arguments?.getString("category_name")
+
+        if (argId != -1 || !argName.isNullOrBlank()) {
+            val preselect = categories.find { it.id == argId }
+                ?: categories.find { it.categoryName.equals(argName, ignoreCase = true) }
+
+            preselect?.let { cat ->
+                view.post {
+                    showProductsForCategory(cat)
+                    val idx = categories.indexOf(cat)
+                    if (idx >= 0) binding.rvCategories.scrollToPosition(idx)
+                }
+            }
+        }
     }
 
     private fun getUserData() {
@@ -61,16 +79,11 @@ class CategoriesFragment : Fragment() {
     }
 
     private fun setupRecyclerViews() {
-        // Categories RecyclerView - Grid
         categoryAdapter = CategoryAdapter(categories) { category ->
             showProductsForCategory(category)
         }
-        binding.rvCategories.apply {
-            layoutManager = GridLayoutManager(requireContext(), 2)
-            adapter = categoryAdapter
-        }
+        binding.rvCategories.adapter = categoryAdapter
 
-        // Products RecyclerView - Linear
         productAdapter = ProductAdapter(products, userRole) { product, action ->
             when (action) {
                 "view" -> Toast.makeText(requireContext(), "View: ${product.name}", Toast.LENGTH_SHORT).show()
@@ -78,10 +91,7 @@ class CategoriesFragment : Fragment() {
                 "delete" -> Toast.makeText(requireContext(), "Delete: ${product.name}", Toast.LENGTH_SHORT).show()
             }
         }
-        binding.rvCategoryProducts.apply {
-            layoutManager = LinearLayoutManager(requireContext())
-            adapter = productAdapter
-        }
+        binding.rvCategoryProducts.adapter = productAdapter
     }
 
     private fun setupClickListeners() {
@@ -94,111 +104,35 @@ class CategoriesFragment : Fragment() {
     }
 
     private fun loadDummyCategories() {
-        // DUMMY DATA - Kategori
-        val dummyCategories = listOf(
-            Category(1, "Pertanian", "2025-01-01"),
-            Category(2, "Pupuk", "2025-01-01"),
-            Category(3, "Benih", "2025-01-01"),
-            Category(4, "Peralatan", "2025-01-01"),
-            Category(5, "Pestisida", "2025-01-01")
-        )
+        val repoCategories = CategoryRepository.getCategories()
 
         categories.clear()
-        categories.addAll(dummyCategories)
+        categories.addAll(repoCategories)
         categoryAdapter.notifyDataSetChanged()
     }
 
     private fun loadDummyProducts() {
-        // DUMMY DATA - Produk
         val dummyProducts = listOf(
             Product(
-                id = 1,
-                name = "Cangkul Premium",
-                price = 150000.0,
-                description = "Cangkul berkualitas tinggi untuk mengolah tanah",
-                imageUrl = "https://via.placeholder.com/300x200?text=Cangkul",
-                categoryId = 1,
-                stock = 50,
-                categoryName = "Pertanian",
-                createdAt = "2025-01-01"
+                id = 1, name = "Cangkul Premium", price = 150000.0, description = "Cangkul berkualitas tinggi.", categoryId = 1, stock = 50,
+                categoryName = "Peralatan", imageResId = R.drawable.cangkul, imageUrl = null, createdAt = null
             ),
             Product(
-                id = 2,
-                name = "Pupuk Organik 25kg",
-                price = 200000.0,
-                description = "Pupuk organik alami berkualitas tinggi",
-                imageUrl = "https://via.placeholder.com/300x200?text=Pupuk",
-                categoryId = 2,
-                stock = 30,
-                categoryName = "Pupuk",
-                createdAt = "2025-01-01"
+                id = 2, name = "Pupuk Organik 25kg", price = 200000.0, description = "Pupuk untuk semua jenis tanaman.", categoryId = 2, stock = 30,
+                categoryName = "Pupuk", imageResId = R.drawable.pupuk, imageUrl = null, createdAt = null
             ),
             Product(
-                id = 3,
-                name = "Benih Padi Premium",
-                price = 50000.0,
-                description = "Benih padi unggul hasil seleksi",
-                imageUrl = "https://via.placeholder.com/300x200?text=Benih",
-                categoryId = 3,
-                stock = 100,
-                categoryName = "Benih",
-                createdAt = "2025-01-01"
+                id = 3, name = "Benih Padi Premium", price = 50000.0, description = "Benih padi kualitas unggul.", categoryId = 3, stock = 100,
+                categoryName = "Benih", imageResId = R.drawable.benih, imageUrl = null, createdAt = null
             ),
             Product(
-                id = 4,
-                name = "Traktor Mini",
-                price = 5000000.0,
-                description = "Traktor mini untuk pertanian skala kecil",
-                imageUrl = "https://via.placeholder.com/300x200?text=Traktor",
-                categoryId = 4,
-                stock = 5,
-                categoryName = "Peralatan",
-                createdAt = "2025-01-01"
+                id = 4, name = "Traktor Mini", price = 5000000.0, description = "Traktor untuk sawah luas.", categoryId = 4, stock = 5,
+                categoryName = "Alat Pertanian", imageResId = R.drawable.traktor, imageUrl = null, createdAt = null
             ),
-            Product(
-                id = 5,
-                name = "Pestisida Alami 500ml",
-                price = 75000.0,
-                description = "Pestisida ramah lingkungan",
-                imageUrl = "https://via.placeholder.com/300x200?text=Pestisida",
-                categoryId = 5,
-                stock = 60,
-                categoryName = "Pestisida",
-                createdAt = "2025-01-01"
-            ),
-            Product(
-                id = 6,
-                name = "Benih Jagung Hibrida",
-                price = 45000.0,
-                description = "Benih jagung hibrida tahan hama",
-                imageUrl = "https://via.placeholder.com/300x200?text=Jagung",
-                categoryId = 3,
-                stock = 80,
-                categoryName = "Benih",
-                createdAt = "2025-01-01"
-            ),
-            Product(
-                id = 7,
-                name = "Pupuk NPK",
-                price = 180000.0,
-                description = "Pupuk NPK lengkap untuk berbagai tanaman",
-                imageUrl = "https://via.placeholder.com/300x200?text=NPK",
-                categoryId = 2,
-                stock = 40,
-                categoryName = "Pupuk",
-                createdAt = "2025-01-01"
-            ),
-            Product(
-                id = 8,
-                name = "Sekop Tani Kuat",
-                price = 120000.0,
-                description = "Sekop berkualitas dengan gagang besi",
-                imageUrl = "https://via.placeholder.com/300x200?text=Sekop",
-                categoryId = 1,
-                stock = 25,
-                categoryName = "Pertanian",
-                createdAt = "2025-01-01"
-            )
+            Product(id = 5, name = "Pestisida Alami 500ml", price = 75000.0, description = "Pestisida dari bahan alami.", categoryId = 5, stock = 60, categoryName = "Pestisida", imageResId = null, imageUrl = null, createdAt = null),
+            Product(id = 6, name = "Benih Jagung Hibrida", price = 45000.0, description = "Benih jagung hibrida F1.", categoryId = 3, stock = 80, categoryName = "Benih", imageResId = null, imageUrl = null, createdAt = null),
+            Product(id = 7, name = "Pupuk NPK", price = 180000.0, description = "Pupuk NPK seimbang.", categoryId = 2, stock = 40, categoryName = "Pupuk", imageResId = null, imageUrl = null, createdAt = null),
+            Product(id = 8, name = "Sekop Tani Kuat", price = 120000.0, description = "Sekop dari bahan baja.", categoryId = 1, stock = 25, categoryName = "Peralatan", imageResId = null, imageUrl = null, createdAt = null)
         )
 
         allProducts.clear()
@@ -209,9 +143,7 @@ class CategoriesFragment : Fragment() {
         binding.tvCategoryTitle.text = "Products in ${category.categoryName}"
         binding.llProductsSection.visibility = View.VISIBLE
 
-        val filteredProducts = allProducts.filter { product ->
-            product.categoryName?.equals(category.categoryName, ignoreCase = true) == true
-        }
+        val filteredProducts = allProducts.filter { it.categoryId == category.id }
 
         products.clear()
         products.addAll(filteredProducts)
@@ -219,6 +151,11 @@ class CategoriesFragment : Fragment() {
 
         if (products.isEmpty()) {
             Toast.makeText(requireContext(), "No products found in ${category.categoryName}", Toast.LENGTH_SHORT).show()
+        }
+
+        // Scroll to the product list
+        binding.nestedScrollView.post {
+            binding.nestedScrollView.smoothScrollTo(0, binding.llProductsSection.top)
         }
     }
 

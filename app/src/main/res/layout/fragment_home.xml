@@ -38,6 +38,12 @@
             android:backgroundTint="@color/primary_green" />
     </LinearLayout>
 
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvCategoriesHome"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"/>
+
     <!-- 🛒 RecyclerView Produk -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvHomeProducts"

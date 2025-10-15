@@ -73,6 +73,22 @@ class MainActivity : AppCompatActivity() {
             .commit()
     }
 
+    // ✅ Panggil ini untuk buka Category Page dengan filter kategori tertentu
+    fun openCategoriesWithFilter(categoryId: Int?, categoryName: String?) {
+        val fragment = CategoriesFragment().apply {
+            arguments = Bundle().apply {
+                if (categoryId != null) putInt("category_id", categoryId)
+                if (!categoryName.isNullOrBlank()) putString("category_name", categoryName)
+            }
+        }
+        // pindah tab + buka fragment
+        bottomNavigation.selectedItemId = R.id.nav_categories
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, fragment)
+            .setReorderingAllowed(true)
+            .commit()
+    }
+
     // 🔹 Saat user sudah login
     private fun showMainApp() {
         bottomNavigation.visibility = View.VISIBLE

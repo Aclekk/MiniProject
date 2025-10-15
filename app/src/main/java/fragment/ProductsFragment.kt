@@ -13,10 +13,12 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.miniproject.MainActivity
 import com.example.miniproject.R
 import com.example.miniproject.adapter.CategoryAdapter
 import com.example.miniproject.adapter.ProductAdapter
 import com.example.miniproject.adapter.PromoAdapter
+import com.example.miniproject.data.CategoryRepository
 import com.example.miniproject.databinding.FragmentProductsBinding
 import com.example.miniproject.model.Category
 import com.example.miniproject.model.Product
@@ -85,20 +87,20 @@ class ProductsFragment : Fragment() {
     // 🔹 KATEGORI PRODUK
     // ============================================================
     private fun setupCategories() {
-        val categories = listOf(
-            Category(1, "Peralatan", "2025-01-01"),
-            Category(2, "Pupuk", "2025-01-01"),
-            Category(3, "Benih", "2025-01-01"),
-            Category(4, "Alat Pertanian", "2025-01-01")
-        )
+        val categories = CategoryRepository.getCategories()
 
         categoryAdapter = CategoryAdapter(categories) { selectedCategory ->
             filterByCategory(selectedCategory.categoryName)
         }
 
+        val horizontalLayout = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+
         binding.rvCategories.apply {
-            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+            layoutManager = horizontalLayout
             adapter = categoryAdapter
+            setHasFixedSize(true)
+            clipToPadding = false
+            isNestedScrollingEnabled = false
         }
     }
 
@@ -114,7 +116,7 @@ class ProductsFragment : Fragment() {
             }
         }
 
-        val gridLayout = GridLayoutManager(requireContext(), 4, RecyclerView.VERTICAL, false)
+        val gridLayout = GridLayoutManager(requireContext(), 2, RecyclerView.VERTICAL, false)
 
         binding.rvProducts.apply {
             layoutManager = gridLayout
@@ -238,7 +240,7 @@ class ProductsFragment : Fragment() {
                 }
                 .setNegativeButton("Tampilkan Semua") { _, _ ->
                     products.clear()
-                    products.addAll(allProducts)
+                    products.addAll(allProducts.take(4))  // <— kuncinya di sini
                     productAdapter.notifyDataSetChanged()
                 }
                 .create()
@@ -265,7 +267,16 @@ class ProductsFragment : Fragment() {
     }
 
     private fun viewProduct(product: Product) {
-        Toast.makeText(requireContext(), "View: ${product.name}", Toast.LENGTH_SHORT).show()
+        val detailFragment = ProductDetailFragment().apply {
+            arguments = Bundle().apply {
+                putParcelable("product", product)
+            }
+        }
+
+        parentFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, detailFragment)
+            .addToBackStack(null)
+            .commit()
     }
 
     private fun showLoading(show: Boolean) {
