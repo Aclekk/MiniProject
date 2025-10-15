@@ -18,46 +18,47 @@ class MainActivity : AppCompatActivity() {
 
         bottomNavigation = findViewById(R.id.bottomNavigation)
 
-        // 🔹 Cek apakah user sudah login
+        // ✅ Cek apakah user sudah login
         if (isUserLoggedIn()) {
             showMainApp()
         } else {
             showLoginFragment()
         }
 
-        // 🔹 Listener navigasi bottom bar
+        // ✅ Bottom navigation listener
         bottomNavigation.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_home -> {
-                    // 🏠 Home = ProductsFragment (tampilan promo/top selling)
-                    open(ProductsFragment())
+                    open(ProductsFragment()) // tampilan utama (produk + promo)
                     true
                 }
                 R.id.nav_products -> {
-                    // 📦 Products = HomeFragment (katalog grid penuh)
-                    open(HomeFragment())
-                    true
-                }
-                R.id.nav_profile -> {
-                    // 👤 Profil Pembeli
-                    open(ProfileFragment())
+                    open(HomeFragment()) // katalog produk penuh
                     true
                 }
                 R.id.nav_categories -> {
-                    // 📂 Kategori produk
                     open(CategoriesFragment())
                     true
                 }
                 R.id.nav_cart -> {
-                    // 🛒 Keranjang
                     open(CartFragment())
+                    true
+                }
+                R.id.nav_profile -> {
+                    val role = getSharedPreferences("user_pref", Context.MODE_PRIVATE)
+                        .getString("role", "user")
+                    if (role == "admin") {
+                        open(StoreProfileFragment()) // langsung ke profil toko
+                    } else {
+                        open(ProfileFragment()) // profil pembeli
+                    }
                     true
                 }
                 else -> false
             }
         }
 
-        // 🔹 Jika ada intent dari notifikasi ke tab tertentu (misal: Cart)
+        // ✅ Navigasi dari notifikasi ke tab tertentu
         val navigateTo = intent.getStringExtra("navigate_to")
         if (navigateTo == "cart") {
             bottomNavigation.selectedItemId = R.id.nav_cart
@@ -65,28 +66,38 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // 🔹 Fungsi buka fragment
+    // ✅ Fungsi umum untuk membuka fragment
     private fun open(fragment: Fragment) {
         supportFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, fragment)
             .setReorderingAllowed(true)
-            .commit()
+            .commitAllowingStateLoss() // lebih aman saat config change
     }
 
-    // 🔹 Saat user sudah login
+    // ✅ Saat user sudah login
     private fun showMainApp() {
         bottomNavigation.visibility = View.VISIBLE
-        bottomNavigation.selectedItemId = R.id.nav_home
-        open(ProductsFragment()) // default tampilan pertama
+
+        val sharedPref = getSharedPreferences("user_pref", Context.MODE_PRIVATE)
+        val role = sharedPref.getString("role", "user")
+
+        // kalau admin → langsung buka profil toko
+        if (role == "admin") {
+            bottomNavigation.selectedItemId = R.id.nav_profile
+            open(StoreProfileFragment())
+        } else {
+            bottomNavigation.selectedItemId = R.id.nav_home
+            open(ProductsFragment())
+        }
     }
 
-    // 🔹 Saat user belum login
+    // ✅ Saat user belum login
     private fun showLoginFragment() {
         bottomNavigation.visibility = View.GONE
         open(LoginFragment())
     }
 
-    // 🔹 Simpan status login
+    // ✅ Saat login sukses
     fun onLoginSuccess() {
         getSharedPreferences("user_pref", Context.MODE_PRIVATE)
             .edit()
@@ -95,7 +106,7 @@ class MainActivity : AppCompatActivity() {
         showMainApp()
     }
 
-    // 🔹 Logout
+    // ✅ Logout user
     fun onLogout() {
         getSharedPreferences("user_pref", Context.MODE_PRIVATE)
             .edit()
@@ -104,7 +115,7 @@ class MainActivity : AppCompatActivity() {
         showLoginFragment()
     }
 
-    // 🔹 Cek apakah user sudah login
+    // ✅ Cek apakah user sudah login
     private fun isUserLoggedIn(): Boolean {
         val sp = getSharedPreferences("user_pref", Context.MODE_PRIVATE)
         return sp.getBoolean("is_logged_in", false)

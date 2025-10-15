@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF"
+    tools:context=".fragment.StoreProfileFragment">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp"
+        android:gravity="center_horizontal">
+
+        <!-- 🏪 Judul -->
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Kelola Profil Toko"
+            android:textAlignment="center"
+            android:textStyle="bold"
+            android:textSize="22sp"
+            android:textColor="#333333"
+            android:layout_marginBottom="24dp" />
+
+        <!-- 🖼️ Foto Toko -->
+        <ImageView
+            android:id="@+id/ivStorePhoto"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:layout_gravity="center_horizontal"
+            android:src="@drawable/ic_store"
+            android:scaleType="centerCrop"
+            android:background="@drawable/bg_circle_gray"
+            android:layout_marginBottom="16dp" />
+
+        <Button
+            android:id="@+id/btnChangePhoto"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Ubah Foto Toko"
+            android:backgroundTint="#E0E0E0"
+            android:textColor="#333333"
+            android:paddingHorizontal="20dp"
+            android:layout_marginBottom="24dp" />
+
+        <!-- 🧾 Nama Toko -->
+        <EditText
+            android:id="@+id/etStoreName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Nama Toko"
+            android:background="@android:drawable/edit_text"
+            android:padding="12dp"
+            android:textSize="14sp"
+            android:layout_marginBottom="16dp" />
+
+        <!-- 🏠 Alamat -->
+        <EditText
+            android:id="@+id/etStoreAddress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Alamat Toko"
+            android:background="@android:drawable/edit_text"
+            android:padding="12dp"
+            android:textSize="14sp"
+            android:layout_marginBottom="16dp" />
+
+        <!-- 📞 Kontak -->
+        <EditText
+            android:id="@+id/etStoreContact"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Nomor Kontak"
+            android:inputType="phone"
+            android:background="@android:drawable/edit_text"
+            android:padding="12dp"
+            android:textSize="14sp"
+            android:layout_marginBottom="24dp" />
+        <Button
+            android:id="@+id/btnLogout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Logout"
+            android:layout_marginTop="32dp"
+            android:backgroundTint="@color/error_red"
+            android:textColor="@color/text_white" />
+        <!-- 💾 Tombol Simpan -->
+        <Button
+            android:id="@+id/btnSaveProfile"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Simpan Perubahan"
+            android:backgroundTint="#7FD8BE"
+            android:textColor="@android:color/white"
+            android:textSize="16sp"
+            android:padding="12dp" />
+        <TextView
+            android:id="@+id/tvAboutUs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="Tentang Kami: Toko Niaga Tani berkomitmen menyediakan alat dan kebutuhan pertanian terbaik untuk petani Indonesia 🌾"
+            android:textColor="#666666"
+            android:textSize="12sp"
+            android:lineSpacingExtra="4dp"
+            android:textAlignment="center"
+            android:paddingHorizontal="16dp"/>
+
+    </LinearLayout>
+</ScrollView>

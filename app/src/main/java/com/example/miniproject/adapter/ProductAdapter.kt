@@ -1,6 +1,8 @@
 package com.example.miniproject.adapter
 
+import android.app.AlertDialog
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
@@ -15,8 +17,11 @@ class ProductAdapter(
 ) : RecyclerView.Adapter<ProductAdapter.ProductViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ProductViewHolder {
-        val binding = ItemProductGridBinding
-            .inflate(LayoutInflater.from(parent.context), parent, false)
+        val binding = ItemProductGridBinding.inflate(
+            LayoutInflater.from(parent.context),
+            parent,
+            false
+        )
         return ProductViewHolder(binding)
     }
 
@@ -26,31 +31,17 @@ class ProductAdapter(
 
     override fun getItemCount(): Int = products.size
 
-    // ✅ Fungsi tambahan untuk update list saat search / filter
-    fun updateList(newList: List<Product>) {
-        products.clear()
-        products.addAll(newList)
-        notifyDataSetChanged()
-    }
-
     inner class ProductViewHolder(private val binding: ItemProductGridBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
         fun bind(product: Product) {
-            // Nama produk
             binding.tvProductName.text = product.name
-
-            // Harga
             binding.tvProductPrice.text = "Rp ${String.format("%,d", product.price.toInt())}"
-
-            // Kategori
             binding.tvCategory.text = product.categoryName
 
             // Load gambar
             when {
-                product.imageResId != null -> {
-                    binding.imgProduct.setImageResource(product.imageResId)
-                }
+                product.imageResId != null -> binding.imgProduct.setImageResource(product.imageResId)
                 !product.imageUrl.isNullOrEmpty() -> {
                     Glide.with(binding.root.context)
                         .load(product.imageUrl)
@@ -58,15 +49,22 @@ class ProductAdapter(
                         .error(R.drawable.bg_card)
                         .into(binding.imgProduct)
                 }
-                else -> {
-                    binding.imgProduct.setImageResource(R.drawable.bg_card)
-                }
+                else -> binding.imgProduct.setImageResource(R.drawable.bg_card)
             }
 
-            // Klik item
-            binding.root.setOnClickListener {
-                onItemClick(product, "view")
+            // 🟢 SHOW / HIDE tombol edit-delete sesuai role
+            if (userRole == "admin") {
+                binding.btnEdit.visibility = View.VISIBLE
+                binding.btnDelete.visibility = View.VISIBLE
+            } else {
+                binding.btnEdit.visibility = View.GONE
+                binding.btnDelete.visibility = View.GONE
             }
+
+            // 🖱️ Event click
+            binding.btnEdit.setOnClickListener { onItemClick(product, "edit") }
+            binding.btnDelete.setOnClickListener { onItemClick(product, "delete") }
+            binding.root.setOnClickListener { onItemClick(product, "view") }
         }
     }
 }

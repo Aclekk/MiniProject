@@ -3,9 +3,9 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="10dp"
     android:background="@drawable/bg_card_premium"
     android:layout_margin="8dp"
+    android:padding="10dp"
     android:elevation="6dp">
 
     <ImageView
@@ -19,7 +19,7 @@
         android:id="@+id/tvCategory"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="PERTANIAN"
+        android:text="Kategori"
         android:textColor="#A5FFAA"
         android:textSize="11sp"
         android:textStyle="bold"
@@ -27,9 +27,9 @@
 
     <TextView
         android:id="@+id/tvProductName"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Cangkul Premium"
+        android:text="Nama Produk"
         android:textColor="@android:color/white"
         android:textSize="14sp"
         android:textStyle="bold"
@@ -41,10 +41,45 @@
         android:id="@+id/tvProductPrice"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Rp150.000"
+        android:text="Rp 0"
         android:textColor="#FFD700"
-        android:textStyle="bold"
         android:textSize="13sp"
+        android:textStyle="bold"
         android:layout_marginTop="2dp" />
+
+    <!-- Tombol admin -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginTop="8dp">
+
+        <Button
+            android:id="@+id/btnEdit"
+            android:layout_width="0dp"
+            android:layout_height="32dp"
+            android:layout_weight="1"
+            android:text="Edit"
+            android:textSize="12sp"
+            android:backgroundTint="#4CAF50"
+            android:textColor="@android:color/white"
+            android:visibility="gone" />
+
+        <Space
+            android:layout_width="8dp"
+            android:layout_height="wrap_content" />
+
+        <Button
+            android:id="@+id/btnDelete"
+            android:layout_width="0dp"
+            android:layout_height="32dp"
+            android:layout_weight="1"
+            android:text="Hapus"
+            android:textSize="12sp"
+            android:backgroundTint="#F44336"
+            android:textColor="@android:color/white"
+            android:visibility="gone" />
+    </LinearLayout>
 
 </LinearLayout>

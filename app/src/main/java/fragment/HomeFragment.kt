@@ -1,6 +1,6 @@
 package com.example.miniproject.fragment
 
-import android.app.AlertDialog
+import android.content.Context
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -8,13 +8,14 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
 import com.example.miniproject.R
 import com.example.miniproject.adapter.ProductAdapter
 import com.example.miniproject.databinding.FragmentHomeBinding
 import com.example.miniproject.model.Product
-import com.google.android.material.slider.RangeSlider
+import com.example.miniproject.utils.ProductStorage
 
 class HomeFragment : Fragment() {
 
@@ -22,248 +23,169 @@ class HomeFragment : Fragment() {
     private val binding get() = _binding!!
 
     private lateinit var productAdapter: ProductAdapter
-    private val allProducts = mutableListOf<Product>() // ✅ Data asli
-    private val displayProducts = mutableListOf<Product>() // ✅ Data tampil
+    private val products = mutableListOf<Product>()
+    private val allProducts = mutableListOf<Product>()
+
+    companion object {
+        private const val TAG = "HomeFragment"
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
-        Log.d("HomeFragment", "🟢 onCreateView dipanggil")
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        Log.d("HomeFragment", "🟢 onViewCreated mulai setup")
 
         setupRecyclerView()
-        loadDummyProducts()
         setupSearch()
-        setupFilter()
+        setupClickListeners()
+        loadProducts() // ✅ Load data saat fragment dibuka
     }
 
-    // ✅ PERBAIKAN: semua logika klik pindah ke sini
+    // ============================================================
+    // 🧱 RECYCLER VIEW PRODUK
+    // ============================================================
     private fun setupRecyclerView() {
-        Log.d("HomeFragment", "🔧 setupRecyclerView() dipanggil")
+        val sharedPref = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
+        val userRole = sharedPref.getString("role", "user") ?: "user"
 
-        productAdapter = ProductAdapter(displayProducts, "user") { product, _ ->
-            Log.d("HomeFragment", "🖱 Produk diklik: ${product.name}")
-
-            // Pindah ke ProductDetailFragment
-            val bundle = Bundle().apply {
-                putParcelable("product", product)
+        productAdapter = ProductAdapter(products, userRole) { product, action ->
+            when (action) {
+                "edit" -> {
+                    Toast.makeText(requireContext(), "Edit: ${product.name}", Toast.LENGTH_SHORT).show()
+                    // TODO: Implementasi edit
+                }
+                "delete" -> {
+                    // ✅ PENTING: Hapus dari storage juga!
+                    deleteProduct(product)
+                }
+                "view" -> {
+                    Toast.makeText(requireContext(), "Lihat: ${product.name}", Toast.LENGTH_SHORT).show()
+                    // TODO: Implementasi detail view
+                }
             }
-
-            val fragment = ProductDetailFragment().apply {
-                arguments = bundle
-            }
-
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, fragment)
-                .addToBackStack(null)
-                .commit()
         }
 
-        binding.rvHomeProducts.layoutManager = GridLayoutManager(requireContext(), 2)
-        binding.rvHomeProducts.adapter = productAdapter
-        Log.d("HomeFragment", "✅ RecyclerView siap dengan adapter")
+        binding.rvHomeProducts.apply {
+            layoutManager = GridLayoutManager(requireContext(), 2)
+            adapter = productAdapter
+            setHasFixedSize(true)
+        }
     }
 
-    private fun loadDummyProducts() {
-        Log.d("HomeFragment", "📦 Memuat produk dummy...")
+    // ============================================================
+    // 🗑️ DELETE PRODUCT
+    // ============================================================
+    private fun deleteProduct(product: Product) {
+        // Hapus dari list
+        allProducts.remove(product)
+        products.remove(product)
 
-        val dummy = listOf(
-            Product(
-                id = 1,
-                name = "Cangkul Premium",
-                price = 150000.0,
-                description = "Cangkul baja berkualitas tinggi untuk mengolah tanah",
-                imageUrl = null,
-                imageResId = R.drawable.cangkul,
-                categoryId = 1,
-                stock = 10,
-                categoryName = "Peralatan",
-                createdAt = "2025-01-01"
-            ),
-            Product(
-                id = 2,
-                name = "Pupuk Organik 25kg",
-                price = 200000.0,
-                description = "Pupuk alami ramah lingkungan berkualitas premium",
-                imageUrl = null,
-                imageResId = R.drawable.pupuk,
-                categoryId = 2,
-                stock = 30,
-                categoryName = "Pupuk",
-                createdAt = "2025-01-01"
-            ),
-            Product(
-                id = 3,
-                name = "Benih Padi Premium",
-                price = 50000.0,
-                description = "Benih unggul padi hasil seleksi terbaik",
-                imageUrl = null,
-                imageResId = R.drawable.benih,
-                categoryId = 3,
-                stock = 100,
-                categoryName = "Benih",
-                createdAt = "2025-01-01"
-            ),
-            Product(
-                id = 4,
-                name = "Traktor Mini",
-                price = 5000000.0,
-                description = "Traktor pertanian mini untuk lahan kecil dan menengah",
-                imageUrl = null,
-                imageResId = R.drawable.traktor,
-                categoryId = 4,
-                stock = 5,
-                categoryName = "Peralatan",
-                createdAt = "2025-01-01"
-            ),
-            // --- Produk Dummy Baru ---
-            Product(
-                id = 5,
-                name = "Rotavator Tangan",
-                price = 950000.0,
-                description = "Alat putar penggembur tanah manual atau elektrik",
-                imageUrl = null,
-                imageResId = R.drawable.rotavator, // Pastikan resource ada
-                categoryId = 1,
-                stock = 7,
-                categoryName = "Peralatan",
-                createdAt = "2025-01-02"
-            ),
-            Product(
-                id = 6,
-                name = "Sekop Kebun",
-                price = 85000.0,
-                description = "Sekop multifungsi untuk menggali dan memindahkan material",
-                imageUrl = null,
-                imageResId = R.drawable.sekop, // Pastikan resource ada
-                categoryId = 1,
-                stock = 35,
-                categoryName = "Peralatan",
-                createdAt = "2025-01-02"
-            ),
-            Product(
-                id = 7,
-                name = "Selang Irigasi 20m",
-                price = 120000.0,
-                description = "Selang elastis kualitas premium untuk sistem penyiraman",
-                imageUrl = null,
-                imageResId = R.drawable.selang, // Pastikan resource ada
-                categoryId = 1,
-                stock = 40,
-                categoryName = "Peralatan",
-                createdAt = "2025-01-02"
-            ),
-            Product(
-                id = 8,
-                name = "Arit Tajam",
-                price = 55000.0,
-                description = "Arit berbahan baja untuk memotong rumput dan panen padi",
-                imageUrl = null,
-                imageResId = R.drawable.arit, // Pastikan resource ada
-                categoryId = 1,
-                stock = 20,
-                categoryName = "Peralatan",
-                createdAt = "2025-01-02"
-            )
-            // -------------------------
-        )
+        // Save ke storage
+        ProductStorage.saveProducts(requireContext(), allProducts)
 
-        allProducts.clear()
-        allProducts.addAll(dummy)
-        displayProducts.clear()
-        displayProducts.addAll(dummy)
-
-        Log.d("HomeFragment", "✅ Produk dimuat: ${allProducts.size}")
+        // Update adapter
         productAdapter.notifyDataSetChanged()
+
+        Toast.makeText(requireContext(), "Berhasil menghapus ${product.name}", Toast.LENGTH_SHORT).show()
     }
 
+    // ============================================================
+    // 🔹 CLICK HANDLERS
+    // ============================================================
+    private fun setupClickListeners() {
+        binding.swipeRefreshHome.setOnRefreshListener {
+            loadProducts()
+        }
+
+        // FAB untuk tambah produk (jika admin)
+        binding.fabAddProductHome.setOnClickListener {
+            Toast.makeText(requireContext(), "Tambah produk", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // ============================================================
+    // 📦 LOAD PRODUK (STORAGE ATAU DUMMY)
+    // ============================================================
+    private fun loadProducts() {
+        showLoading(true)
+        Log.d(TAG, "🔄 Memulai loadProducts()")
+
+        val context = requireContext()
+        val savedProducts = ProductStorage.loadProducts(context)
+
+        Log.d(TAG, "📊 Jumlah produk tersimpan: ${savedProducts.size}")
+
+        // ✅ PENTING: Cek apakah data kosong, kalau iya load dummy
+        if (savedProducts.isEmpty()) {
+            Log.d(TAG, "⚠️ Data kosong! Loading dummy products...")
+
+            // ✅ Pakai central dummy data
+            val dummyProducts = com.example.miniproject.utils.DummyData.getDummyProducts()
+
+            // Simpan dummy ke storage
+            ProductStorage.saveProducts(context, dummyProducts)
+            Log.d(TAG, "✅ ${dummyProducts.size} dummy products berhasil disimpan!")
+
+            allProducts.clear()
+            allProducts.addAll(dummyProducts)
+        } else {
+            Log.d(TAG, "✅ Menggunakan data tersimpan")
+            allProducts.clear()
+            allProducts.addAll(savedProducts)
+        }
+
+        // Update tampilan
+        products.clear()
+        products.addAll(allProducts)
+        productAdapter.notifyDataSetChanged()
+
+        Log.d(TAG, "🎉 Berhasil load ${products.size} produk")
+
+        showLoading(false)
+        binding.swipeRefreshHome.isRefreshing = false
+    }
+
+    // ============================================================
+    // 🔍 SEARCH PRODUK
+    // ============================================================
     private fun setupSearch() {
         binding.etSearchHome.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                val text = s.toString().lowercase().trim()
-
-                val filtered = if (text.isEmpty()) {
-                    allProducts.toList()
-                } else {
-                    allProducts.filter {
-                        it.name.lowercase().contains(text) ||
-                                it.categoryName?.lowercase()?.contains(text) == true ||
-                                it.description?.lowercase()?.contains(text) == true
-                    }
+                val query = s?.toString()?.lowercase().orEmpty()
+                val filtered = allProducts.filter {
+                    it.name.lowercase().contains(query) ||
+                            it.categoryName?.lowercase()?.contains(query) == true
                 }
-
-                displayProducts.clear()
-                displayProducts.addAll(filtered)
+                products.clear()
+                products.addAll(filtered)
                 productAdapter.notifyDataSetChanged()
-
-                Log.d("HomeFragment", "🔎 Search: \"$text\" → ${filtered.size} hasil")
             }
-
             override fun afterTextChanged(s: Editable?) {}
         })
     }
 
-    private fun setupFilter() {
-        binding.btnFilterHome.setOnClickListener {
-            Log.d("HomeFragment", "⚙️ Tombol Filter diklik")
-            val sliderView = layoutInflater.inflate(R.layout.dialog_price_filter, null)
-            val slider = sliderView.findViewById<RangeSlider>(R.id.sliderPrice)
+    // ============================================================
+    // 🌀 LOADING
+    // ============================================================
+    private fun showLoading(show: Boolean) {
+        binding.progressBarHome.visibility = if (show) View.VISIBLE else View.GONE
+    }
 
-            val minPrice = allProducts.minOfOrNull { it.price } ?: 0.0
-            val maxPrice = allProducts.maxOfOrNull { it.price } ?: 10000000.0
-
-            slider.setValues(minPrice.toFloat(), maxPrice.toFloat())
-            slider.valueFrom = minPrice.toFloat()
-            slider.valueTo = maxPrice.toFloat()
-
-            slider.addOnChangeListener { _, _, _ ->
-                val values = slider.values
-                Log.d("HomeFragment", "💰 Range slider: ${values[0]} - ${values[1]}")
-            }
-
-            AlertDialog.Builder(requireContext())
-                .setTitle("Filter Harga")
-                .setView(sliderView)
-                .setPositiveButton("Terapkan") { dialog, _ ->
-                    val values = slider.values
-                    val minPriceVal = values[0].toInt()
-                    val maxPriceVal = values[1].toInt()
-
-                    val filtered = allProducts.filter {
-                        it.price.toInt() in minPriceVal..maxPriceVal
-                    }
-
-                    displayProducts.clear()
-                    displayProducts.addAll(filtered)
-                    productAdapter.notifyDataSetChanged()
-
-                    Log.d("HomeFragment", "✅ Filter harga diterapkan: $minPriceVal - $maxPriceVal → ${filtered.size} hasil")
-                    dialog.dismiss()
-                }
-                .setNegativeButton("Reset") { dialog, _ ->
-                    displayProducts.clear()
-                    displayProducts.addAll(allProducts)
-                    productAdapter.notifyDataSetChanged()
-
-                    Log.d("HomeFragment", "🔁 Filter direset → ${allProducts.size} hasil")
-                    dialog.dismiss()
-                }
-                .show()
-        }
+    override fun onResume() {
+        super.onResume()
+        // ✅ Reload setiap kali fragment ditampilkan
+        loadProducts()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
-        Log.d("HomeFragment", "🧹 onDestroyView dipanggil")
     }
 }

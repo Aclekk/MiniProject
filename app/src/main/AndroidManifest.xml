@@ -49,10 +49,13 @@
             android:theme="@style/Theme.NiagaTani.NoActionBar" />
 
         <!-- 🟢 Main -->
+        <!-- 🟢 Main -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.NiagaTani.NoActionBar" />
+            android:theme="@style/Theme.NiagaTani.NoActionBar"
+            android:windowSoftInputMode="adjustPan|stateHidden" />
+
 
         <!-- 🟢 Checkout -->
         <activity

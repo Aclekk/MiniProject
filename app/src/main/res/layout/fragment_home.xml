@@ -1,51 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background_main"
-    android:orientation="vertical"
-    android:padding="8dp"
-    tools:context=".fragment.HomeFragment">
+    android:background="#FFFFFF">
 
-    <!-- 🔍 Search bar -->
-    <LinearLayout
-        android:layout_width="match_parent"
+    <!-- Progress Bar -->
+    <ProgressBar
+        android:id="@+id/progressBarHome"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginBottom="8dp">
+        android:layout_gravity="center"
+        android:visibility="gone" />
 
-        <EditText
-            android:id="@+id/etSearchHome"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_weight="1"
-            android:hint="Cari produk..."
-            android:paddingStart="12dp"
-            android:background="@drawable/bg_search"
-            android:inputType="text"
-            android:drawableStart="@android:drawable/ic_menu_search" />
-
-        <Button
-            android:id="@+id/btnFilterHome"
-            android:layout_width="wrap_content"
-            android:layout_height="48dp"
-            android:layout_marginStart="8dp"
-            android:text="FILTER"
-            android:textAllCaps="true"
-            android:textColor="@android:color/white"
-            android:backgroundTint="@color/primary_green" />
-    </LinearLayout>
-
-    <!-- 🛒 RecyclerView Produk -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvHomeProducts"
+    <!-- Swipe Refresh Layout -->
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefreshHome"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:padding="4dp"
-        android:clipToPadding="false"
-        android:scrollbars="vertical" />
+        android:layout_height="match_parent">
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:padding="8dp">
 
-</LinearLayout>
+            <!-- Search Bar -->
+            <EditText
+                android:id="@+id/etSearchHome"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:hint="Cari produk..."
+                android:paddingHorizontal="12dp"
+                android:drawableStart="@android:drawable/ic_menu_search"
+                android:drawablePadding="8dp"
+                android:background="@drawable/bg_search_white"
+                android:textColor="#333"
+                android:textColorHint="#AAA"
+                android:textSize="14sp" />
+
+            <!-- RecyclerView Products -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvHomeProducts"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:paddingTop="8dp"
+                android:clipToPadding="false" />
+        </LinearLayout>
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+    <!-- Floating Action Button (Admin Only) -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabAddProductHome"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:src="@android:drawable/ic_input_add"
+        app:backgroundTint="#7FD8BE" />
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

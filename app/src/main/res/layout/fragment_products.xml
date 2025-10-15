@@ -25,39 +25,15 @@
 
         <ScrollView
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent"
+            android:fillViewport="true">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
-                <!-- Header dengan padding -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp"
-                    android:background="#FFFFFF">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Produk Niaga Tani"
-                        android:textSize="26sp"
-                        android:textStyle="bold"
-                        android:textColor="#333333" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Temukan produk pertanian terbaik"
-                        android:textSize="13sp"
-                        android:textColor="#999999"
-                        android:layout_marginTop="4dp" />
-                </LinearLayout>
-
-                <!-- 🔍 SEARCH BAR (paling atas) -->
+                <!-- 🏪 Header toko + search bar -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -66,6 +42,18 @@
                     android:padding="12dp"
                     android:background="#FFFFFF">
 
+                    <!-- Foto toko -->
+                    <ImageView
+                        android:id="@+id/ivStoreProfile"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_marginEnd="12dp"
+                        android:src="@drawable/ic_store_default"
+                        android:scaleType="centerCrop"
+                        android:background="@drawable/bg_circle_gray"
+                        android:contentDescription="Foto toko" />
+
+                    <!-- Search bar -->
                     <EditText
                         android:id="@+id/etSearch"
                         android:layout_width="0dp"
@@ -77,11 +65,12 @@
                         android:background="@drawable/bg_search_white"
                         android:drawableStart="@android:drawable/ic_menu_search"
                         android:drawablePadding="8dp"
-                        android:textColorHint="#CCCCCC"
+                        android:textColorHint="#AAAAAA"
                         android:textColor="#333333"
                         android:inputType="text"
                         android:textSize="14sp" />
 
+                    <!-- Tombol Filter -->
                     <Button
                         android:id="@+id/btnFilter"
                         android:layout_width="wrap_content"
@@ -93,6 +82,18 @@
                         android:paddingHorizontal="20dp"
                         android:textSize="13sp" />
                 </LinearLayout>
+
+                <!-- 🏷️ Nama toko -->
+                <TextView
+                    android:id="@+id/tvStoreName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Toko Niaga Tani"
+                    android:textStyle="bold"
+                    android:textSize="18sp"
+                    android:textColor="#333333"
+                    android:paddingHorizontal="16dp"
+                    android:paddingBottom="8dp" />
 
                 <!-- 🎠 CAROUSEL PROMO -->
                 <LinearLayout
@@ -106,7 +107,8 @@
                         android:id="@+id/viewPagerPromo"
                         android:layout_width="match_parent"
                         android:layout_height="160dp"
-                        android:clipToOutline="true" />
+                        android:clipToOutline="true"
+                        android:clipChildren="false" />
 
                     <com.tbuonomo.viewpagerdotsindicator.WormDotsIndicator
                         android:id="@+id/dotsIndicator"
@@ -115,14 +117,10 @@
                         android:layout_gravity="center_horizontal"
                         android:layout_marginTop="12dp"
                         app:dotsColor="#E0E0E0"
-                        app:dotsStrokeWidth="0dp"
-                        app:dotsCornerRadius="4dp"
-                        app:dotsSize="8dp"
-                        app:dotsSpacing="6dp"
                         app:selectedDotColor="#7FD8BE" />
                 </LinearLayout>
 
-                <!-- 📂 CATEGORY BUTTONS (horizontal scrollable) - SETELAH CAROUSEL -->
+                <!-- 📂 CATEGORY -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -139,43 +137,14 @@
                         android:textStyle="bold"
                         android:textColor="#333333"
                         android:paddingStart="8dp"
-                        android:paddingBottom="8dp"
-                        android:gravity="center" />
+                        android:paddingBottom="8dp" />
 
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/rvCategories"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:scrollbars="horizontal"
-                        android:paddingHorizontal="8dp"
-                        android:paddingVertical="4dp"
                         android:clipToPadding="false" />
-                </LinearLayout>
-
-                <!-- 📌 OUR TOP SELLING LABEL -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:paddingHorizontal="16dp"
-                    android:paddingVertical="16dp"
-                    android:background="#FFFFFF">
-
-                    <View
-                        android:layout_width="4dp"
-                        android:layout_height="20dp"
-                        android:background="#7FD8BE"
-                        android:layout_marginEnd="8dp" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Our Top Selling"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:textColor="#333333"
-                        android:gravity="center"/>
                 </LinearLayout>
 
                 <!-- 🛍️ PRODUCTS GRID -->
@@ -185,35 +154,83 @@
                     android:layout_height="wrap_content"
                     android:paddingHorizontal="12dp"
                     android:paddingVertical="8dp"
-                    android:clipToPadding="false"
                     android:nestedScrollingEnabled="false"
-                    android:scrollbars="none"
-                    android:orientation="vertical"
                     app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
-                    app:spanCount="2" /> <!-- DITAMBAHKAN: Menggunakan GridLayoutManager dengan 2 kolom -->
+                    app:spanCount="2" />
+
+                <!-- 🌾 Tentang Kami -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:padding="20dp"
+                    android:background="#FFFFFF">
+
+                    <TextView
+                        android:id="@+id/tvAboutUsTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Tentang Kami"
+                        android:textColor="#333333"
+                        android:textStyle="bold"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="6dp" />
+
+                    <TextView
+                        android:id="@+id/tvAboutUsContent"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Toko Niaga Tani berkomitmen menyediakan alat dan kebutuhan pertanian terbaik untuk petani Indonesia 🌾"
+                        android:textColor="#666666"
+                        android:textSize="12sp"
+                        android:lineSpacingExtra="4dp"
+                        android:textAlignment="center"
+                        android:paddingHorizontal="16dp"
+                        android:layout_marginBottom="10dp"/>
+
+                    <!-- 🏠 Alamat & Kontak -->
+                    <TextView
+                        android:id="@+id/tvStoreContactTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Alamat &amp; Kontak"
+                        android:textColor="#333333"
+                        android:textStyle="bold"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="6dp" />
+
+                    <TextView
+                        android:id="@+id/tvStoreAddress"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Jl. Pertanian No. 1, Tangerang"
+                        android:textColor="#666666"
+                        android:textSize="12sp"
+                        android:textAlignment="center"
+                        android:paddingHorizontal="16dp"/>
+
+                    <TextView
+                        android:id="@+id/tvStoreContact"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Telp: 08123456789"
+                        android:textColor="#666666"
+                        android:textSize="12sp"
+                        android:textAlignment="center"
+                        android:paddingHorizontal="16dp"
+                        android:layout_marginTop="2dp"/>
+                </LinearLayout>
 
 
-                <!-- Bottom spacer -->
                 <View
                     android:layout_width="match_parent"
-                    android:layout_height="24dp" />
-
+                    android:layout_height="32dp" />
             </LinearLayout>
-
         </ScrollView>
-
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-    <!-- Bottom Navigation Spacer -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp"
-        android:background="#FFFFFF">
-    </LinearLayout>
-
-    <!-- FAB untuk tambah produk (admin only) -->
+    <!-- FAB tambah produk (khusus admin) -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabAddProduct"
         android:layout_width="wrap_content"
@@ -223,5 +240,4 @@
         android:src="@android:drawable/ic_input_add"
         android:backgroundTint="#7FD8BE"
         android:visibility="gone" />
-
 </LinearLayout>
