@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="#FFFFFF"
+    android:background="#F5F7F5"
     tools:context=".fragment.ProductsFragment">
 
     <!-- ProgressBar -->
@@ -14,214 +13,267 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
+        android:indeterminateTint="#5C8A3C"
         android:visibility="gone" />
 
-    <!-- Swipe Refresh Container -->
+    <!-- Main Content -->
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipeRefresh"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-        <ScrollView
+        <androidx.core.widget.NestedScrollView
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent"
+            android:fillViewport="true">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
-                <!-- Header dengan padding -->
+                <!-- 🌾 HEADER SECTION -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp"
-                    android:background="#FFFFFF">
+                    android:background="@drawable/bg_header_gradient"
+                    android:padding="20dp"
+                    android:elevation="4dp">
 
                     <TextView
-                        android:layout_width="match_parent"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Produk Niaga Tani"
-                        android:textSize="26sp"
+                        android:text="🌾 Niaga Tani"
+                        android:textSize="28sp"
                         android:textStyle="bold"
-                        android:textColor="#333333" />
+                        android:textColor="@color/primary_dark"
+                        android:letterSpacing="0.02" />
 
                     <TextView
-                        android:layout_width="match_parent"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Temukan produk pertanian terbaik"
-                        android:textSize="13sp"
-                        android:textColor="#999999"
-                        android:layout_marginTop="4dp" />
+                        android:text="Solusi Pertanian Modern Indonesia"
+                        android:textSize="14sp"
+                        android:textColor="@color/primary_green"
+                        android:layout_marginTop="4dp"
+                        android:fontFamily="sans-serif-light" />
                 </LinearLayout>
 
-                <!-- 🔍 SEARCH BAR (paling atas) -->
-                <LinearLayout
+                <!-- 🔍 SEARCH & FILTER BAR -->
+                <androidx.cardview.widget.CardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:padding="12dp"
-                    android:background="#FFFFFF">
+                    android:layout_margin="16dp"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="6dp"
+                    android:backgroundTint="#FFFFFF">
 
-                    <EditText
-                        android:id="@+id/etSearch"
-                        android:layout_width="0dp"
-                        android:layout_height="48dp"
-                        android:layout_weight="1"
-                        android:hint="Cari produk..."
-                        android:paddingStart="16dp"
-                        android:paddingEnd="16dp"
-                        android:background="@drawable/bg_search_white"
-                        android:drawableStart="@android:drawable/ic_menu_search"
-                        android:drawablePadding="8dp"
-                        android:textColorHint="#CCCCCC"
-                        android:textColor="#333333"
-                        android:inputType="text"
-                        android:textSize="14sp" />
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:padding="8dp"
+                        android:gravity="center_vertical">
 
-                    <Button
-                        android:id="@+id/btnFilter"
-                        android:layout_width="wrap_content"
-                        android:layout_height="48dp"
-                        android:text="Filter"
-                        android:layout_marginStart="12dp"
-                        android:backgroundTint="#7FD8BE"
-                        android:textColor="@android:color/white"
-                        android:paddingHorizontal="20dp"
-                        android:textSize="13sp" />
-                </LinearLayout>
+                        <EditText
+                            android:id="@+id/etSearch"
+                            android:layout_width="0dp"
+                            android:layout_height="48dp"
+                            android:layout_weight="1"
+                            android:hint="Cari produk pertanian..."
+                            android:paddingStart="16dp"
+                            android:paddingEnd="12dp"
+                            android:background="@android:color/transparent"
+                            android:drawableStart="@android:drawable/ic_menu_search"
+                            android:drawableTint="#5C8A3C"
+                            android:drawablePadding="12dp"
+                            android:textColorHint="#B0B0B0"
+                            android:textColor="#2D5016"
+                            android:inputType="text"
+                            android:textSize="15sp" />
 
-                <!-- 🎠 CAROUSEL PROMO -->
+                        <View
+                            android:layout_width="1dp"
+                            android:layout_height="32dp"
+                            android:background="#E0E0E0" />
+
+                        <Button
+                            android:id="@+id/btnFilter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="48dp"
+                            android:text="Filter"
+                            android:textAllCaps="false"
+                            android:backgroundTint="#5C8A3C"
+                            android:textColor="#FFFFFF"
+                            android:paddingHorizontal="24dp"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:drawableStart="@android:drawable/ic_menu_sort_by_size"
+                            android:drawableTint="#FFFFFF"
+                            android:drawablePadding="8dp"
+                            app:cornerRadius="12dp" />
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <!-- 🎠 PROMO CAROUSEL SECTION -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:paddingHorizontal="16dp"
-                    android:paddingVertical="16dp">
+                    android:paddingBottom="20dp"
+                    android:paddingTop="8dp">
 
-                    <androidx.viewpager2.widget.ViewPager2
-                        android:id="@+id/viewPagerPromo"
+                    <!-- Judul di atas Carousel -->
+                    <TextView
+                        android:id="@+id/tvPromoTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="✨ Promo Spesial"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="#2D5016"
+                        android:layout_marginBottom="10dp"
+                        android:layout_marginTop="6dp" />
+
+                    <!-- Carousel (ViewPager2) -->
+                    <androidx.cardview.widget.CardView
                         android:layout_width="match_parent"
-                        android:layout_height="160dp"
-                        android:clipToOutline="true" />
+                        android:layout_height="wrap_content"
+                        app:cardCornerRadius="20dp"
+                        app:cardElevation="8dp">
 
+                        <androidx.viewpager2.widget.ViewPager2
+                            android:id="@+id/viewPagerPromo"
+                            android:layout_width="match_parent"
+                            android:layout_height="180dp"
+                            android:clipToOutline="true" />
+                    </androidx.cardview.widget.CardView>
+
+                    <!-- Dots indicator -->
                     <com.tbuonomo.viewpagerdotsindicator.WormDotsIndicator
                         android:id="@+id/dotsIndicator"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center_horizontal"
                         android:layout_marginTop="12dp"
-                        app:dotsColor="#E0E0E0"
+                        app:dotsColor="#D0D0D0"
                         app:dotsStrokeWidth="0dp"
-                        app:dotsCornerRadius="4dp"
-                        app:dotsSize="8dp"
-                        app:dotsSpacing="6dp"
-                        app:selectedDotColor="#7FD8BE" />
+                        app:dotsCornerRadius="8dp"
+                        app:dotsSize="10dp"
+                        app:dotsSpacing="8dp"
+                        app:selectedDotColor="#5C8A3C" />
                 </LinearLayout>
 
-                <!-- 📂 CATEGORY BUTTONS (horizontal scrollable) - SETELAH CAROUSEL -->
+
+                <!-- 📂 KATEGORI SECTION -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="12dp"
-                    android:background="#F9F9F9">
+                    android:background="#FFFFFF"
+                    android:paddingVertical="20dp"
+                    android:paddingHorizontal="16dp"
+                    android:elevation="2dp">
 
                     <TextView
-                        android:layout_width="match_parent"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Kategori"
-                        android:textSize="13sp"
+                        android:text="Kategori Produk"
+                        android:textSize="18sp"
                         android:textStyle="bold"
-                        android:textColor="#333333"
-                        android:paddingStart="8dp"
-                        android:paddingBottom="8dp"
-                        android:gravity="center" />
+                        android:textColor="#2D5016"
+                        android:layout_marginBottom="12dp" />
 
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/rvCategories"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:scrollbars="horizontal"
-                        android:paddingHorizontal="8dp"
-                        android:paddingVertical="4dp"
-                        android:clipToPadding="false" />
+                        android:clipToPadding="false"
+                        android:paddingHorizontal="4dp" />
                 </LinearLayout>
 
-                <!-- 📌 OUR TOP SELLING LABEL -->
+                <!-- 🏆 TOP SELLING SECTION -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
+                    android:orientation="vertical"
+                    android:paddingTop="24dp"
                     android:paddingHorizontal="16dp"
-                    android:paddingVertical="16dp"
-                    android:background="#FFFFFF">
+                    android:paddingBottom="12dp">
 
-                    <View
-                        android:layout_width="4dp"
-                        android:layout_height="20dp"
-                        android:background="#7FD8BE"
-                        android:layout_marginEnd="8dp" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Our Top Selling"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:textColor="#333333"
-                        android:gravity="center"/>
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="16dp">
+
+                        <View
+                            android:layout_width="5dp"
+                            android:layout_height="28dp"
+                            android:background="@drawable/bg_accent_bar"
+                            android:layout_marginEnd="12dp" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Produk Terlaris"
+                            android:textSize="20sp"
+                            android:textStyle="bold"
+                            android:textColor="#2D5016" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Lihat Semua →"
+                            android:textSize="13sp"
+                            android:textColor="#5C8A3C"
+                            android:textStyle="bold"
+                            android:clickable="true"
+                            android:focusable="true" />
+                    </LinearLayout>
+
+                    <!-- 🛍️ PRODUCTS GRID (2 Kolom Besar & Premium) -->
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rvProducts"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:clipToPadding="false"
+                        android:nestedScrollingEnabled="false"
+                        android:paddingBottom="8dp"
+                        app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+                        app:spanCount="2" />
                 </LinearLayout>
 
-                <!-- 🛍️ PRODUCTS GRID -->
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rvProducts"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:paddingHorizontal="12dp"
-                    android:paddingVertical="8dp"
-                    android:clipToPadding="false"
-                    android:nestedScrollingEnabled="false"
-                    android:scrollbars="none"
-                    android:orientation="vertical"
-                    app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
-                    app:spanCount="2" /> <!-- DITAMBAHKAN: Menggunakan GridLayoutManager dengan 2 kolom -->
-
-
-                <!-- Bottom spacer -->
+                <!-- Bottom Spacer -->
                 <View
                     android:layout_width="match_parent"
-                    android:layout_height="24dp" />
+                    android:layout_height="80dp" />
 
             </LinearLayout>
 
-        </ScrollView>
+        </androidx.core.widget.NestedScrollView>
 
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-    <!-- Bottom Navigation Spacer -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp"
-        android:background="#FFFFFF">
-    </LinearLayout>
-
-    <!-- FAB untuk tambah produk (admin only) -->
+    <!-- 🎯 FAB untuk Admin -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabAddProduct"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
-        android:layout_margin="16dp"
+        android:layout_margin="20dp"
         android:src="@android:drawable/ic_input_add"
-        android:backgroundTint="#7FD8BE"
+        app:tint="#FFFFFF"
+        app:backgroundTint="#5C8A3C"
+        app:borderWidth="0dp"
+        app:elevation="12dp"
+        app:pressedTranslationZ="16dp"
         android:visibility="gone" />
 
-</LinearLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

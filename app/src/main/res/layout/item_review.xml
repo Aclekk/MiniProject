@@ -1,59 +1,99 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="12dp"
-    android:background="#222222"
-    android:layout_margin="8dp">
+    app:cardCornerRadius="8dp"
+    app:cardElevation="0dp"
+    app:strokeWidth="1dp"
+    app:strokeColor="@color/border_light"
+    android:layout_marginBottom="8dp"
+    app:cardBackgroundColor="@color/background_light_gray">
 
-    <!-- Nama Reviewer & Rating -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
+        android:orientation="vertical"
+        android:padding="12dp">
 
+        <!-- Header: User & Rating -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="8dp">
+
+            <!-- User Avatar -->
+            <TextView
+                android:id="@+id/tvUserInitial"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:gravity="center"
+                android:text="B"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/white"
+                android:background="@drawable/bg_user_avatar"
+                tools:text="B" />
+
+            <!-- User Info -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:layout_marginStart="12dp">
+
+                <TextView
+                    android:id="@+id/tvUserName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Nama User"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary"
+                    tools:text="Budi Santoso" />
+
+                <RatingBar
+                    android:id="@+id/rbUserRating"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:numStars="5"
+                    android:rating="5"
+                    android:stepSize="0.5"
+                    android:isIndicator="true"
+                    style="?android:attr/ratingBarStyleSmall"
+                    android:progressTint="@color/accent_yellow_premium"
+                    android:layout_marginTop="2dp" />
+
+            </LinearLayout>
+
+            <!-- Date -->
+            <TextView
+                android:id="@+id/tvReviewDate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="2025-01-10"
+                android:textSize="12sp"
+                android:textColor="@color/text_hint"
+                tools:text="10 Jan" />
+
+        </LinearLayout>
+
+        <!-- Review Comment -->
         <TextView
-            android:id="@+id/tvReviewerName"
-            android:layout_width="0dp"
+            android:id="@+id/tvReviewComment"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Nama Reviewer"
-            android:textColor="@android:color/white"
+            android:text="Komentar review akan muncul di sini"
             android:textSize="13sp"
-            android:textStyle="bold" />
+            android:textColor="@color/text_secondary"
+            android:lineSpacingExtra="2dp"
+            tools:text="Produk sangat bagus, kualitas terjamin dan pengiriman cepat!" />
 
-        <RatingBar
-            android:id="@+id/rbReviewRating"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:numStars="5"
-            android:rating="4"
-            android:isIndicator="true"
-            android:scaleX="0.6"
-            android:scaleY="0.6"
-            android:transformPivotX="0dp" />
     </LinearLayout>
 
-    <!-- Comment -->
-    <TextView
-        android:id="@+id/tvReviewComment"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Komentar review produk di sini"
-        android:textColor="#CCCCCC"
-        android:textSize="12sp"
-        android:layout_marginTop="6dp" />
-
-    <!-- Date -->
-    <TextView
-        android:id="@+id/tvReviewDate"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="2025-01-01"
-        android:textColor="#888888"
-        android:textSize="11sp"
-        android:layout_marginTop="4dp" />
-
-</LinearLayout>
+</androidx.cardview.widget.CardView>

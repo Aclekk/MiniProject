@@ -43,8 +43,7 @@ class ProductAdapter(
             // Harga
             binding.tvProductPrice.text = "Rp ${String.format("%,d", product.price.toInt())}"
 
-            // Kategori
-            binding.tvCategory.text = product.categoryName
+
 
             // Load gambar
             when {

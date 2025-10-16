@@ -1,46 +1,90 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- 🌿 BRAND COLORS -->
+    <!-- ========================================
+         🌿 ORIGINAL BRAND COLORS (EXISTING)
+         ======================================== -->
     <color name="primary_green">#2E7D32</color>
     <color name="primary_dark">#1B5E20</color>
     <color name="secondary_green">#A5D6A7</color>
     <color name="accent_yellow">#FBC02D</color>
     <color name="secondary_yellow">#FDD835</color>
 
-    <!-- 🎨 NEUTRAL BACKGROUND -->
+    <!-- 🎨 NEUTRAL BACKGROUND (EXISTING) -->
     <color name="background_light">#F1F8E9</color>
     <color name="background_card">#FFFFFF</color>
     <color name="background_light_green">#C8E6C9</color>
-    <color name="background_main">#E8F5E9</color> <!-- 🌿 Tambahan ini! -->
+    <color name="background_main">#E8F5E9</color>
 
-    <!-- 📝 TEXT COLORS -->
+    <!-- 📝 TEXT COLORS (EXISTING) -->
     <color name="text_primary">#1B1B1B</color>
     <color name="text_secondary">#757575</color>
     <color name="text_white">#FFFFFF</color>
     <color name="text_hint">#9E9E9E</color>
 
-    <!-- 🚨 STATUS COLORS -->
+    <!-- 🚨 STATUS COLORS (EXISTING) -->
     <color name="error_red">#D32F2F</color>
     <color name="purple_700">#3700B3</color>
 
-    <!-- ☁️ SURFACE -->
+    <!-- ☁️ SURFACE (EXISTING) -->
     <color name="surface_white">#FFFFFF</color>
 
-    <!-- 🌈 GRADIENT -->
+    <!-- 🌈 GRADIENT (EXISTING) -->
     <color name="gradient_start">#1B5E20</color>
     <color name="gradient_end">#4CAF50</color>
 
-    <!-- ⚙️ COMMON COLORS -->
+    <!-- ⚙️ COMMON COLORS (EXISTING) -->
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
 
-    <!-- 🩶 GRAYSCALE VARIANTS -->
+    <!-- 🩶 GRAYSCALE VARIANTS (EXISTING) -->
     <color name="gray_extra_light">#EEEEEE</color>
     <color name="gray_light">#BDBDBD</color>
-    <color name="gray">#9E9E9E</color> <!-- 🌟 ini gray utama -->
+    <color name="gray">#9E9E9E</color>
     <color name="gray_medium">#757575</color>
     <color name="gray_dark">#424242</color>
     <color name="teal_700">#00796B</color>
+
+
+    <!-- ========================================
+         🌾 NEW PREMIUM COLORS (UNTUK UI BARU)
+         Tambahan untuk ProductsFragment & HomeFragment
+         ======================================== -->
+
+    <!-- 🌾 Premium Green Variations (untuk UI baru) -->
+    <color name="primary_green_premium">#5C8A3C</color>
+    <color name="primary_dark_premium">#2D5016</color>
+    <color name="primary_light_premium">#7FD8BE</color>
+
+    <!-- 🌍 Natural Brown Accent (earthy theme) -->
+    <color name="secondary_brown">#8B6F47</color>
+    <color name="secondary_brown_light">#C4A57B</color>
+
+    <!-- 🎯 New Accent Colors -->
+    <color name="accent_orange">#FF6B35</color>
+    <color name="accent_yellow_premium">#FFD23F</color>
+
+    <!-- 🖼️ Additional Backgrounds -->
+    <color name="background_premium">#F5F7F5</color>
+    <color name="background_light_gray">#F9F9F9</color>
+
+    <!-- 📝 Additional Text Colors -->
+    <color name="text_primary_green">#2D5016</color>
+    <color name="text_secondary_green">#5C8A3C</color>
+    <color name="text_tertiary">#999999</color>
+    <color name="text_light_gray">#B0B0B0</color>
+
+    <!-- 🔲 Borders & Dividers -->
+    <color name="border_light">#E0E0E0</color>
+    <color name="divider_light">#F0F0F0</color>
+
+    <!-- ⚠️ Status Colors (extended) -->
+    <color name="status_success">#4CAF50</color>
+    <color name="status_warning">#FF9800</color>
+    <color name="status_error">#D32F2F</color>
+
+    <!-- 🌓 Overlay Colors -->
+    <color name="overlay_dark">#80000000</color>
+    <color name="overlay_light">#40FFFFFF</color>
 
 </resources>

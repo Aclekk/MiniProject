@@ -3,16 +3,15 @@ package com.example.miniproject.ui
 import android.Manifest
 import android.content.pm.PackageManager
 import android.location.Geocoder
-import android.location.Location
 import android.os.Bundle
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import com.example.miniproject.data.CartManager
-import com.example.miniproject.data.Order
+import com.example.miniproject.R
 import com.example.miniproject.databinding.ActivityCheckoutBinding
 import com.example.miniproject.model.Product
+import com.example.miniproject.data.CartManager
+import com.example.miniproject.data.Order
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import java.util.Locale
@@ -21,111 +20,179 @@ class CheckoutActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityCheckoutBinding
     private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private val LOCATION_PERMISSION_REQUEST_CODE = 1000
+
+    private var product: Product? = null
+    private var quantity: Int = 1
+    private val shippingCost = 20000.0
+    private var isFromCart: Boolean = false // 🆕 Deteksi sumber checkout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityCheckoutBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        setSupportActionBar(binding.toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        binding.toolbar.setNavigationOnClickListener { finish() }
+
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
-        // 🔹 Ambil lokasi otomatis saat activity dibuka
+        // 🔹 Deteksi apakah dari Cart atau Product Detail
+        product = intent.getParcelableExtra("product")
+        quantity = intent.getIntExtra("quantity", 1)
+        isFromCart = intent.getBooleanExtra("from_cart", false)
+
+        setupUI()
         requestLocationPermission()
+    }
 
-        // 🔹 Hitung total belanja (harga produk + ongkir)
-        val total = CartManager.cartItems.sumOf { it.price } + 20000
-        binding.tvTotal.text = "Rp ${String.format("%,d", total.toInt())}"
+    private fun setupUI() {
+        product?.let { prod ->
+            binding.tvProductName.text = prod.name
+            binding.tvQuantity.text = "x$quantity"
 
-        // 🔹 Tombol Bayar Sekarang
-        binding.btnPayNow.setOnClickListener {
-            val selectedPayment = when {
-                binding.rbTransfer.isChecked -> "Transfer Bank"
-                binding.rbEwallet.isChecked -> "E-Wallet"
-                else -> "Belum Dipilih"
+            val subtotal = prod.price * quantity
+            val total = subtotal + shippingCost
+
+            binding.tvPrice.text = "Rp ${String.format("%,d", subtotal.toInt())}"
+            binding.tvSubtotal.text = "Rp ${String.format("%,d", subtotal.toInt())}"
+            binding.tvShipping.text = "Rp ${String.format("%,d", shippingCost.toInt())}"
+            binding.tvShippingCost.text = "Rp ${String.format("%,d", shippingCost.toInt())}"
+            binding.tvTotal.text = "Rp ${String.format("%,d", total.toInt())}"
+            binding.tvTotalBottom.text = "Rp ${String.format("%,d", total.toInt())}"
+
+            // Default payment method
+            binding.rbTransfer.isChecked = true
+
+            // 🆕 FIX: Radio button manual listener
+            binding.rbTransfer.setOnClickListener {
+                binding.rbEwallet.isChecked = false
+            }
+            binding.rbEwallet.setOnClickListener {
+                binding.rbTransfer.isChecked = false
             }
 
-            if (selectedPayment == "Belum Dipilih") {
-                Toast.makeText(this, "Pilih metode pembayaran dulu!", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            // 🔹 Ambil data produk dari intent
-            val product = intent.getParcelableExtra<Product>("product")
-            val quantity = intent.getIntExtra("quantity", 1)
-            val totalPrice = (product?.price ?: 0.0) * quantity + 20000 // + ongkir
-
-            if (product != null) {
-                // ✅ Buat order baru dan simpan ke CartManager
-                val newOrder = Order(
-                    id = (CartManager.orders.size + 1),
-                    products = listOf(product),
-                    totalPrice = totalPrice,
-                    status = "Dikemas",
-                    paymentMethod = selectedPayment,
-                    address = binding.tvUserAddress.text.toString()
-                )
-
-                CartManager.orders.add(newOrder)
-                CartManager.clearCart() // Kosongkan keranjang
-
-                Toast.makeText(
-                    this,
-                    "Pembayaran berhasil! Pesanan sedang dikemas.",
-                    Toast.LENGTH_LONG
-                ).show()
-                finish() // Kembali ke CartFragment
+            binding.btnPayNow.setOnClickListener {
+                processPayment()
             }
         }
     }
 
-    // 🔹 Fungsi minta izin lokasi
     private fun requestLocationPermission() {
-        val requestPermissionLauncher = registerForActivityResult(
-            ActivityResultContracts.RequestPermission()
-        ) { isGranted: Boolean ->
-            if (isGranted) {
-                getCurrentLocation()
-            } else {
-                Toast.makeText(this, "Izin lokasi ditolak 😢", Toast.LENGTH_SHORT).show()
-            }
-        }
-
-        when {
-            ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED -> {
-                getCurrentLocation()
-            }
-            else -> {
-                requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-            }
-        }
-    }
-
-    // 🔹 Fungsi ambil lokasi user
-    private fun getCurrentLocation() {
         if (ActivityCompat.checkSelfPermission(
                 this,
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) != PackageManager.PERMISSION_GRANTED
-        ) return
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                LOCATION_PERMISSION_REQUEST_CODE
+            )
+        } else {
+            getUserLocation()
+        }
+    }
 
-        fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
-            if (location != null) {
-                try {
+    private fun getUserLocation() {
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                if (location != null) {
                     val geocoder = Geocoder(this, Locale.getDefault())
-                    val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
-                    val addressText = addresses?.firstOrNull()?.getAddressLine(0)
-
-                    // tampilkan alamat lengkap jika tersedia, fallback ke koordinat
-                    binding.tvUserAddress.text = addressText
-                        ?: "📍 ${location.latitude}, ${location.longitude}"
-                } catch (e: Exception) {
-                    binding.tvUserAddress.text = "📍 ${location.latitude}, ${location.longitude}"
+                    try {
+                        val addresses = geocoder.getFromLocation(
+                            location.latitude,
+                            location.longitude,
+                            1
+                        )
+                        if (!addresses.isNullOrEmpty()) {
+                            val address = addresses[0]
+                            val fullAddress = "${address.getAddressLine(0)}"
+                            binding.tvUserAddress.text = fullAddress
+                            binding.tvAddress.text = "📍 Lat: ${String.format("%.4f", location.latitude)}, " +
+                                    "Lon: ${String.format("%.4f", location.longitude)}"
+                        }
+                    } catch (e: Exception) {
+                        binding.tvUserAddress.text = "Gagal mendapatkan alamat"
+                        binding.tvAddress.text = "📍 ${e.message}"
+                    }
+                } else {
+                    binding.tvUserAddress.text = "Lokasi tidak ditemukan"
+                    binding.tvAddress.text = "📍 Aktifkan GPS Anda"
                 }
+            }
+        }
+    }
+
+    private fun processPayment() {
+        val selectedPaymentMethod = when {
+            binding.rbTransfer.isChecked -> "Transfer Bank"
+            binding.rbEwallet.isChecked -> "E-Wallet"
+            else -> {
+                Toast.makeText(
+                    this,
+                    "Pilih metode pembayaran terlebih dahulu",
+                    Toast.LENGTH_SHORT
+                ).show()
+                return
+            }
+        }
+
+        product?.let { prod ->
+            val subtotal = prod.price * quantity
+            val total = subtotal + shippingCost
+            val userAddress = binding.tvUserAddress.text.toString()
+
+            // 🆕 Buat pesanan baru dan masukkan ke CartManager
+            val newOrder = Order(
+                id = CartManager.orders.size + 1,
+                products = listOf(prod),
+                totalPrice = total,
+                status = "Dikemas", // Status awal setelah bayar
+                paymentMethod = selectedPaymentMethod,
+                address = userAddress
+            )
+
+            CartManager.orders.add(newOrder)
+
+            // 🆕 FIX: Hapus barang dari cart kalau checkout dari cart
+            if (isFromCart) {
+                CartManager.cartItems.remove(prod)
+            }
+
+            Toast.makeText(
+                this,
+                "Pesanan berhasil! Metode: $selectedPaymentMethod\nTotal: Rp ${String.format("%,d", total.toInt())}",
+                Toast.LENGTH_LONG
+            ).show()
+
+            binding.btnPayNow.isEnabled = false
+            binding.btnPayNow.text = "Memproses..."
+
+            binding.btnPayNow.postDelayed({
+                Toast.makeText(this, "Pembayaran berhasil! ✅", Toast.LENGTH_SHORT).show()
+                finish()
+            }, 2000)
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                getUserLocation()
             } else {
-                binding.tvUserAddress.text = "Tidak dapat menemukan lokasi 😢"
+                binding.tvUserAddress.text = "Izin lokasi ditolak"
+                binding.tvAddress.text = "📍 Berikan izin untuk mendapatkan lokasi"
             }
         }
     }

@@ -212,8 +212,10 @@ class ProductsFragment : Fragment() {
     // 🔹 SEARCH & FILTER
     // ============================================================
     private fun setupSearchAndFilter() {
+        // 🔍 Fitur Search Produk
         binding.etSearch.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 val searchText = s?.toString()?.lowercase().orEmpty()
                 val filtered = allProducts.filter {
@@ -223,10 +225,15 @@ class ProductsFragment : Fragment() {
                 products.clear()
                 products.addAll(filtered)
                 productAdapter.notifyDataSetChanged()
+
+                // Debug log & toast
+                android.util.Log.d("ProductsFragment", "🔎 Search: \"$searchText\" → ${filtered.size} hasil")
             }
+
             override fun afterTextChanged(s: Editable?) {}
         })
 
+        // ⚙️ Tombol Filter Kategori
         binding.btnFilter.setOnClickListener {
             val categories = allProducts.mapNotNull { it.categoryName }.distinct()
             val dialog = AlertDialog.Builder(requireContext())
@@ -237,16 +244,26 @@ class ProductsFragment : Fragment() {
                     products.clear()
                     products.addAll(filtered)
                     productAdapter.notifyDataSetChanged()
+
+                    Toast.makeText(requireContext(), "Filter: $selected (${filtered.size} produk)", Toast.LENGTH_SHORT).show()
+                    android.util.Log.d("ProductsFragment", "✅ Filter kategori: $selected → ${filtered.size} hasil")
                 }
-                .setNegativeButton("Tampilkan Semua") { _, _ ->
+                .setNegativeButton("Tampilkan Semua") { dialog, _ ->
+                    // ✅ Perbaikan di sini: tampilkan SEMUA produk tanpa limit
                     products.clear()
-                    products.addAll(allProducts.take(4))  // <— kuncinya di sini
+                    products.addAll(allProducts)
                     productAdapter.notifyDataSetChanged()
+
+                    Toast.makeText(requireContext(), "Menampilkan semua produk (${allProducts.size})", Toast.LENGTH_SHORT).show()
+                    android.util.Log.d("ProductsFragment", "🔁 Filter direset → ${allProducts.size} hasil")
+
+                    dialog.dismiss()
                 }
                 .create()
             dialog.show()
         }
     }
+
 
     // ============================================================
     // 🔹 UTILITAS

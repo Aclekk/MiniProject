@@ -9,7 +9,6 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.miniproject.adapter.CartAdapter
-import com.example.miniproject.adapter.OrderHistoryAdapter
 import com.example.miniproject.data.CartManager
 import com.example.miniproject.databinding.FragmentCartBinding
 import com.google.android.material.tabs.TabLayoutMediator
@@ -21,8 +20,6 @@ class CartFragment : Fragment() {
     private val binding get() = _binding!!
 
     private lateinit var cartAdapter: CartAdapter
-    private lateinit var activeOrderAdapter: OrderHistoryAdapter
-    private lateinit var completedOrderAdapter: OrderHistoryAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -36,15 +33,18 @@ class CartFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         setupCartRecycler()
-        setupOrderTabs() // ✅ tambahan baru
+        setupOrderTabs()
         updateCartSummary()
 
         binding.btnCheckout.setOnClickListener {
             if (CartManager.cartItems.isEmpty()) {
                 Toast.makeText(requireContext(), "Keranjang kosong!", Toast.LENGTH_SHORT).show()
             } else {
+                // 🆕 FIX: Kirim flag "from_cart" ke CheckoutActivity
                 val intent = Intent(requireContext(), CheckoutActivity::class.java)
                 intent.putExtra("product", CartManager.cartItems.first())
+                intent.putExtra("quantity", 1)
+                intent.putExtra("from_cart", true) // ✅ Tambahkan flag ini
                 startActivity(intent)
             }
         }

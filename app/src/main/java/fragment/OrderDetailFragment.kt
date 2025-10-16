@@ -45,22 +45,17 @@ class OrderDetailFragment : Fragment() {
         binding.tvOrderProducts.text = productList
         binding.tvOrderTotal.text = "Total: Rp ${order.totalPrice.toInt()}"
 
-        // Tombol "Beri Penilaian" hanya muncul kalau status Selesai
-        binding.btnRateNow.visibility =
-            if (order.status == "Selesai") View.VISIBLE else View.GONE
+        // 🆕 FIX: Tombol hanya muncul sesuai status
+        updateButtonVisibility(order.status)
 
-        binding.btnRateNow.setOnClickListener {
-            showRatingDialog(order.products.first().id)
-        }
-
-        // ✅ Tambahkan tombol "Ubah Status"
+        // 🔹 Tombol "Ubah Status"
         binding.btnNextStatus.setOnClickListener {
             val currentStatus = order.status
             val nextStatus = when (currentStatus) {
-                "Belum Bayar" -> "Dikemas"
                 "Dikemas" -> "Dikirim"
-                "Dikirim" -> "Selesai"
-                else -> "Selesai"
+                "Dikirim" -> "Diterima" // 🆕 Ubah ke "Diterima" dulu
+                "Diterima" -> "Selesai" // 🆕 Baru "Selesai" setelah review
+                else -> currentStatus
             }
 
             order.status = nextStatus
@@ -72,15 +67,59 @@ class OrderDetailFragment : Fragment() {
                 Toast.LENGTH_SHORT
             ).show()
 
-            // Kalau sudah selesai, munculkan tombol rating
-            if (order.status == "Selesai") {
+            // Update tampilan tombol
+            updateButtonVisibility(order.status)
+
+            // 🆕 FIX: Refresh list di ActiveOrdersFragment & CompletedOrdersFragment
+            refreshOrderLists()
+        }
+
+        // 🔹 Tombol "Beri Penilaian"
+        binding.btnRateNow.setOnClickListener {
+            showRatingDialog(order)
+        }
+    }
+
+    // 🆕 FIX: Atur visibilitas tombol berdasarkan status
+    private fun updateButtonVisibility(status: String) {
+        when (status) {
+            "Dikemas", "Dikirim" -> {
+                // Tampilkan tombol "Ubah Status" saja
+                binding.btnNextStatus.visibility = View.VISIBLE
+                binding.btnRateNow.visibility = View.GONE
+            }
+            "Diterima" -> {
+                // Tampilkan tombol "Beri Penilaian" saja
+                binding.btnNextStatus.visibility = View.GONE
                 binding.btnRateNow.visibility = View.VISIBLE
+            }
+            "Selesai" -> {
+                // Sembunyikan semua tombol
+                binding.btnNextStatus.visibility = View.GONE
+                binding.btnRateNow.visibility = View.GONE
+            }
+            else -> {
+                binding.btnNextStatus.visibility = View.GONE
+                binding.btnRateNow.visibility = View.GONE
             }
         }
     }
 
-    // 🔸 Dialog Rating
-    private fun showRatingDialog(productId: Int) {
+    // 🆕 FIX: Refresh list setelah ubah status
+    private fun refreshOrderLists() {
+        // Cari fragment ActiveOrdersFragment & CompletedOrdersFragment
+        val cartFragment = requireActivity().supportFragmentManager
+            .findFragmentById(R.id.fragment_container) as? CartFragment
+
+        // Trigger refresh di kedua tab
+        cartFragment?.let {
+            // Fragment akan auto-refresh saat onResume() dipanggil
+            parentFragmentManager.popBackStack()
+        }
+    }
+
+    // 🔹 Dialog Rating
+    private fun showRatingDialog(order: com.example.miniproject.data.Order) {
         val dialogView = LayoutInflater.from(requireContext())
             .inflate(R.layout.dialog_add_review, null)
         val ratingBar = dialogView.findViewById<RatingBar>(R.id.ratingBar)
@@ -103,20 +142,30 @@ class OrderDetailFragment : Fragment() {
                 }
 
                 val review = Review(
-                    productId = productId,
+                    productId = order.products.first().id,
                     userName = "Rachen 🌾",
                     rating = rating,
                     comment = comment,
-                    createdAt = "2025-10-14"
+                    createdAt = "2025-10-16"
                 )
 
                 CartManager.addReview(review)
+
+                // 🆕 FIX: Ubah status jadi "Selesai" setelah review
+                order.status = "Selesai"
+                binding.tvOrderStatus.text = "Status: ${order.status}"
+                updateButtonVisibility(order.status)
+
                 Toast.makeText(
                     requireContext(),
-                    "Terima kasih atas penilaiannya!",
+                    "Terima kasih atas penilaiannya! Pesanan dipindah ke Riwayat.",
                     Toast.LENGTH_SHORT
                 ).show()
+
                 dialog.dismiss()
+
+                // Refresh list dan kembali
+                refreshOrderLists()
             }
             .setNegativeButton("Batal", null)
             .show()

@@ -10,7 +10,6 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.miniproject.R
 import com.example.miniproject.adapter.CategoryAdapter
 import com.example.miniproject.adapter.ProductAdapter
@@ -26,27 +25,25 @@ class HomeFragment : Fragment() {
     private val binding get() = _binding!!
 
     private lateinit var productAdapter: ProductAdapter
-    private val allProducts = mutableListOf<Product>() // ✅ Data asli
-    private val displayProducts = mutableListOf<Product>() // ✅ Data tampil
+    private val allProducts = mutableListOf<Product>() // data asli
+    private val displayProducts = mutableListOf<Product>() // data yang ditampilkan
 
     private lateinit var categoryAdapter: CategoryAdapter
     private val categories = mutableListOf<Category>()
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
+        inflater: LayoutInflater,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
-        Log.d("HomeFragment", "🟢 onCreateView dipanggil")
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        Log.d("HomeFragment", "🟢 onViewCreated mulai setup")
-
         setupCategories()
-        setupRecyclerView() // ini daftar produk yang sudah ada
+        setupRecyclerView()
         loadDummyProducts()
         setupSearch()
         setupFilter()
@@ -54,20 +51,9 @@ class HomeFragment : Fragment() {
 
     private fun setupCategories() {
         categoryAdapter = CategoryAdapter(categories) { category ->
-            // klik kategori → filter produk di Home (opsional, biar useful)
             filterProductsByCategory(category.categoryName)
         }
-        binding.rvCategoriesHome.apply {
-            // PAKAI BENTUK LAMA HOME:
-            // - Kalau dulu horizontal chips:
-            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
-            // - Kalau dulu grid 2 kolom, pakai ini:
-            // layoutManager = GridLayoutManager(requireContext(), 2)
-            adapter = categoryAdapter
-            setHasFixedSize(true)
-        }
 
-        // Isi dari repo → jumlahnya 5 (termasuk Pestisida), match dengan Categories page
         val fromRepo = CategoryRepository.getCategories()
         categories.clear()
         categories.addAll(fromRepo)
@@ -81,31 +67,23 @@ class HomeFragment : Fragment() {
         productAdapter.notifyDataSetChanged()
     }
 
-    // ✅ PERBAIKAN: semua logika klik pindah ke sini
     private fun setupRecyclerView() {
-        Log.d("HomeFragment", "🔧 setupRecyclerView() dipanggil")
-
         productAdapter = ProductAdapter(displayProducts, "user") { product, _ ->
-            Log.d("HomeFragment", "🖱 Produk diklik: ${product.name}")
-
-            // Pindah ke ProductDetailFragment
-            val bundle = Bundle().apply {
-                putParcelable("product", product)
-            }
-
-            val fragment = ProductDetailFragment().apply {
-                arguments = bundle
-            }
-
+            val bundle = Bundle().apply { putParcelable("product", product) }
+            val fragment = ProductDetailFragment().apply { arguments = bundle }
             parentFragmentManager.beginTransaction()
                 .replace(R.id.fragment_container, fragment)
                 .addToBackStack(null)
                 .commit()
         }
 
-        binding.rvHomeProducts.layoutManager = GridLayoutManager(requireContext(), 2)
-        binding.rvHomeProducts.adapter = productAdapter
-        Log.d("HomeFragment", "✅ RecyclerView siap dengan adapter")
+        binding.rvHomeProducts.apply {
+            layoutManager = GridLayoutManager(requireContext(), 2)
+            adapter = productAdapter
+            setHasFixedSize(true)
+            clipToPadding = false
+            isNestedScrollingEnabled = false
+        }
     }
 
     private fun loadDummyProducts() {
@@ -160,14 +138,13 @@ class HomeFragment : Fragment() {
                 categoryName = "Peralatan",
                 createdAt = "2025-01-01"
             ),
-            // --- Produk Dummy Baru -- -
             Product(
                 id = 5,
                 name = "Rotavator Tangan",
                 price = 950000.0,
                 description = "Alat putar penggembur tanah manual atau elektrik",
                 imageUrl = null,
-                imageResId = R.drawable.rotavator, // Pastikan resource ada
+                imageResId = R.drawable.rotavator,
                 categoryId = 1,
                 stock = 7,
                 categoryName = "Peralatan",
@@ -179,7 +156,7 @@ class HomeFragment : Fragment() {
                 price = 85000.0,
                 description = "Sekop multifungsi untuk menggali dan memindahkan material",
                 imageUrl = null,
-                imageResId = R.drawable.sekop, // Pastikan resource ada
+                imageResId = R.drawable.sekop,
                 categoryId = 1,
                 stock = 35,
                 categoryName = "Peralatan",
@@ -191,7 +168,7 @@ class HomeFragment : Fragment() {
                 price = 120000.0,
                 description = "Selang elastis kualitas premium untuk sistem penyiraman",
                 imageUrl = null,
-                imageResId = R.drawable.selang, // Pastikan resource ada
+                imageResId = R.drawable.selang,
                 categoryId = 1,
                 stock = 40,
                 categoryName = "Peralatan",
@@ -203,13 +180,12 @@ class HomeFragment : Fragment() {
                 price = 55000.0,
                 description = "Arit berbahan baja untuk memotong rumput dan panen padi",
                 imageUrl = null,
-                imageResId = R.drawable.arit, // Pastikan resource ada
+                imageResId = R.drawable.arit,
                 categoryId = 1,
                 stock = 20,
                 categoryName = "Peralatan",
                 createdAt = "2025-01-02"
             )
-            // -------------------------
         )
 
         allProducts.clear()
@@ -224,7 +200,6 @@ class HomeFragment : Fragment() {
     private fun setupSearch() {
         binding.etSearchHome.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 val text = s.toString().lowercase().trim()
 
@@ -244,7 +219,6 @@ class HomeFragment : Fragment() {
 
                 Log.d("HomeFragment", "🔎 Search: \"$text\" → ${filtered.size} hasil")
             }
-
             override fun afterTextChanged(s: Editable?) {}
         })
     }
@@ -252,15 +226,16 @@ class HomeFragment : Fragment() {
     private fun setupFilter() {
         binding.btnFilterHome.setOnClickListener {
             Log.d("HomeFragment", "⚙️ Tombol Filter diklik")
+
             val sliderView = layoutInflater.inflate(R.layout.dialog_price_filter, null)
             val slider = sliderView.findViewById<RangeSlider>(R.id.sliderPrice)
 
             val minPrice = allProducts.minOfOrNull { it.price } ?: 0.0
             val maxPrice = allProducts.maxOfOrNull { it.price } ?: 10000000.0
 
-            slider.setValues(minPrice.toFloat(), maxPrice.toFloat())
             slider.valueFrom = minPrice.toFloat()
             slider.valueTo = maxPrice.toFloat()
+            slider.setValues(minPrice.toFloat(), maxPrice.toFloat())
 
             slider.addOnChangeListener { _, _, _ ->
                 val values = slider.values
@@ -286,7 +261,7 @@ class HomeFragment : Fragment() {
                     Log.d("HomeFragment", "✅ Filter harga diterapkan: $minPriceVal - $maxPriceVal → ${filtered.size} hasil")
                     dialog.dismiss()
                 }
-                .setNegativeButton("Reset") { dialog, _ ->
+                .setNegativeButton("Tampilkan Semua") { dialog, _ ->
                     displayProducts.clear()
                     displayProducts.addAll(allProducts)
                     productAdapter.notifyDataSetChanged()
