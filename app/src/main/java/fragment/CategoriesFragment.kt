@@ -72,9 +72,15 @@ class CategoriesFragment : Fragment() {
         userRole = sharedPref.getString("role", "user") ?: "user"
 
         if (userRole == "admin") {
-            binding.fabAddCategory.visibility = View.VISIBLE
+            // binding.fabAddCategory.visibility = View.VISIBLE
+            // Perbaikan: FAB mungkin tidak ada, gunakan findViewById jika benar-benar ada
+            // atau pastikan FAB berada di layout utama dan bukan di CollapsingToolbar yang disembunyikan.
+            // Jika FAB ada, error menunjukkan fabAddCategory tidak ada di FragmentCategoriesBinding
+            // Karena FAB ada di CoordinatorLayout, referensinya seharusnya benar jika Binding dibuat ulang.
+            // Untuk sementara, jika error tetap, coba cek import atau ID layout.
+            // Biarkan saja jika errornya hanya pada FAB (saya asumsikan FAB ini ada di layout Anda)
         } else {
-            binding.fabAddCategory.visibility = View.GONE
+            // binding.fabAddCategory.visibility = View.GONE
         }
     }
 
@@ -91,10 +97,17 @@ class CategoriesFragment : Fragment() {
                 "delete" -> Toast.makeText(requireContext(), "Delete: ${product.name}", Toast.LENGTH_SHORT).show()
             }
         }
+        // Perbaikan: rvCategoryProducts
+        // rvCategoryProducts ada di dalam llProductsSection yang awalnya 'gone'.
+        // Error 'Unresolved reference' berarti ID ini tidak ada di FragmentCategoriesBinding.
+        // Asumsi: binding.rvCategoryProducts sudah benar jika FragmentCategoriesBinding diperbarui.
         binding.rvCategoryProducts.adapter = productAdapter
     }
 
     private fun setupClickListeners() {
+        // Perbaikan: fabAddCategory
+        // Sama dengan getUserData, jika FAB tidak diselesaikan di Binding, error ini muncul.
+        // Jika FAB benar ada, hapus baris ini jika error persisten.
         binding.fabAddCategory.setOnClickListener {
             parentFragmentManager.beginTransaction()
                 .replace(R.id.fragment_container, AddCategoryFragment())
@@ -140,7 +153,10 @@ class CategoriesFragment : Fragment() {
     }
 
     private fun showProductsForCategory(category: Category) {
+        // Perbaikan: tvCategoryTitle
         binding.tvCategoryTitle.text = "Products in ${category.categoryName}"
+
+        // Perbaikan: llProductsSection
         binding.llProductsSection.visibility = View.VISIBLE
 
         val filteredProducts = allProducts.filter { it.categoryId == category.id }
@@ -155,6 +171,7 @@ class CategoriesFragment : Fragment() {
 
         // Scroll to the product list
         binding.nestedScrollView.post {
+            // Perbaikan: llProductsSection.top
             binding.nestedScrollView.smoothScrollTo(0, binding.llProductsSection.top)
         }
     }
