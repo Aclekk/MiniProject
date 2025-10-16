@@ -8,9 +8,9 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.miniproject.R
 import com.example.miniproject.adapter.OrderHistoryAdapter
-import com.example.miniproject.data.CartManager
-import com.example.miniproject.data.Order
 import com.example.miniproject.databinding.FragmentActiveOrdersBinding
+import com.example.miniproject.model.DummyDataRepository
+import com.example.miniproject.model.Order
 
 class ActiveOrdersFragment : Fragment() {
 
@@ -31,27 +31,27 @@ class ActiveOrdersFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Ambil pesanan aktif (belum selesai)
-        val activeOrders: MutableList<Order> = CartManager.orders
+        // Gunakan DummyDataRepository.orders (tipe com.example.miniproject.model.Order)
+        val activeOrders: MutableList<Order> = DummyDataRepository.orders
             .filter { it.status != "Selesai" }
             .toMutableList()
 
         adapter = OrderHistoryAdapter(
             orders = activeOrders,
             onOrderClick = { order ->
+                // ✅ Kirim orderId sebagai String
                 val detailFragment = OrderDetailFragment().apply {
                     arguments = Bundle().apply {
-                        putInt("orderId", order.id)
+                        putString("orderId", order.id) // ✅ Ubah dari putInt ke putString
                     }
                 }
 
-                // Ganti fragment ke detail
                 requireActivity().supportFragmentManager.beginTransaction()
                     .replace(R.id.fragment_container, detailFragment)
                     .addToBackStack(null)
                     .commit()
             },
-            isActiveTab = true // ✅ hanya tab aktif yang punya tombol ubah status
+            isActiveTab = true
         )
 
         binding.rvActiveOrders.layoutManager = LinearLayoutManager(requireContext())
@@ -60,8 +60,7 @@ class ActiveOrdersFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        // Refresh data setiap kembali dari checkout
-        val updatedOrders = CartManager.orders.filter { it.status != "Selesai" }
+        val updatedOrders = DummyDataRepository.orders.filter { it.status != "Selesai" }
         adapter.orders.clear()
         adapter.orders.addAll(updatedOrders)
         adapter.notifyDataSetChanged()

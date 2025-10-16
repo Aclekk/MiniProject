@@ -8,9 +8,9 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.miniproject.R
 import com.example.miniproject.adapter.OrderHistoryAdapter
-import com.example.miniproject.data.CartManager
-import com.example.miniproject.data.Order
 import com.example.miniproject.databinding.FragmentCompletedOrdersBinding
+import com.example.miniproject.model.DummyDataRepository
+import com.example.miniproject.model.Order
 
 class CompletedOrdersFragment : Fragment() {
 
@@ -31,17 +31,17 @@ class CompletedOrdersFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // ambil pesanan yang sudah selesai
-        val completedOrders: MutableList<Order> = CartManager.orders
+        val completedOrders: MutableList<Order> = DummyDataRepository.orders
             .filter { it.status == "Selesai" }
             .toMutableList()
 
         adapter = OrderHistoryAdapter(
             orders = completedOrders,
             onOrderClick = { order ->
+                // ✅ Kirim orderId sebagai String
                 val detailFragment = OrderDetailFragment().apply {
                     arguments = Bundle().apply {
-                        putInt("orderId", order.id)
+                        putString("orderId", order.id) // ✅ Ubah dari putInt ke putString
                     }
                 }
 
@@ -50,7 +50,7 @@ class CompletedOrdersFragment : Fragment() {
                     .addToBackStack(null)
                     .commit()
             },
-            isActiveTab = false // 🚫 Jangan tampilkan tombol ubah status di riwayat
+            isActiveTab = false
         )
 
         binding.rvCompletedOrders.layoutManager = LinearLayoutManager(requireContext())
@@ -59,7 +59,7 @@ class CompletedOrdersFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        val updatedOrders = CartManager.orders.filter { it.status == "Selesai" }
+        val updatedOrders = DummyDataRepository.orders.filter { it.status == "Selesai" }
         adapter.orders.clear()
         adapter.orders.addAll(updatedOrders)
         adapter.notifyDataSetChanged()

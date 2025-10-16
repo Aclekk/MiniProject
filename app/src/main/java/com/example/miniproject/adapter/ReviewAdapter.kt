@@ -4,7 +4,8 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.example.miniproject.databinding.ItemReviewBinding
-import com.example.miniproject.data.Review
+import com.example.miniproject.model.Review
+
 
 class ReviewAdapter(private val reviews: List<Review>) : RecyclerView.Adapter<ReviewAdapter.ReviewViewHolder>() {
 

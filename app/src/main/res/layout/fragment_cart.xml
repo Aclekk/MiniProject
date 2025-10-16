@@ -4,79 +4,37 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp"
-    android:background="#F5F8F2">
+    android:background="@color/white"
+    android:padding="16dp">
 
-    <!-- Judul Keranjang -->
+    <!-- 🔹 Header -->
     <TextView
-        android:text="🛒 Keranjang Belanja"
-        android:textStyle="bold"
+        android:id="@+id/tvCartTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Daftar Pesanan"
         android:textSize="20sp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"/>
+        android:textStyle="bold"
+        android:gravity="center"
+        android:paddingBottom="8dp"
+        android:textColor="@color/black" />
 
-    <!-- List Produk -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvCart"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
-
-    <!-- Total dan Checkout -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:padding="8dp">
-
-        <TextView
-            android:id="@+id/tvTotalCart"
-            android:text="Rp 0"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"/>
-
-        <Button
-            android:id="@+id/btnCheckout"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Checkout"
-            android:backgroundTint="@color/primary_green"
-            android:textColor="@android:color/white"/>
-    </LinearLayout>
-
-    <!-- Divider -->
+    <!-- 🔹 Garis pemisah -->
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="@color/gray"
-        android:layout_marginTop="12dp"
-        android:layout_marginBottom="8dp" />
-
-    <!-- Tabs Pesanan -->
-    <TextView
-        android:text="📦 Pesanan Saya"
-        android:textStyle="bold"
-        android:textSize="18sp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:background="#DDDDDD"
         android:layout_marginBottom="8dp"/>
 
-    <com.google.android.material.tabs.TabLayout
-        android:id="@+id/tabLayoutOrders"
+    <!-- 🔹 RecyclerView Pesanan -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvOrders"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:tabTextColor="@color/black"
-        app:tabIndicatorColor="@color/primary_green"/>
-
-    <androidx.viewpager2.widget.ViewPager2
-        android:id="@+id/viewPagerOrders"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"/>
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:paddingBottom="8dp"
+        android:scrollbars="vertical"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 
 </LinearLayout>

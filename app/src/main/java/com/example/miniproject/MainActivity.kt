@@ -2,111 +2,85 @@ package com.example.miniproject
 
 import android.content.Context
 import android.os.Bundle
-import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
-import com.example.miniproject.fragment.*
-import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.example.miniproject.databinding.ActivityMainBinding
+import com.example.miniproject.fragment.CartFragmentUser
+import com.example.miniproject.fragment.HomeFragment
+import com.example.miniproject.fragment.LoginFragment
+import com.example.miniproject.fragment.ProductsFragment
+import com.example.miniproject.fragment.ProfileFragment
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var bottomNavigation: BottomNavigationView
+    private lateinit var binding: ActivityMainBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        bottomNavigation = findViewById(R.id.bottomNavigation)
-
-        // 🔹 Cek apakah user sudah login
-        if (isUserLoggedIn()) {
-            showMainApp()
-        } else {
+        // Check if user is logged in
+        if (!isUserLoggedIn()) {
             showLoginFragment()
+        } else {
+            // Tampilkan fragment awal
+            if (savedInstanceState == null) {
+                replaceFragment(HomeFragment())
+            }
+            setupBottomNavigation()
         }
+    }
 
-        // 🔹 Listener navigasi bottom bar
-        bottomNavigation.setOnItemSelectedListener { item ->
+    private fun isUserLoggedIn(): Boolean {
+        val sharedPref = getSharedPreferences("user_pref", Context.MODE_PRIVATE)
+        return sharedPref.getBoolean("is_logged_in", false)
+    }
+
+    private fun showLoginFragment() {
+        binding.bottomNavigation.visibility = android.view.View.GONE
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, LoginFragment())
+            .commit()
+    }
+
+    // ✅ Method yang dipanggil dari LoginFragment
+    fun onLoginSuccess() {
+        binding.bottomNavigation.visibility = android.view.View.VISIBLE
+        replaceFragment(HomeFragment())
+        setupBottomNavigation()
+    }
+
+    // 🔹 Navigasi bawah (BottomNavigationView)
+    private fun setupBottomNavigation() {
+        binding.bottomNavigation.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_home -> {
-                    // 🏠 Home = ProductsFragment (tampilan promo/top selling)
-                    open(ProductsFragment())
+                    replaceFragment(HomeFragment())
                     true
                 }
                 R.id.nav_products -> {
-                    // 📦 Products = HomeFragment (katalog grid penuh)
-                    open(HomeFragment())
-                    true
-                }
-                R.id.nav_profile -> {
-                    // 👤 Profil Pembeli
-                    open(ProfileFragment())
-                    true
-                }
-                R.id.nav_categories -> {
-                    // 📂 Kategori produk
-                    open(CategoriesFragment())
+                    replaceFragment(ProductsFragment())
                     true
                 }
                 R.id.nav_cart -> {
-                    // 🛒 Keranjang
-                    open(CartFragment())
+                    // ✅ Gunakan CartFragmentUser untuk tampilan user
+                    replaceFragment(CartFragmentUser())
+                    true
+                }
+                R.id.nav_profile -> {
+                    replaceFragment(ProfileFragment())
                     true
                 }
                 else -> false
             }
         }
-
-        // 🔹 Jika ada intent dari notifikasi ke tab tertentu (misal: Cart)
-        val navigateTo = intent.getStringExtra("navigate_to")
-        if (navigateTo == "cart") {
-            bottomNavigation.selectedItemId = R.id.nav_cart
-            open(CartFragment())
-        }
     }
 
-    // 🔹 Fungsi buka fragment
-    private fun open(fragment: Fragment) {
+    // 🔹 Fungsi ganti fragment
+    private fun replaceFragment(fragment: Fragment) {
         supportFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, fragment)
-            .setReorderingAllowed(true)
             .commit()
-    }
-
-    // 🔹 Saat user sudah login
-    private fun showMainApp() {
-        bottomNavigation.visibility = View.VISIBLE
-        bottomNavigation.selectedItemId = R.id.nav_home
-        open(ProductsFragment()) // default tampilan pertama
-    }
-
-    // 🔹 Saat user belum login
-    private fun showLoginFragment() {
-        bottomNavigation.visibility = View.GONE
-        open(LoginFragment())
-    }
-
-    // 🔹 Simpan status login
-    fun onLoginSuccess() {
-        getSharedPreferences("user_pref", Context.MODE_PRIVATE)
-            .edit()
-            .putBoolean("is_logged_in", true)
-            .apply()
-        showMainApp()
-    }
-
-    // 🔹 Logout
-    fun onLogout() {
-        getSharedPreferences("user_pref", Context.MODE_PRIVATE)
-            .edit()
-            .clear()
-            .apply()
-        showLoginFragment()
-    }
-
-    // 🔹 Cek apakah user sudah login
-    private fun isUserLoggedIn(): Boolean {
-        val sp = getSharedPreferences("user_pref", Context.MODE_PRIVATE)
-        return sp.getBoolean("is_logged_in", false)
     }
 }

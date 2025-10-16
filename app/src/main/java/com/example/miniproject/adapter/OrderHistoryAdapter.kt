@@ -1,51 +1,73 @@
 package com.example.miniproject.adapter
 
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.example.miniproject.data.Order
-import com.example.miniproject.databinding.ItemOrderBinding
+import com.example.miniproject.databinding.ItemOrderHistoryBinding
+import com.example.miniproject.model.Order
+import java.text.NumberFormat
+import java.text.SimpleDateFormat
+import java.util.*
 
 class OrderHistoryAdapter(
     val orders: MutableList<Order>,
     private val onOrderClick: (Order) -> Unit,
-    private val isActiveTab: Boolean = true
+    private val isActiveTab: Boolean
 ) : RecyclerView.Adapter<OrderHistoryAdapter.OrderViewHolder>() {
 
-    inner class OrderViewHolder(val binding: ItemOrderBinding) :
-        RecyclerView.ViewHolder(binding.root)
+    inner class OrderViewHolder(private val binding: ItemOrderHistoryBinding) :
+        RecyclerView.ViewHolder(binding.root) {
+
+        fun bind(order: Order) {
+            val currencyFormat = NumberFormat.getCurrencyInstance(Locale("id", "ID"))
+            val dateFormat = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale("id", "ID"))
+
+            binding.tvOrderId.text = "Order #${order.id}"
+            binding.tvOrderDate.text = dateFormat.format(Date(order.orderDate))
+            binding.tvOrderStatus.text = order.status
+            binding.tvOrderTotal.text = currencyFormat.format(order.totalPrice)
+
+            // Tampilkan produk
+            val productNames = order.products.joinToString(", ") { "${it.name} (${it.quantity}x)" }
+            binding.tvOrderProducts.text = productNames
+
+            // Set status color
+            binding.tvOrderStatus.setTextColor(
+                binding.root.context.getColor(
+                    when (order.status) {
+                        "Menunggu Konfirmasi" -> android.R.color.holo_orange_dark
+                        "Dikemas" -> android.R.color.holo_blue_dark
+                        "Dikirim" -> android.R.color.holo_purple
+                        "Selesai" -> android.R.color.holo_green_dark
+                        else -> android.R.color.darker_gray
+                    }
+                )
+            )
+
+            binding.root.setOnClickListener {
+                onOrderClick(order)
+            }
+        }
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): OrderViewHolder {
-        val binding = ItemOrderBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        val binding = ItemOrderHistoryBinding.inflate(
+            LayoutInflater.from(parent.context),
+            parent,
+            false
+        )
         return OrderViewHolder(binding)
     }
 
     override fun onBindViewHolder(holder: OrderViewHolder, position: Int) {
-        val order = orders[position]
-        holder.binding.tvOrderId.text = "Order #${order.id}"
-        holder.binding.tvOrderStatus.text = "Status: ${order.status}"
-        holder.binding.tvOrderItems.text = "Barang: ${order.products.joinToString { it.name }}"
-        holder.binding.tvOrderTotal.text =
-            "Total: Rp ${String.format("%,d", order.totalPrice.toInt())}"
-
-        // hanya tampilkan tombol ubah status di tab aktif
-        if (isActiveTab && order.status != "Selesai") {
-            holder.binding.btnNextStatus.visibility = View.VISIBLE
-            holder.binding.btnNextStatus.text = when (order.status) {
-                "Belum Bayar" -> "Tandai Dikemas"
-                "Dikemas" -> "Tandai Dikirim"
-                "Dikirim" -> "Tandai Selesai"
-                else -> "Update"
-            }
-            holder.binding.btnNextStatus.setOnClickListener { onOrderClick(order) }
-        } else {
-            holder.binding.btnNextStatus.visibility = View.GONE
-        }
-
-        // klik card untuk lihat detail
-        holder.binding.root.setOnClickListener { onOrderClick(order) }
+        holder.bind(orders[position])
     }
 
-    override fun getItemCount() = orders.size
+    override fun getItemCount(): Int = orders.size
+
+    fun updateData(newOrders: List<Order>) {
+        orders.clear()
+        orders.addAll(newOrders)
+        notifyDataSetChanged()
+    }
 }

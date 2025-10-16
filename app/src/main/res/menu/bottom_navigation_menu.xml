@@ -4,25 +4,21 @@
     <item
         android:id="@+id/nav_home"
         android:icon="@drawable/ic_home"
-        android:title="Home" />
+        android:title="Beranda" />
 
     <item
         android:id="@+id/nav_products"
         android:icon="@drawable/ic_products"
-        android:title="Products" />
-
-    <item
-        android:id="@+id/nav_profile"
-        android:icon="@drawable/ic_person"
-        android:title="Profile" />
-
-    <item
-        android:id="@+id/nav_categories"
-        android:icon="@drawable/ic_category"
-        android:title="Categories" />
+        android:title="Produk" />
 
     <item
         android:id="@+id/nav_cart"
         android:icon="@drawable/ic_cart"
-        android:title="Cart" />
+        android:title="Pesanan" />
+
+    <item
+        android:id="@+id/nav_profile"
+        android:icon="@drawable/ic_profile"
+        android:title="Profil" />
+
 </menu>

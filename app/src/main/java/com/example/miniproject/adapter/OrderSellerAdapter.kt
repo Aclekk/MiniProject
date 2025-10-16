@@ -1,16 +1,14 @@
 package com.example.miniproject.adapter
 
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.example.miniproject.databinding.ItemOrderBinding
 import com.example.miniproject.model.Order
 
-class OrderAdapter(
-    private val userRole: String,
+class OrderSellerAdapter(
     private val onActionClick: (Order) -> Unit
-) : RecyclerView.Adapter<OrderAdapter.ViewHolder>() {
+) : RecyclerView.Adapter<OrderSellerAdapter.ViewHolder>() {
 
     private val orderList = mutableListOf<Order>()
 
@@ -24,24 +22,17 @@ class OrderAdapter(
             val productNames = order.products.joinToString(", ") { it.name }
             binding.tvUserName.text = "Produk: $productNames"
 
-            binding.tvTotalPrice.text =
-                "Total: Rp ${String.format("%,d", order.totalPrice.toInt())}"
+            binding.tvTotalPrice.text = "Total: Rp ${String.format("%,d", order.totalPrice.toInt())}"
             binding.tvStatus.text = "Status: ${order.status}"
 
-            // 🔹 Penjual (admin) bisa ubah status, user tidak
-            if (userRole == "admin") {
-                binding.btnNextStatus.visibility = View.VISIBLE
-                binding.btnNextStatus.text = when (order.status) {
-                    "Menunggu Konfirmasi" -> "Kemas Barang 📦"
-                    "Dikemas" -> "Kirim Barang 🚚"
-                    "Dikirim" -> "Selesaikan ✅"
-                    else -> "Selesai"
-                }
-                binding.btnNextStatus.isEnabled = order.status != "Selesai"
-                binding.btnNextStatus.setOnClickListener { onActionClick(order) }
-            } else {
-                binding.btnNextStatus.visibility = View.GONE
+            binding.btnNextStatus.text = when (order.status) {
+                "Menunggu Konfirmasi" -> "Kemas Barang 📦"
+                "Dikemas" -> "Kirim Barang 🚚"
+                "Dikirim" -> "Selesaikan ✅"
+                else -> "Selesai"
             }
+            binding.btnNextStatus.isEnabled = order.status != "Selesai"
+            binding.btnNextStatus.setOnClickListener { onActionClick(order) }
         }
     }
 

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="12dp"
+    android:background="?attr/selectableItemBackground">
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvSalesDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="15/10"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@color/black"/>
+
+        <TextView
+            android:id="@+id/tvOrderCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="5 pesanan"
+            android:textSize="12sp"
+            android:textColor="#666666"/>
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tvSalesAmount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Rp 5.000.000"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:textColor="#4CAF50"
+        android:layout_gravity="center_vertical"/>
+
+</LinearLayout>

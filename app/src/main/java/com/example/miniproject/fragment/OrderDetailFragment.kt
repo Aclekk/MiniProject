@@ -11,8 +11,10 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.example.miniproject.R
 import com.example.miniproject.data.CartManager
-import com.example.miniproject.data.Review
+import com.example.miniproject.model.Review
 import com.example.miniproject.databinding.FragmentOrderDetailBinding
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 class OrderDetailFragment : Fragment() {
 
@@ -30,57 +32,65 @@ class OrderDetailFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val orderId = arguments?.getInt("orderId") ?: return
+        // ✅ Terima orderId sebagai String
+        val orderId = arguments?.getString("orderId") ?: return
         val order = CartManager.orders.find { it.id == orderId } ?: return
+
+        // Format tanggal
+        val dateFormat = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale("id", "ID"))
+        val formattedDate = dateFormat.format(order.orderDate)
 
         // Tampilkan detail pesanan
         binding.tvOrderId.text = "Order #${order.id}"
         binding.tvOrderStatus.text = "Status: ${order.status}"
-        binding.tvOrderPayment.text = "Metode Pembayaran: ${order.paymentMethod}"
-        binding.tvOrderAddress.text = "Alamat: ${order.address}"
 
-        val productList = order.products.joinToString("\n") {
-            "- ${it.name} (Rp ${it.price.toInt()})"
-        }
-        binding.tvOrderProducts.text = productList
-        binding.tvOrderTotal.text = "Total: Rp ${order.totalPrice.toInt()}"
+        // Tampilkan info tambahan (userName dan tanggal)
+        binding.tvOrderPayment.text = "Pemesan: ${order.userName}"
+        binding.tvOrderAddress.text = "Tanggal: $formattedDate"
+
+        // Tampilkan daftar produk dari items (List<String>)
+        val productList = order.items?.joinToString("\n") { "- $it" } ?: "Tidak ada produk"
+        binding.tvOrderProducts.text = "Produk:\n$productList"
+
+        binding.tvOrderTotal.text = "Total: Rp ${String.format("%,d", order.totalPrice.toInt())}"
 
         // Tombol "Beri Penilaian" hanya muncul kalau status Selesai
         binding.btnRateNow.visibility =
             if (order.status == "Selesai") View.VISIBLE else View.GONE
 
         binding.btnRateNow.setOnClickListener {
-            showRatingDialog(order.products.first().id)
+            // Ambil productId dari produk pertama
+            val productId = order.products.firstOrNull()?.id ?: "1"
+            showRatingDialog(productId)
         }
 
-        // ✅ Tambahkan tombol "Ubah Status"
+        // ✅ Tombol "Ubah Status"
         binding.btnNextStatus.setOnClickListener {
             val currentStatus = order.status
             val nextStatus = when (currentStatus) {
-                "Belum Bayar" -> "Dikemas"
-                "Dikemas" -> "Dikirim"
+                "Menunggu Konfirmasi" -> "Dikirim"
                 "Dikirim" -> "Selesai"
                 else -> "Selesai"
             }
 
-            order.status = nextStatus
-            binding.tvOrderStatus.text = "Status: ${order.status}"
+            CartManager.updateOrderStatus(order.id, nextStatus)
+            binding.tvOrderStatus.text = "Status: $nextStatus"
 
             Toast.makeText(
                 requireContext(),
-                "Status diubah ke ${order.status}",
+                "Status diubah ke $nextStatus",
                 Toast.LENGTH_SHORT
             ).show()
 
             // Kalau sudah selesai, munculkan tombol rating
-            if (order.status == "Selesai") {
+            if (nextStatus == "Selesai") {
                 binding.btnRateNow.visibility = View.VISIBLE
             }
         }
     }
 
     // 🔸 Dialog Rating
-    private fun showRatingDialog(productId: Int) {
+    private fun showRatingDialog(productId: String) {
         val dialogView = LayoutInflater.from(requireContext())
             .inflate(R.layout.dialog_add_review, null)
         val ratingBar = dialogView.findViewById<RatingBar>(R.id.ratingBar)
@@ -103,11 +113,12 @@ class OrderDetailFragment : Fragment() {
                 }
 
                 val review = Review(
+                    id = "REV${System.currentTimeMillis()}",
                     productId = productId,
                     userName = "Rachen 🌾",
                     rating = rating,
                     comment = comment,
-                    createdAt = "2025-10-14"
+                    reviewDate = System.currentTimeMillis()
                 )
 
                 CartManager.addReview(review)

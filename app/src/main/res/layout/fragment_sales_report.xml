@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp"
+    android:background="@color/white">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvSummary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Laporan Penjualan"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:paddingBottom="12dp" />
+
+        <TextView
+            android:id="@+id/tvTotalOrders"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Total Pesanan:" />
+
+        <TextView
+            android:id="@+id/tvTotalRevenue"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Total Pendapatan:" />
+
+        <TextView
+            android:id="@+id/tvAvgRevenue"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Rata-rata Pendapatan:" />
+
+        <TextView
+            android:id="@+id/tvBestSeller"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Produk Terlaris:"
+            android:layout_marginTop="12dp" />
+    </LinearLayout>
+</ScrollView>

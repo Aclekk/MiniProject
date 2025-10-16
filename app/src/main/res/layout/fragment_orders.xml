@@ -1,21 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#F5F5F5">
 
-    <com.google.android.material.tabs.TabLayout
-        android:id="@+id/tabLayout"
+    <!-- Header -->
+    <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/primary_green"
-        app:tabTextColor="@color/white"
-        app:tabIndicatorColor="@color/accent_yellow"
-        app:tabSelectedTextColor="@color/white"
-        app:tabIndicatorHeight="4dp"/>
+        app:cardElevation="4dp"
+        app:cardCornerRadius="0dp">
 
-    <androidx.viewpager2.widget.ViewPager2
-        android:id="@+id/viewPager"
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📦 Pesanan Saya"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="@color/black"/>
+
+        </LinearLayout>
+
+    </androidx.cardview.widget.CardView>
+
+    <!-- Filter Buttons -->
+    <HorizontalScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="wrap_content"
+        android:scrollbars="none"
+        android:padding="12dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnFilterAll"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:text="Semua"
+                android:textSize="12sp"
+                android:backgroundTint="#607D8B"
+                android:layout_marginEnd="8dp"
+                style="@style/Widget.Material3.Button"/>
+
+            <Button
+                android:id="@+id/btnFilterWaiting"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:text="⏳ Menunggu"
+                android:textSize="12sp"
+                android:backgroundTint="#FF9800"
+                android:layout_marginEnd="8dp"
+                style="@style/Widget.Material3.Button"/>
+
+            <Button
+                android:id="@+id/btnFilterPacking"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:text="📦 Dikemas"
+                android:textSize="12sp"
+                android:backgroundTint="#2196F3"
+                android:layout_marginEnd="8dp"
+                style="@style/Widget.Material3.Button"/>
+
+            <Button
+                android:id="@+id/btnFilterShipping"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:text="🚚 Dikirim"
+                android:textSize="12sp"
+                android:backgroundTint="#9C27B0"
+                android:layout_marginEnd="8dp"
+                style="@style/Widget.Material3.Button"/>
+
+            <Button
+                android:id="@+id/btnFilterCompleted"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:text="✅ Selesai"
+                android:textSize="12sp"
+                android:backgroundTint="#4CAF50"
+                style="@style/Widget.Material3.Button"/>
+
+        </LinearLayout>
+
+    </HorizontalScrollView>
+
+    <!-- Orders List -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvOrders"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:paddingBottom="8dp"/>
+
+    <!-- Empty State -->
+    <TextView
+        android:id="@+id/tvEmptyOrders"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:text="📦\n\nBelum Ada Pesanan\n\nYuk belanja sekarang!"
+        android:textSize="16sp"
+        android:textColor="#666666"
+        android:gravity="center"
+        android:visibility="gone"/>
+
 </LinearLayout>
