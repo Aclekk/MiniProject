@@ -1,18 +1,21 @@
 package com.example.miniproject.fragment
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.example.miniproject.adapter.CartAdapter
 import com.example.miniproject.data.CartManager
 import com.example.miniproject.databinding.FragmentCartBinding
-import com.google.android.material.tabs.TabLayoutMediator
 import com.example.miniproject.ui.CheckoutActivity
+import com.google.android.material.tabs.TabLayoutMediator
 
 class CartFragment : Fragment() {
 
@@ -40,11 +43,10 @@ class CartFragment : Fragment() {
             if (CartManager.cartItems.isEmpty()) {
                 Toast.makeText(requireContext(), "Keranjang kosong!", Toast.LENGTH_SHORT).show()
             } else {
-                // 🆕 FIX: Kirim flag "from_cart" ke CheckoutActivity
                 val intent = Intent(requireContext(), CheckoutActivity::class.java)
                 intent.putExtra("product", CartManager.cartItems.first())
                 intent.putExtra("quantity", 1)
-                intent.putExtra("from_cart", true) // ✅ Tambahkan flag ini
+                intent.putExtra("from_cart", true)
                 startActivity(intent)
             }
         }
@@ -63,12 +65,28 @@ class CartFragment : Fragment() {
         val tabLayout = binding.tabLayoutOrders
         val viewPager = binding.viewPagerOrders
 
-        viewPager.adapter = object : androidx.viewpager2.adapter.FragmentStateAdapter(this) {
+        val pagerAdapter = object : FragmentStateAdapter(this) {
             override fun getItemCount(): Int = 2
             override fun createFragment(position: Int): Fragment {
-                return if (position == 0) ActiveOrdersFragment() else CompletedOrdersFragment()
+                // 🔥 BACA ROLE DARI SHAREDPREFERENCES
+                val sharedPref = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
+                val userRole = sharedPref.getString("role", "user") ?: "user"
+
+                Log.d("CartFragment", "User role: $userRole")
+
+                return if (userRole == "admin") {
+                    // ADMIN: Pakai fragment dengan button
+                    if (position == 0) AdminOrderListFragment()
+                    else AdminOrderHistoryFragment()
+                } else {
+                    // USER: Pakai fragment tanpa button
+                    if (position == 0) ActiveOrdersFragment()
+                    else CompletedOrdersFragment()
+                }
             }
         }
+
+        viewPager.adapter = pagerAdapter
 
         TabLayoutMediator(tabLayout, viewPager) { tab, position ->
             tab.text = if (position == 0) "Pesanan Aktif" else "Riwayat Pesanan"

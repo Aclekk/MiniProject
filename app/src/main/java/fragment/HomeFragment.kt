@@ -1,6 +1,7 @@
 package com.example.miniproject.fragment
 
 import android.app.AlertDialog
+import android.content.Context
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -8,12 +9,14 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
 import com.example.miniproject.R
 import com.example.miniproject.adapter.CategoryAdapter
 import com.example.miniproject.adapter.ProductAdapter
 import com.example.miniproject.data.CategoryRepository
+import com.example.miniproject.data.ProductDataSource
 import com.example.miniproject.databinding.FragmentHomeBinding
 import com.example.miniproject.model.Category
 import com.example.miniproject.model.Product
@@ -25,7 +28,6 @@ class HomeFragment : Fragment() {
     private val binding get() = _binding!!
 
     private lateinit var productAdapter: ProductAdapter
-    private val allProducts = mutableListOf<Product>() // data asli
     private val displayProducts = mutableListOf<Product>() // data yang ditampilkan
 
     private lateinit var categoryAdapter: CategoryAdapter
@@ -44,9 +46,34 @@ class HomeFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         setupCategories()
         setupRecyclerView()
-        loadDummyProducts()
+        loadProducts()
         setupSearch()
         setupFilter()
+        setupFAB() //
+    }
+    private fun setupFAB() {
+        val sharedPreferences = requireContext().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
+        val userRole = sharedPreferences.getString("role", "user") ?: "user"
+
+        // Tampilkan FAB hanya untuk admin
+        if (userRole == "admin") {
+            binding.fabAddProduct.visibility = View.VISIBLE
+
+            binding.fabAddProduct.setOnClickListener {
+                val fragment = AddProductFragment()
+                parentFragmentManager.beginTransaction()
+                    .replace(R.id.fragment_container, fragment)
+                    .addToBackStack(null)
+                    .commit()
+            }
+        } else {
+            binding.fabAddProduct.visibility = View.GONE
+        }
+    }
+    override fun onResume() {
+        super.onResume()
+        // Refresh data setiap kali fragment visible
+        refreshProducts()
     }
 
     private fun setupCategories() {
@@ -61,6 +88,7 @@ class HomeFragment : Fragment() {
     }
 
     private fun filterProductsByCategory(name: String) {
+        val allProducts = ProductDataSource.getAllProducts()
         val filtered = allProducts.filter { it.categoryName.equals(name, ignoreCase = true) }
         displayProducts.clear()
         displayProducts.addAll(filtered)
@@ -68,13 +96,47 @@ class HomeFragment : Fragment() {
     }
 
     private fun setupRecyclerView() {
-        productAdapter = ProductAdapter(displayProducts, "user") { product, _ ->
-            val bundle = Bundle().apply { putParcelable("product", product) }
-            val fragment = ProductDetailFragment().apply { arguments = bundle }
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, fragment)
-                .addToBackStack(null)
-                .commit()
+        val sharedPreferences = requireContext().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
+        val userRole = sharedPreferences.getString("role", "user") ?: "user"
+
+        Log.d("HomeFragment", "👤 User Role: $userRole")
+
+        productAdapter = ProductAdapter(displayProducts, userRole) { product, action ->
+            when (action) {
+                "edit" -> {
+                    Log.d("HomeFragment", "✏️ Edit product: ${product.name}")
+                    val bundle = Bundle().apply { putParcelable("product", product) }
+                    val fragment = EditProductFragment().apply { arguments = bundle }
+                    parentFragmentManager.beginTransaction()
+                        .replace(R.id.fragment_container, fragment)
+                        .addToBackStack(null)
+                        .commit()
+                }
+                "delete" -> {
+                    Log.d("HomeFragment", "🗑️ Delete product: ${product.name}")
+                    AlertDialog.Builder(requireContext())
+                        .setTitle("Hapus Produk")
+                        .setMessage("Yakin ingin menghapus ${product.name}?")
+                        .setPositiveButton("Hapus") { dialog, _ ->
+                            ProductDataSource.deleteProduct(product)
+                            refreshProducts()
+                            Toast.makeText(context, "✅ Produk dihapus", Toast.LENGTH_SHORT).show()
+                            dialog.dismiss()
+                        }
+                        .setNegativeButton("Batal") { dialog, _ ->
+                            dialog.dismiss()
+                        }
+                        .show()
+                }
+                "view" -> {
+                    val bundle = Bundle().apply { putParcelable("product", product) }
+                    val fragment = ProductDetailFragment().apply { arguments = bundle }
+                    parentFragmentManager.beginTransaction()
+                        .replace(R.id.fragment_container, fragment)
+                        .addToBackStack(null)
+                        .commit()
+                }
+            }
         }
 
         binding.rvHomeProducts.apply {
@@ -86,114 +148,21 @@ class HomeFragment : Fragment() {
         }
     }
 
-    private fun loadDummyProducts() {
-        Log.d("HomeFragment", "📦 Memuat produk dummy...")
+    private fun loadProducts() {
+        Log.d("HomeFragment", "📦 Memuat produk...")
 
-        val dummy = listOf(
-            Product(
-                id = 1,
-                name = "Cangkul Premium",
-                price = 150000.0,
-                description = "Cangkul baja berkualitas tinggi untuk mengolah tanah",
-                imageUrl = null,
-                imageResId = R.drawable.cangkul,
-                categoryId = 1,
-                stock = 10,
-                categoryName = "Peralatan",
-                createdAt = "2025-01-01"
-            ),
-            Product(
-                id = 2,
-                name = "Pupuk Organik 25kg",
-                price = 200000.0,
-                description = "Pupuk alami ramah lingkungan berkualitas premium",
-                imageUrl = null,
-                imageResId = R.drawable.pupuk,
-                categoryId = 2,
-                stock = 30,
-                categoryName = "Pupuk",
-                createdAt = "2025-01-01"
-            ),
-            Product(
-                id = 3,
-                name = "Benih Padi Premium",
-                price = 50000.0,
-                description = "Benih unggul padi hasil seleksi terbaik",
-                imageUrl = null,
-                imageResId = R.drawable.benih,
-                categoryId = 3,
-                stock = 100,
-                categoryName = "Benih",
-                createdAt = "2025-01-01"
-            ),
-            Product(
-                id = 4,
-                name = "Traktor Mini",
-                price = 5000000.0,
-                description = "Traktor pertanian mini untuk lahan kecil dan menengah",
-                imageUrl = null,
-                imageResId = R.drawable.traktor,
-                categoryId = 4,
-                stock = 5,
-                categoryName = "Peralatan",
-                createdAt = "2025-01-01"
-            ),
-            Product(
-                id = 5,
-                name = "Rotavator Tangan",
-                price = 950000.0,
-                description = "Alat putar penggembur tanah manual atau elektrik",
-                imageUrl = null,
-                imageResId = R.drawable.rotavator,
-                categoryId = 1,
-                stock = 7,
-                categoryName = "Peralatan",
-                createdAt = "2025-01-02"
-            ),
-            Product(
-                id = 6,
-                name = "Sekop Kebun",
-                price = 85000.0,
-                description = "Sekop multifungsi untuk menggali dan memindahkan material",
-                imageUrl = null,
-                imageResId = R.drawable.sekop,
-                categoryId = 1,
-                stock = 35,
-                categoryName = "Peralatan",
-                createdAt = "2025-01-02"
-            ),
-            Product(
-                id = 7,
-                name = "Selang Irigasi 20m",
-                price = 120000.0,
-                description = "Selang elastis kualitas premium untuk sistem penyiraman",
-                imageUrl = null,
-                imageResId = R.drawable.selang,
-                categoryId = 1,
-                stock = 40,
-                categoryName = "Peralatan",
-                createdAt = "2025-01-02"
-            ),
-            Product(
-                id = 8,
-                name = "Arit Tajam",
-                price = 55000.0,
-                description = "Arit berbahan baja untuk memotong rumput dan panen padi",
-                imageUrl = null,
-                imageResId = R.drawable.arit,
-                categoryId = 1,
-                stock = 20,
-                categoryName = "Peralatan",
-                createdAt = "2025-01-02"
-            )
-        )
+        // Load dummy data (hanya sekali saat app start)
+        ProductDataSource.loadDummyData()
 
-        allProducts.clear()
-        allProducts.addAll(dummy)
+        refreshProducts()
+    }
+
+    private fun refreshProducts() {
+        val allProducts = ProductDataSource.getAllProducts()
         displayProducts.clear()
-        displayProducts.addAll(dummy)
+        displayProducts.addAll(allProducts)
 
-        Log.d("HomeFragment", "✅ Produk dimuat: ${allProducts.size}")
+        Log.d("HomeFragment", "✅ Produk dimuat: ${displayProducts.size}")
         productAdapter.notifyDataSetChanged()
     }
 
@@ -202,6 +171,7 @@ class HomeFragment : Fragment() {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 val text = s.toString().lowercase().trim()
+                val allProducts = ProductDataSource.getAllProducts()
 
                 val filtered = if (text.isEmpty()) {
                     allProducts.toList()
@@ -230,6 +200,7 @@ class HomeFragment : Fragment() {
             val sliderView = layoutInflater.inflate(R.layout.dialog_price_filter, null)
             val slider = sliderView.findViewById<RangeSlider>(R.id.sliderPrice)
 
+            val allProducts = ProductDataSource.getAllProducts()
             val minPrice = allProducts.minOfOrNull { it.price } ?: 0.0
             val maxPrice = allProducts.maxOfOrNull { it.price } ?: 10000000.0
 

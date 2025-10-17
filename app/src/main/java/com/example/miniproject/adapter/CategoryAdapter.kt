@@ -36,15 +36,15 @@ class CategoryAdapter(
             categoryName.text = category.categoryName
 
             // 2. Set Ikon Berdasarkan Nama Kategori
+            // 2. Set Ikon Berdasarkan Nama Kategori
             val iconResId = when (category.categoryName) {
-                "Pertanian" -> R.drawable.pertanian
-                "Pupuk"     -> R.drawable.pupukk     // Menggunakan pupukk.png
-                "Benih"     -> R.drawable.benihh     // Menggunakan benihh.png
-                "Peralatan" -> R.drawable.peralatan
-                "Pestisida" -> R.drawable.pest
+                "Pertanian" -> android.R.drawable.ic_menu_crop          // ikon daun
+                "Pupuk"     -> android.R.drawable.ic_menu_gallery       // ikon pupuk (sementara)
+                "Benih"     -> android.R.drawable.ic_menu_agenda        // ikon benih
+                "Peralatan" -> android.R.drawable.ic_menu_manage        // ikon gear
+                "Pestisida" -> android.R.drawable.ic_menu_info_details  // ikon info
 
-                // Tambahkan kategori lain jika ada
-                else        -> R.drawable.ic_default_category // Ikon cadangan
+                else        -> android.R.drawable.ic_menu_help          // cadangan
             }
 
             categoryIcon.setImageResource(iconResId) // Terapkan ikon ke ImageView

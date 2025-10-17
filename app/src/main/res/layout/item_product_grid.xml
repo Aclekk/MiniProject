@@ -170,6 +170,58 @@
                     android:textStyle="bold"
                     android:layout_marginStart="4dp" />
             </LinearLayout>
+
+            <!-- 📦 Stok -->
+            <TextView
+                android:id="@+id/tvProductStock"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Stok: 0"
+                android:textColor="@android:color/white"
+                android:textSize="12sp"
+                android:layout_marginTop="6dp" />
+
+            <!-- 🏷️ Kategori -->
+            <TextView
+                android:id="@+id/tvProductCategory"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Kategori"
+                android:textColor="@android:color/white"
+                android:textSize="12sp"
+                android:layout_marginTop="2dp" />
+
+            <!-- 🔧 Tombol Admin -->
+            <LinearLayout
+                android:id="@+id/llAdminActions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginTop="12dp"
+                android:background="#4CAF50"
+                android:padding="8dp"
+                android:visibility="gone">
+
+                <Button
+                    android:id="@+id/btnEdit"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="EDIT"
+                    android:textColor="#FFFFFF"
+                    android:backgroundTint="#FBC02D"
+                    android:layout_marginEnd="8dp" />
+
+                <Button
+                    android:id="@+id/btnDelete"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="DELETE"
+                    android:textColor="#FFFFFF"
+                    android:backgroundTint="#E53935" />
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
     <!-- ==================== /KONTEN KOTAK PRODUK ==================== -->

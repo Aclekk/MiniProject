@@ -31,7 +31,6 @@ class ActiveOrdersFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Ambil pesanan aktif (belum selesai)
         val activeOrders: MutableList<Order> = CartManager.orders
             .filter { it.status != "Selesai" }
             .toMutableList()
@@ -44,14 +43,12 @@ class ActiveOrdersFragment : Fragment() {
                         putInt("orderId", order.id)
                     }
                 }
-
-                // Ganti fragment ke detail
                 requireActivity().supportFragmentManager.beginTransaction()
                     .replace(R.id.fragment_container, detailFragment)
                     .addToBackStack(null)
                     .commit()
             },
-            isActiveTab = true // ✅ hanya tab aktif yang punya tombol ubah status
+            isActiveTab = true // 🔥 HAPUS parameter isAdminView
         )
 
         binding.rvActiveOrders.layoutManager = LinearLayoutManager(requireContext())
@@ -60,7 +57,6 @@ class ActiveOrdersFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        // Refresh data setiap kembali dari checkout
         val updatedOrders = CartManager.orders.filter { it.status != "Selesai" }
         adapter.orders.clear()
         adapter.orders.addAll(updatedOrders)

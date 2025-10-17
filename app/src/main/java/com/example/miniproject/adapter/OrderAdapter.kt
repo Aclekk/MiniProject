@@ -6,9 +6,10 @@ import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import android.util.Log
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -34,29 +35,39 @@ class OrderAdapter(
         val order = orders[position]
         val context = holder.binding.root.context
 
+        // 🔥 LOG DEBUGGING
+        Log.d("OrderAdapter", "Binding order #${order.id} at position $position")
+        Log.d("OrderAdapter", "Status: ${order.status}")
+
         holder.binding.tvOrderId.text = "Order #${order.id}"
-        holder.binding.tvOrderStatus.text = "Status: ${order.status}"
+        holder.binding.tvOrderStatus.text = order.status
         holder.binding.tvOrderTotal.text =
-            "Total: Rp ${String.format("%,d", order.totalPrice.toInt())}"
+            "Rp ${String.format("%,d", order.totalPrice.toInt())}"
 
         val productNames = order.products.joinToString { it.name }
-        holder.binding.tvOrderItems.text = "Barang: $productNames"
+        holder.binding.tvOrderItems.text = productNames
 
+        // 🔥 BUTTON ADMIN - PASTIKAN VISIBLE
         holder.binding.btnNextStatus.apply {
+            visibility = View.VISIBLE
+
             text = when (order.status) {
-                "Belum Bayar" -> "Tandai Dikemas"
-                "Dikemas" -> "Tandai Dikirim"
-                "Dikirim" -> "Tandai Selesai"
-                "Selesai" -> "Selesai ✅"
+                "Belum Bayar" -> "✅ Konfirmasi Pembayaran"
+                "Dikemas" -> "🚚 Tandai Dikirim"
+                "Dikirim" -> "✔️ Tandai Selesai"
+                "Selesai" -> "✅ Selesai"
                 else -> "Update"
             }
+
             isEnabled = order.status != "Selesai"
 
-            setOnClickListener {
-                onNextStatus?.invoke(order)
+            // 🔥 LOG BUTTON
+            Log.d("OrderAdapter", "Button text: $text, Visible: $visibility, Enabled: $isEnabled")
 
-                if (order.status == "Dikirim" || order.status == "Selesai") {
-                    showStatusNotification(context, order.status)
+            setOnClickListener {
+                if (order.status != "Selesai") {
+                    Log.d("OrderAdapter", "Button clicked for order #${order.id}")
+                    onNextStatus?.invoke(order)
                 }
             }
         }
@@ -83,7 +94,7 @@ class OrderAdapter(
         val message = when (status) {
             "Dikirim" -> "Pesananmu sedang dalam perjalanan 🚚"
             "Selesai" -> "Pesananmu telah tiba 🎉"
-            else -> "Status pesanan kamu: $status"
+            else -> "Status pesanan: $status"
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -93,23 +104,22 @@ class OrderAdapter(
             ) == PackageManager.PERMISSION_GRANTED
 
             if (!hasPermission) {
-                Toast.makeText(
-                    context,
-                    "Aktifkan izin notifikasi di pengaturan 📱",
-                    Toast.LENGTH_SHORT
-                ).show()
                 return
             }
         }
 
         val notification = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(R.drawable.baseline_notifications_24)
-            .setContentTitle("Status Pesanan Kamu 📦")
+            .setContentTitle("Status Pesanan 📦")
             .setContentText(message)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .build()
 
-        NotificationManagerCompat.from(context).notify(notificationId, notification)
+        try {
+            NotificationManagerCompat.from(context).notify(notificationId, notification)
+        } catch (e: Exception) {
+            Log.e("OrderAdapter", "❌ Error showing notification: ${e.message}")
+        }
     }
 }

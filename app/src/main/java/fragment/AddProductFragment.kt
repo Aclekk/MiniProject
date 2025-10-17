@@ -8,21 +8,15 @@ import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.example.miniproject.R
+import com.example.miniproject.data.CategoryRepository
+import com.example.miniproject.data.ProductDataSource
 import com.example.miniproject.databinding.FragmentAddProductBinding
+import com.example.miniproject.model.Product
 
 class AddProductFragment : Fragment() {
 
     private var _binding: FragmentAddProductBinding? = null
     private val binding get() = _binding!!
-
-    // DUMMY CATEGORIES
-    private val dummyCategories = listOf(
-        "Pertanian",
-        "Pupuk",
-        "Benih",
-        "Peralatan",
-        "Pestisida"
-    )
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -35,23 +29,30 @@ class AddProductFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        // Setup spinner dengan dummy categories
         setupCategorySpinner()
-
-        // Setup click listeners
-        binding.btnSaveProduct.setOnClickListener { saveProduct() }
-        binding.btnCancel.setOnClickListener { goBackToProducts() }
+        setupClickListeners()
     }
 
     private fun setupCategorySpinner() {
+        val categories = CategoryRepository.getCategories()
+        val categoryNames = categories.map { it.categoryName }
+
         val adapter = ArrayAdapter(
             requireContext(),
-            android.R.layout.simple_spinner_item,
-            dummyCategories
+            android.R.layout.simple_spinner_dropdown_item,
+            categoryNames
         )
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         binding.spinnerCategory.adapter = adapter
+    }
+
+    private fun setupClickListeners() {
+        binding.btnSave.setOnClickListener {
+            saveProduct()
+        }
+
+        binding.btnCancel.setOnClickListener {
+            parentFragmentManager.popBackStack()
+        }
     }
 
     private fun saveProduct() {
@@ -59,72 +60,60 @@ class AddProductFragment : Fragment() {
         val priceStr = binding.etProductPrice.text.toString().trim()
         val description = binding.etProductDescription.text.toString().trim()
         val stockStr = binding.etProductStock.text.toString().trim()
-        val selectedCategory = binding.spinnerCategory.selectedItem.toString()
+        val categoryName = binding.spinnerCategory.selectedItem.toString()
 
-        // Validasi input
-        if (!validateInput(name, priceStr, stockStr)) return
-
-        val price = priceStr.toDouble()
-        val stock = stockStr.toInt()
-
-        // DUMMY SAVE - Hanya tampil Toast
-        Toast.makeText(
-            requireContext(),
-            "Product '$name' added successfully!\nCategory: $selectedCategory\nPrice: Rp $price\nStock: $stock",
-            Toast.LENGTH_LONG
-        ).show()
-
-        // Clear input
-        clearInput()
-
-        // Kembali ke ProductsFragment
-        goBackToProducts()
-    }
-
-    private fun validateInput(name: String, price: String, stock: String): Boolean {
-        return when {
-            name.isEmpty() -> {
-                binding.etProductName.error = "Name required"
-                false
-            }
-            price.isEmpty() -> {
-                binding.etProductPrice.error = "Price required"
-                false
-            }
-            stock.isEmpty() -> {
-                binding.etProductStock.error = "Stock required"
-                false
-            }
-            else -> {
-                try {
-                    price.toDouble()
-                    stock.toInt()
-                    true
-                } catch (e: NumberFormatException) {
-                    Toast.makeText(
-                        requireContext(),
-                        "Invalid price or stock format",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    false
-                }
-            }
+        // Validasi
+        if (name.isEmpty()) {
+            binding.etProductName.error = "Nama produk harus diisi"
+            return
         }
+        if (priceStr.isEmpty()) {
+            binding.etProductPrice.error = "Harga harus diisi"
+            return
+        }
+        if (stockStr.isEmpty()) {
+            binding.etProductStock.error = "Stok harus diisi"
+            return
+        }
+
+        // Generate ID baru (auto-increment dari ID terakhir)
+        val allProducts = ProductDataSource.getAllProducts()
+        val newId = if (allProducts.isEmpty()) 1 else (allProducts.maxOf { it.id } + 1)
+
+        // Get category ID
+        val categories = CategoryRepository.getCategories()
+        val selectedCategory = categories.find { it.categoryName == categoryName }
+        val categoryId = selectedCategory?.id ?: 1
+
+        // Buat produk baru
+        val newProduct = Product(
+            id = newId,
+            name = name,
+            price = priceStr.toDouble(),
+            description = description,
+            imageUrl = null,
+            imageResId = getDefaultImageForCategory(categoryName),
+            categoryId = categoryId,
+            stock = stockStr.toInt(),
+            categoryName = categoryName,
+            createdAt = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+                .format(java.util.Date())
+        )
+
+        // Tambahkan ke ProductDataSource
+        ProductDataSource.getAllProducts().add(newProduct)
+
+        Toast.makeText(context, "✅ Produk berhasil ditambahkan!", Toast.LENGTH_SHORT).show()
+        parentFragmentManager.popBackStack()
     }
 
-    private fun clearInput() {
-        binding.etProductName.text?.clear()
-        binding.etProductPrice.text?.clear()
-        binding.etProductDescription.text?.clear()
-        binding.etProductImageUrl.text?.clear()
-        binding.etProductStock.text?.clear()
-    }
-
-    private fun goBackToProducts() {
-        parentFragmentManager.beginTransaction()
-            .replace(R.id.fragment_container, ProductsFragment())
-            .addToBackStack(null)
-            .commit()
+    private fun getDefaultImageForCategory(categoryName: String): Int {
+        return when (categoryName) {
+            "Peralatan" -> R.drawable.cangkul
+            "Pupuk" -> R.drawable.pupuk
+            "Benih" -> R.drawable.benih
+            else -> R.drawable.bg_card
+        }
     }
 
     override fun onDestroyView() {

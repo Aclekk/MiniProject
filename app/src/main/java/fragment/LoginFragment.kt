@@ -89,7 +89,7 @@ class LoginFragment : Fragment() {
                 Toast.LENGTH_SHORT
             ).show()
 
-            navigateToProducts()
+            navigateToProducts(user.username, user.role)
         } else {
             showLoading(false)
             Toast.makeText(
@@ -98,6 +98,8 @@ class LoginFragment : Fragment() {
                 Toast.LENGTH_SHORT
             ).show()
         }
+
+
     }
 
 
@@ -117,9 +119,11 @@ class LoginFragment : Fragment() {
         }
     }
 
-    private fun navigateToProducts() {
-        (requireActivity() as MainActivity).onLoginSuccess()
+    private fun navigateToProducts(username: String, role: String) {
+        (requireActivity() as MainActivity).onLoginSuccess(username, role)
     }
+
+
 
     override fun onDestroyView() {
         super.onDestroyView()

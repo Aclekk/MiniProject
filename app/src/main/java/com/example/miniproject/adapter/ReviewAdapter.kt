@@ -3,36 +3,30 @@ package com.example.miniproject.adapter
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.example.miniproject.R
 import com.example.miniproject.data.Review
 import com.example.miniproject.databinding.ItemReviewBinding
-import java.text.SimpleDateFormat
-import java.util.Locale
 
 class ReviewAdapter(
-    private val reviews: List<Review>
+    private val reviews: List<Triple<Review, String, Int?>> // (Review, ProductName, ImageResId)
 ) : RecyclerView.Adapter<ReviewAdapter.ReviewViewHolder>() {
 
     inner class ReviewViewHolder(private val binding: ItemReviewBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(review: Review) {
+        fun bind(item: Triple<Review, String, Int?>) {
+            val (review, productName, imageResId) = item
+
+            binding.tvProductName.text = productName
             binding.tvUserName.text = review.userName
-            binding.rbUserRating.rating = review.rating
+            binding.tvReviewDate.text = review.createdAt
+            binding.ratingBar.rating = review.rating
             binding.tvReviewComment.text = review.comment
 
-            // Format date
-            try {
-                val inputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                val outputFormat = SimpleDateFormat("dd MMM", Locale.getDefault())
-                val date = inputFormat.parse(review.createdAt)
-                binding.tvReviewDate.text = date?.let { outputFormat.format(it) } ?: review.createdAt
-            } catch (e: Exception) {
-                binding.tvReviewDate.text = review.createdAt
-            }
-
-            // User initial for avatar
-            val initial = review.userName.firstOrNull()?.uppercase() ?: "?"
-            binding.tvUserInitial.text = initial
+            // Set gambar produk
+            imageResId?.let {
+                binding.ivProductImage.setImageResource(it)
+            } ?: binding.ivProductImage.setImageResource(R.drawable.bg_card)
         }
     }
 
@@ -49,5 +43,5 @@ class ReviewAdapter(
         holder.bind(reviews[position])
     }
 
-    override fun getItemCount(): Int = reviews.size
+    override fun getItemCount() = reviews.size
 }

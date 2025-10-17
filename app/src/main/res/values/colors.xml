@@ -6,6 +6,7 @@
          ======================================== -->
     <color name="primary_green">#2E7D32</color>
     <color name="primary_dark">#1B5E20</color>
+    <color name="green_primary">#2E7D32</color>
     <color name="secondary_green">#A5D6A7</color>
     <color name="accent_yellow">#FBC02D</color>
     <color name="secondary_yellow">#FDD835</color>

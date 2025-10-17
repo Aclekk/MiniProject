@@ -40,64 +40,68 @@ class OrderDetailFragment : Fragment() {
         binding.tvOrderAddress.text = "Alamat: ${order.address}"
 
         val productList = order.products.joinToString("\n") {
-            "- ${it.name} (Rp ${it.price.toInt()})"
+            "- ${it.name} (Rp ${String.format("%,d", it.price.toInt())})"
         }
-        binding.tvOrderProducts.text = productList
-        binding.tvOrderTotal.text = "Total: Rp ${order.totalPrice.toInt()}"
+        binding.tvOrderProducts.text = "Produk:\n$productList"
+        binding.tvOrderTotal.text = "Total: Rp ${String.format("%,d", order.totalPrice.toInt())}"
 
-        // 🆕 FIX: Tombol hanya muncul sesuai status
-        updateButtonVisibility(order.status)
+        // 🔥 UPDATE BUTTON VISIBILITY
+        updateButtonVisibility(order)
 
-        // 🔹 Tombol "Ubah Status"
+        // 🔹 Button "Pesanan Telah Sampai" (User confirm delivery)
         binding.btnNextStatus.setOnClickListener {
-            val currentStatus = order.status
-            val nextStatus = when (currentStatus) {
-                "Dikemas" -> "Dikirim"
-                "Dikirim" -> "Diterima" // 🆕 Ubah ke "Diterima" dulu
-                "Diterima" -> "Selesai" // 🆕 Baru "Selesai" setelah review
-                else -> currentStatus
+            when (order.status) {
+                "Dikirim" -> {
+                    order.status = "Selesai"
+                    binding.tvOrderStatus.text = "Status: ${order.status}"
+                    updateButtonVisibility(order)
+
+                    Toast.makeText(
+                        requireContext(),
+                        "Pesanan selesai! Berikan penilaian Anda 🌟",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+                else -> {
+                    Toast.makeText(
+                        requireContext(),
+                        "Tidak ada aksi untuk status ini",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
             }
-
-            order.status = nextStatus
-            binding.tvOrderStatus.text = "Status: ${order.status}"
-
-            Toast.makeText(
-                requireContext(),
-                "Status diubah ke ${order.status}",
-                Toast.LENGTH_SHORT
-            ).show()
-
-            // Update tampilan tombol
-            updateButtonVisibility(order.status)
-
-            // 🆕 FIX: Refresh list di ActiveOrdersFragment & CompletedOrdersFragment
-            refreshOrderLists()
         }
 
-        // 🔹 Tombol "Beri Penilaian"
+        // 🔹 Button "Beri Penilaian"
         binding.btnRateNow.setOnClickListener {
             showRatingDialog(order)
         }
     }
 
-    // 🆕 FIX: Atur visibilitas tombol berdasarkan status
-    private fun updateButtonVisibility(status: String) {
-        when (status) {
-            "Dikemas", "Dikirim" -> {
-                // Tampilkan tombol "Ubah Status" saja
+    // 🔥 LOGIC TAMPILKAN BUTTON SESUAI STATUS
+    private fun updateButtonVisibility(order: com.example.miniproject.data.Order) {
+        when {
+            // Status "Dikirim" → Tampilkan button "Pesanan Telah Sampai"
+            order.status == "Dikirim" -> {
                 binding.btnNextStatus.visibility = View.VISIBLE
+                binding.btnNextStatus.text = "✅ Pesanan Telah Sampai"
                 binding.btnRateNow.visibility = View.GONE
             }
-            "Diterima" -> {
-                // Tampilkan tombol "Beri Penilaian" saja
+
+            // Status "Selesai" & belum review → Tampilkan button "Beri Penilaian"
+            order.status == "Selesai" && !order.hasReview -> {
                 binding.btnNextStatus.visibility = View.GONE
                 binding.btnRateNow.visibility = View.VISIBLE
+                binding.btnRateNow.text = "⭐ Beri Penilaian"
             }
-            "Selesai" -> {
-                // Sembunyikan semua tombol
+
+            // Sudah review → Sembunyikan semua button
+            order.hasReview -> {
                 binding.btnNextStatus.visibility = View.GONE
                 binding.btnRateNow.visibility = View.GONE
             }
+
+            // Status lain (Dikemas, Belum Bayar) → Sembunyikan button
             else -> {
                 binding.btnNextStatus.visibility = View.GONE
                 binding.btnRateNow.visibility = View.GONE
@@ -105,67 +109,53 @@ class OrderDetailFragment : Fragment() {
         }
     }
 
-    // 🆕 FIX: Refresh list setelah ubah status
-    private fun refreshOrderLists() {
-        // Cari fragment ActiveOrdersFragment & CompletedOrdersFragment
-        val cartFragment = requireActivity().supportFragmentManager
-            .findFragmentById(R.id.fragment_container) as? CartFragment
-
-        // Trigger refresh di kedua tab
-        cartFragment?.let {
-            // Fragment akan auto-refresh saat onResume() dipanggil
-            parentFragmentManager.popBackStack()
-        }
-    }
-
-    // 🔹 Dialog Rating
+    // 🌟 Dialog Rating & Review
     private fun showRatingDialog(order: com.example.miniproject.data.Order) {
         val dialogView = LayoutInflater.from(requireContext())
-            .inflate(R.layout.dialog_add_review, null)
+            .inflate(R.layout.dialog_review, null)
         val ratingBar = dialogView.findViewById<RatingBar>(R.id.ratingBar)
-        val etReview = dialogView.findViewById<EditText>(R.id.etReview)
+        val etComment = dialogView.findViewById<EditText>(R.id.etComment)
 
         AlertDialog.Builder(requireContext())
-            .setTitle("Beri Penilaian")
+            .setTitle("Beri Penilaian untuk Order #${order.id}")
             .setView(dialogView)
-            .setPositiveButton("Kirim") { dialog, _ ->
+            .setPositiveButton("Kirim") { _, _ ->
                 val rating = ratingBar.rating
-                val comment = etReview.text.toString()
+                val comment = etComment.text.toString()
 
-                if (rating == 0f || comment.isEmpty()) {
+                if (rating == 0f) {
                     Toast.makeText(
                         requireContext(),
-                        "Isi rating & ulasan terlebih dahulu 🌾",
+                        "Berikan rating minimal 1 bintang ⭐",
                         Toast.LENGTH_SHORT
                     ).show()
                     return@setPositiveButton
                 }
 
-                val review = Review(
-                    productId = order.products.first().id,
-                    userName = "Rachen 🌾",
-                    rating = rating,
-                    comment = comment,
-                    createdAt = "2025-10-16"
-                )
+                // Simpan review untuk setiap produk
+                order.products.forEach { product ->
+                    val review = Review(
+                        orderId = order.id,
+                        productId = product.id,
+                        userName = "Rachen 🌾",
+                        rating = rating,
+                        comment = comment.ifEmpty { "Tidak ada komentar" }
+                    )
+                    CartManager.addReview(review)
+                }
 
-                CartManager.addReview(review)
-
-                // 🆕 FIX: Ubah status jadi "Selesai" setelah review
-                order.status = "Selesai"
-                binding.tvOrderStatus.text = "Status: ${order.status}"
-                updateButtonVisibility(order.status)
+                // Tandai order sudah direview
+                order.hasReview = true
+                updateButtonVisibility(order)
 
                 Toast.makeText(
                     requireContext(),
-                    "Terima kasih atas penilaiannya! Pesanan dipindah ke Riwayat.",
-                    Toast.LENGTH_SHORT
+                    "Terima kasih atas penilaian Anda! ⭐",
+                    Toast.LENGTH_LONG
                 ).show()
 
-                dialog.dismiss()
-
-                // Refresh list dan kembali
-                refreshOrderLists()
+                // Kembali ke list
+                parentFragmentManager.popBackStack()
             }
             .setNegativeButton("Batal", null)
             .show()

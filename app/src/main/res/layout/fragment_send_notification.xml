@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="24dp"
+    android:background="@color/background_premium">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="📢 Kirim Notifikasi Umum"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="@color/primary_green_premium"
+            android:gravity="center"
+            android:layout_marginBottom="20dp" />
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etNotificationTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Judul Notifikasi"
+            android:textColor="@color/text_primary"
+            android:inputType="text" />
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etNotificationMessage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Isi Pesan Notifikasi"
+            android:textColor="@color/text_primary"
+            android:inputType="textMultiLine"
+            android:lines="4"
+            android:gravity="top"
+            android:layout_marginTop="12dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSendNotification"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="📨 Kirim Notifikasi"
+            android:layout_marginTop="16dp"
+            app:backgroundTint="@color/primary_green_premium"
+            android:textColor="@android:color/white" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnBack"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="⬅️ Kembali"
+            android:layout_marginTop="12dp"
+            app:backgroundTint="@color/white"
+            android:textColor="@color/primary_green_premium" />
+
+    </LinearLayout>
+</ScrollView>

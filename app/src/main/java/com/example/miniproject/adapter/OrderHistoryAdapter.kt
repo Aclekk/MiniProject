@@ -23,28 +23,20 @@ class OrderHistoryAdapter(
 
     override fun onBindViewHolder(holder: OrderViewHolder, position: Int) {
         val order = orders[position]
+
         holder.binding.tvOrderId.text = "Order #${order.id}"
-        holder.binding.tvOrderStatus.text = "Status: ${order.status}"
+        holder.binding.tvOrderStatus.text = order.status
         holder.binding.tvOrderItems.text = "Barang: ${order.products.joinToString { it.name }}"
-        holder.binding.tvOrderTotal.text =
-            "Total: Rp ${String.format("%,d", order.totalPrice.toInt())}"
+        holder.binding.tvOrderTotal.text = "Rp ${String.format("%,d", order.totalPrice.toInt())}"
 
-        // hanya tampilkan tombol ubah status di tab aktif
-        if (isActiveTab && order.status != "Selesai") {
-            holder.binding.btnNextStatus.visibility = View.VISIBLE
-            holder.binding.btnNextStatus.text = when (order.status) {
-                "Belum Bayar" -> "Tandai Dikemas"
-                "Dikemas" -> "Tandai Dikirim"
-                "Dikirim" -> "Tandai Selesai"
-                else -> "Update"
-            }
-            holder.binding.btnNextStatus.setOnClickListener { onOrderClick(order) }
-        } else {
-            holder.binding.btnNextStatus.visibility = View.GONE
+        // 🔥 LOGIC UNTUK USER: Tampilkan button hanya di detail fragment
+        // Di list, button disembunyikan, user klik card untuk lihat detail
+        holder.binding.btnNextStatus.visibility = View.GONE
+
+        // Klik card untuk buka detail
+        holder.binding.root.setOnClickListener {
+            onOrderClick(order)
         }
-
-        // klik card untuk lihat detail
-        holder.binding.root.setOnClickListener { onOrderClick(order) }
     }
 
     override fun getItemCount() = orders.size

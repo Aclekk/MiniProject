@@ -1,73 +1,123 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
+    android:background="@color/background_premium"
+    android:padding="16dp"
+    android:fillViewport="true">
 
     <LinearLayout
-        android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/tvOrderId"
-            android:text="Order #1"
-            android:textStyle="bold"
-            android:textSize="20sp"
-            android:layout_marginBottom="8dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
-
-        <TextView
-            android:id="@+id/tvOrderStatus"
-            android:text="Status: Dikemas"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
-
-        <TextView
-            android:id="@+id/tvOrderPayment"
-            android:text="Metode Pembayaran: Transfer Bank"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
-
-        <TextView
-            android:id="@+id/tvOrderAddress"
-            android:text="Alamat: Lat, Lng"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
-
-        <TextView
-            android:id="@+id/tvOrderProducts"
-            android:text="Produk:"
-            android:layout_marginTop="12dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
-
-        <TextView
-            android:id="@+id/tvOrderTotal"
-            android:text="Total: Rp 0"
-            android:textStyle="bold"
-            android:layout_marginTop="12dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
-        <Button
-            android:id="@+id/btnRateNow"
+        <!-- 🧾 Kartu Detail Pesanan -->
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Beri Penilaian"
-            android:backgroundTint="@color/primary_green"
-            android:textColor="@android:color/white"
-            android:layout_marginTop="16dp"
-            android:visibility="gone" />
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="6dp"
+            android:backgroundTint="@android:color/white"
+            android:padding="20dp">
 
-        <Button
-            android:id="@+id/btnNextStatus"
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- ID Pesanan -->
+                <TextView
+                    android:id="@+id/tvOrderId"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🧾 Order #12345"
+                    android:textStyle="bold"
+                    android:textSize="20sp"
+                    android:textColor="@color/primary_green_premium"
+                    android:layout_marginBottom="8dp" />
+
+                <!-- Status Pesanan -->
+                <TextView
+                    android:id="@+id/tvOrderStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📦 Status: Dikemas"
+                    android:textSize="15sp"
+                    android:textColor="@color/text_primary"
+                    android:layout_marginBottom="4dp" />
+
+                <!-- Pembayaran -->
+                <TextView
+                    android:id="@+id/tvOrderPayment"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="💳 Metode Pembayaran: Transfer Bank"
+                    android:textSize="15sp"
+                    android:textColor="@color/text_primary"
+                    android:layout_marginBottom="4dp" />
+
+                <!-- Alamat -->
+                <TextView
+                    android:id="@+id/tvOrderAddress"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📍 Alamat: Jl. Pertanian No. 123, Jakarta Selatan"
+                    android:textSize="15sp"
+                    android:textColor="@color/text_primary"
+                    android:layout_marginBottom="12dp" />
+
+                <!-- Daftar Produk -->
+                <TextView
+                    android:id="@+id/tvOrderProducts"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="🛒 Produk:\n- Cangkul Premium x2\n- Pupuk Organik x1"
+                    android:textSize="15sp"
+                    android:textColor="@color/text_primary"
+                    android:layout_marginTop="4dp" />
+
+                <!-- Total -->
+                <TextView
+                    android:id="@+id/tvOrderTotal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="💰 Total: Rp 350.000"
+                    android:textStyle="bold"
+                    android:textColor="@color/primary_green_premium"
+                    android:textSize="17sp"
+                    android:layout_marginTop="16dp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- 💬 Tombol Aksi -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Ubah Status Pesanan"
-            android:layout_marginTop="12dp"
-            android:backgroundTint="@color/primary_green"
-            android:textColor="@color/text_white" />
+            android:orientation="vertical">
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRateNow"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:text="⭐ Beri Penilaian"
+                app:cornerRadius="16dp"
+                app:backgroundTint="@color/primary_green_premium"
+                android:textColor="@android:color/white"
+                android:elevation="4dp"
+                android:visibility="gone"
+                android:layout_marginBottom="12dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnNextStatus"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:text="🔄 Ubah Status Pesanan"
+                app:cornerRadius="16dp"
+                app:backgroundTint="@color/teal_700"
+                android:textColor="@android:color/white"
+                android:elevation="4dp" />
+        </LinearLayout>
     </LinearLayout>
 </ScrollView>

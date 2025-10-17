@@ -33,7 +33,7 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
-                <!-- 🌾 HEADER SECTION -->
+                <!-- 🌾 HEADER SECTION WITH STORE INFO -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -42,23 +42,59 @@
                     android:padding="20dp"
                     android:elevation="4dp">
 
-                    <TextView
-                        android:layout_width="wrap_content"
+                    <!-- Row: Logo + Nama Toko -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="🌾 Niaga Tani"
-                        android:textSize="28sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/primary_dark"
-                        android:letterSpacing="0.02" />
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Solusi Pertanian Modern Indonesia"
-                        android:textSize="14sp"
-                        android:textColor="@color/primary_green"
-                        android:layout_marginTop="4dp"
-                        android:fontFamily="sans-serif-light" />
+                        <!-- Logo Toko -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_width="56dp"
+                            android:layout_height="56dp"
+                            app:cardCornerRadius="28dp"
+                            app:cardElevation="4dp"
+                            app:strokeColor="@color/white"
+                            app:strokeWidth="2dp"
+                            android:layout_marginEnd="12dp">
+
+                            <ImageView
+                                android:id="@+id/imgStoreLogo"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:scaleType="centerCrop"
+                                android:src="@drawable/ic_person"
+                                android:contentDescription="Logo Toko" />
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <!-- Nama Toko -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/tvStoreName"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="🌾 Niaga Tani"
+                                android:textSize="28sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/primary_dark"
+                                android:letterSpacing="0.02" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Solusi Pertanian Modern Indonesia"
+                                android:textSize="14sp"
+                                android:textColor="@color/primary_green"
+                                android:layout_marginTop="4dp"
+                                android:fontFamily="sans-serif-light" />
+                        </LinearLayout>
+                    </LinearLayout>
                 </LinearLayout>
 
                 <!-- 🔍 SEARCH & FILTER BAR -->
@@ -126,7 +162,6 @@
                     android:paddingBottom="20dp"
                     android:paddingTop="8dp">
 
-                    <!-- Judul di atas Carousel -->
                     <TextView
                         android:id="@+id/tvPromoTitle"
                         android:layout_width="wrap_content"
@@ -138,7 +173,6 @@
                         android:layout_marginBottom="10dp"
                         android:layout_marginTop="6dp" />
 
-                    <!-- Carousel (ViewPager2) -->
                     <androidx.cardview.widget.CardView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -152,7 +186,6 @@
                             android:clipToOutline="true" />
                     </androidx.cardview.widget.CardView>
 
-                    <!-- Dots indicator -->
                     <com.tbuonomo.viewpagerdotsindicator.WormDotsIndicator
                         android:id="@+id/dotsIndicator"
                         android:layout_width="wrap_content"
@@ -160,13 +193,10 @@
                         android:layout_gravity="center_horizontal"
                         android:layout_marginTop="12dp"
                         app:dotsColor="#D0D0D0"
-                        app:dotsStrokeWidth="0dp"
-                        app:dotsCornerRadius="8dp"
                         app:dotsSize="10dp"
                         app:dotsSpacing="8dp"
                         app:selectedDotColor="#5C8A3C" />
                 </LinearLayout>
-
 
                 <!-- 📂 KATEGORI SECTION -->
                 <LinearLayout
@@ -196,7 +226,7 @@
                         android:paddingHorizontal="4dp" />
                 </LinearLayout>
 
-                <!-- 🏆 TOP SELLING SECTION -->
+                <!-- 🏆 PRODUK TERLARIS -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -226,19 +256,8 @@
                             android:textSize="20sp"
                             android:textStyle="bold"
                             android:textColor="#2D5016" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Lihat Semua →"
-                            android:textSize="13sp"
-                            android:textColor="#5C8A3C"
-                            android:textStyle="bold"
-                            android:clickable="true"
-                            android:focusable="true" />
                     </LinearLayout>
 
-                    <!-- 🛍️ PRODUCTS GRID (2 Kolom Besar & Premium) -->
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/rvProducts"
                         android:layout_width="match_parent"
@@ -250,18 +269,76 @@
                         app:spanCount="2" />
                 </LinearLayout>
 
-                <!-- Bottom Spacer -->
-                <View
+                <!-- 📍 FOOTER (Tanpa logo / foto) -->
+                <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="80dp" />
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="#FFFFFF"
+                    android:padding="24dp"
+                    android:gravity="center"
+                    android:elevation="2dp"
+                    android:layout_marginTop="16dp">
 
+                    <View
+                        android:layout_width="80dp"
+                        android:layout_height="4dp"
+                        android:background="@drawable/bg_accent_bar"
+                        android:layout_marginBottom="20dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="📖 Tentang Kami"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="#2D5016"
+                        android:layout_marginBottom="8dp" />
+
+                    <TextView
+                        android:id="@+id/tvStoreAbout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Solusi Pertanian Modern Indonesia - Menyediakan produk pertanian berkualitas tinggi untuk petani Indonesia"
+                        android:textSize="14sp"
+                        android:textColor="#555555"
+                        android:gravity="center"
+                        android:layout_marginBottom="20dp"
+                        android:lineSpacingExtra="4dp" />
+
+                    <TextView
+                        android:id="@+id/tvStoreAddress"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="📍 Jl. Pertanian Sejahtera No. 123, Jakarta Selatan"
+                        android:textSize="14sp"
+                        android:textColor="#555555"
+                        android:gravity="center"
+                        android:layout_marginBottom="8dp" />
+
+                    <TextView
+                        android:id="@+id/tvStoreContact"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="📞 +62 812-3456-7890"
+                        android:textSize="14sp"
+                        android:textColor="#555555"
+                        android:gravity="center"
+                        android:layout_marginBottom="8dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="© 2025 Niaga Tani. All rights reserved."
+                        android:textSize="12sp"
+                        android:textColor="#999999"
+                        android:layout_marginTop="8dp" />
+                </LinearLayout>
             </LinearLayout>
-
         </androidx.core.widget.NestedScrollView>
-
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-    <!-- 🎯 FAB untuk Admin -->
+    <!-- 🎯 FAB Admin -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabAddProduct"
         android:layout_width="wrap_content"
@@ -271,9 +348,7 @@
         android:src="@android:drawable/ic_input_add"
         app:tint="#FFFFFF"
         app:backgroundTint="#5C8A3C"
-        app:borderWidth="0dp"
         app:elevation="12dp"
         app:pressedTranslationZ="16dp"
         android:visibility="gone" />
-
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

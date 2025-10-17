@@ -20,13 +20,18 @@ class OrdersFragment : Fragment() {
     ): View {
         _binding = FragmentOrdersBinding.inflate(inflater, container, false)
 
-        val adapter = object : FragmentStateAdapter(this) {
+        val pagerAdapter = object : FragmentStateAdapter(this) {
             override fun getItemCount() = 2
-            override fun createFragment(position: Int): Fragment =
-                if (position == 0) ActiveOrdersFragment() else CompletedOrdersFragment()
+            override fun createFragment(position: Int): Fragment {
+                return if (position == 0) {
+                    AdminOrderListFragment()
+                } else {
+                    AdminOrderHistoryFragment()
+                }
+            }
         }
 
-        binding.viewPager.adapter = adapter
+        binding.viewPager.adapter = pagerAdapter
 
         TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, position ->
             tab.text = if (position == 0) "Pesanan Aktif" else "Riwayat Pesanan"

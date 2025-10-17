@@ -33,7 +33,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:padding="12dp"  android:scaleType="fitCenter"
-                android:src="@drawable/benihh"  android:contentDescription="Category Icon" />
+                android:src="@android:drawable/ic_menu_crop"
+                android:contentDescription="Category Icon" />
 
         </androidx.cardview.widget.CardView>
 

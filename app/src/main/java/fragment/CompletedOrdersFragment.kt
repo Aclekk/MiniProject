@@ -9,7 +9,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.miniproject.R
 import com.example.miniproject.adapter.OrderHistoryAdapter
 import com.example.miniproject.data.CartManager
-import com.example.miniproject.data.Order
 import com.example.miniproject.databinding.FragmentCompletedOrdersBinding
 
 class CompletedOrdersFragment : Fragment() {
@@ -31,8 +30,7 @@ class CompletedOrdersFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // ambil pesanan yang sudah selesai
-        val completedOrders: MutableList<Order> = CartManager.orders
+        val completedOrders = CartManager.orders
             .filter { it.status == "Selesai" }
             .toMutableList()
 
@@ -44,13 +42,12 @@ class CompletedOrdersFragment : Fragment() {
                         putInt("orderId", order.id)
                     }
                 }
-
                 requireActivity().supportFragmentManager.beginTransaction()
                     .replace(R.id.fragment_container, detailFragment)
                     .addToBackStack(null)
                     .commit()
             },
-            isActiveTab = false // 🚫 Jangan tampilkan tombol ubah status di riwayat
+            isActiveTab = false
         )
 
         binding.rvCompletedOrders.layoutManager = LinearLayoutManager(requireContext())

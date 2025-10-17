@@ -9,6 +9,7 @@
     <!-- 📸 CAMERA -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="29" />
 
@@ -35,7 +36,8 @@
         <activity
             android:name=".SplashActivity"
             android:exported="true"
-            android:theme="@style/Theme.NiagaTani.NoActionBar">
+            android:theme="@style/Theme.NiagaTani.NoActionBar"
+            android:windowSoftInputMode="adjustPan">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -46,18 +48,21 @@
         <activity
             android:name=".WelcomeActivity"
             android:exported="true"
-            android:theme="@style/Theme.NiagaTani.NoActionBar" />
+            android:theme="@style/Theme.NiagaTani.NoActionBar"
+            android:windowSoftInputMode="adjustPan" />
 
-        <!-- 🟢 Main -->
+        <!-- 🟢 Main Activity (HANYA 1 DEKLARASI!) -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.NiagaTani.NoActionBar" />
+            android:theme="@style/Theme.NiagaTani.NoActionBar"
+            android:windowSoftInputMode="adjustPan" />
 
         <!-- 🟢 Checkout -->
         <activity
             android:name=".ui.CheckoutActivity"
-            android:exported="true" />
+            android:exported="true"
+            android:windowSoftInputMode="adjustPan" />
 
         <!-- 🟢 Provider untuk kamera -->
         <provider
