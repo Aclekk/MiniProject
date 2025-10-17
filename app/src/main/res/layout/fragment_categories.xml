@@ -7,12 +7,12 @@
     android:background="@drawable/gradient_background_main"
     tools:context=".fragment.CategoriesFragment">
 
-    <!-- Premium App Bar with Gradient -->
+    <!-- Premium App Bar with Green Background -->
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/gradient_appbar"
+        android:background="#2E7D32"
         android:elevation="8dp"
         android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
 
@@ -20,26 +20,20 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_scrollFlags="scroll|exitUntilCollapsed|snap"
-            app:contentScrim="@drawable/gradient_appbar"
+            app:contentScrim="#2E7D32"
             app:expandedTitleMarginStart="24dp"
             app:expandedTitleMarginBottom="28dp"
             app:expandedTitleTextAppearance="@style/TextAppearance.App.CollapsingToolbar.Expanded">
 
-            <!-- Premium Header Section -->
+            <!-- ✅ HEADER SIMPLE - CUMA "CATEGORIES" -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:padding="24dp"
+                android:paddingTop="32dp"
+                android:paddingBottom="24dp"
                 app:layout_collapseMode="parallax">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Explore"
-                    android:textColor="#80FFFFFF"
-                    android:textSize="14sp"
-                    android:letterSpacing="0.1" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -48,16 +42,7 @@
                     android:textColor="@android:color/white"
                     android:textSize="32sp"
                     android:textStyle="bold"
-                    android:layout_marginTop="4dp"
                     android:letterSpacing="-0.02" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Discover our premium collection"
-                    android:textColor="#B3FFFFFF"
-                    android:textSize="14sp"
-                    android:layout_marginTop="8dp" />
 
             </LinearLayout>
 
@@ -108,7 +93,7 @@
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:src="@android:drawable/ic_menu_search"
-                        app:tint="#00E676"
+                        app:tint="#2E7D32"
                         android:contentDescription="Search" />
 
                     <EditText
@@ -130,7 +115,7 @@
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:src="@android:drawable/ic_menu_sort_by_size"
-                        app:tint="#00E676"
+                        app:tint="#2E7D32"
                         android:padding="2dp"
                         android:clickable="true"
                         android:focusable="true"
@@ -140,8 +125,6 @@
                 </LinearLayout>
 
             </com.google.android.material.card.MaterialCardView>
-
-            <!-- Stats Cards Section -->
 
             <!-- Section Header -->
             <LinearLayout
@@ -167,7 +150,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="View All"
-                    android:textColor="#00E676"
+                    android:textColor="#2E7D32"
                     android:textSize="13sp"
                     android:textStyle="bold"
                     android:clickable="true"
@@ -248,7 +231,7 @@
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:src="@android:drawable/ic_menu_view"
-                        app:tint="#00E676"
+                        app:tint="#2E7D32"
                         android:contentDescription="View Mode" />
 
                 </LinearLayout>
@@ -293,7 +276,7 @@
                 android:id="@+id/progressBar"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
-                android:indeterminateTint="#00E676" />
+                android:indeterminateTint="#2E7D32" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -319,7 +302,7 @@
         android:textStyle="bold"
         app:icon="@android:drawable/ic_input_add"
         app:iconTint="@android:color/white"
-        app:backgroundTint="#00E676"
+        app:backgroundTint="#2E7D32"
         app:elevation="12dp"
         app:shapeAppearanceOverlay="@style/ShapeAppearance.App.SmallComponent"
         android:visibility="gone"

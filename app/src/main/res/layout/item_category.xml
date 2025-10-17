@@ -7,7 +7,7 @@
     android:layout_margin="6dp"
     app:cardCornerRadius="20dp"
     app:cardElevation="4dp"
-    app:strokeColor="@color/primary_green_premium"
+    app:strokeColor="@color/primary_green"
     app:strokeWidth="1dp"
     android:clickable="true"
     android:focusable="true">
@@ -24,7 +24,7 @@
             android:layout_width="56dp"
             android:layout_height="56dp"
             android:layout_marginBottom="12dp"
-            app:cardBackgroundColor="@color/background_light_green"
+            app:cardBackgroundColor="@color/primary_green"
             app:cardCornerRadius="28dp"
             app:cardElevation="0dp">
 
@@ -32,8 +32,10 @@
                 android:id="@+id/ivCategoryIcon"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:padding="12dp"  android:scaleType="fitCenter"
+                android:padding="12dp"
+                android:scaleType="fitCenter"
                 android:src="@android:drawable/ic_menu_crop"
+                android:tint="@color/white"
                 android:contentDescription="Category Icon" />
 
         </androidx.cardview.widget.CardView>
@@ -47,7 +49,7 @@
             android:letterSpacing="0.01"
             android:maxLines="2"
             android:ellipsize="end"
-            android:textColor="@color/primary_green_premium"
+            android:textColor="@color/primary_green"
             android:textSize="14sp"
             android:textStyle="bold"
             tools:text="Category Name" />

@@ -5,9 +5,12 @@ import android.content.Context
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
@@ -19,16 +22,11 @@ import com.example.miniproject.adapter.CategoryAdapter
 import com.example.miniproject.adapter.ProductAdapter
 import com.example.miniproject.adapter.PromoAdapter
 import com.example.miniproject.data.CategoryRepository
+import com.example.miniproject.data.ProductDataSource
 import com.example.miniproject.databinding.FragmentProductsBinding
-import com.example.miniproject.model.Category
 import com.example.miniproject.model.Product
 import com.example.miniproject.model.Promo
-import android.widget.TextView
-import android.widget.ImageView
-import android.util.Log
 import com.example.miniproject.model.StoreProfile
-import com.example.miniproject.data.ProductDataSource
-
 
 class ProductsFragment : Fragment() {
 
@@ -42,6 +40,7 @@ class ProductsFragment : Fragment() {
     private val products = mutableListOf<Product>()
     private val allProducts = mutableListOf<Product>()
     private var userRole = ""
+
     companion object {
         // List produk global sementara (di-reset tiap restart)
         val globalProductList = mutableListOf<Product>()
@@ -64,12 +63,12 @@ class ProductsFragment : Fragment() {
         setupCarousel()
         setupCategories()
         setupRecyclerView()
-        setupClickListeners()
+        setupClickListeners() // ✅ Fungsi ini sekarang sudah ada di bawah
         setupSearchAndFilter()
         loadDummyProducts()
     }
 
-    // ✅ TAMBAHKAN INI - Update otomatis saat fragment kembali aktif
+    // ✅ Update otomatis saat fragment kembali aktif
     override fun onResume() {
         super.onResume()
         updateStoreInfo()
@@ -93,15 +92,15 @@ class ProductsFragment : Fragment() {
         val promos = listOf(
             Promo(
                 1, "Diskon 30% Pupuk Organik",
-                "Dapatkan pupuk organik berkualitas dengan harga spesial", R.drawable.promo1
+                "Dapatkan pupuk organik berkualitas dengan harga spesial", R.drawable.karosel1
             ),
             Promo(
                 2, "Beli Cangkul Gratis Sekop",
-                "Penawaran terbatas untuk alat pertanian pilihan", R.drawable.promo2
+                "Penawaran terbatas untuk alat pertanian pilihan", R.drawable.karosel2
             ),
             Promo(
                 3, "Flash Sale Benih Padi",
-                "Harga spesial untuk pembelian dalam jumlah banyak", R.drawable.promo3
+                "Harga spesial untuk pembelian dalam jumlah banyak", R.drawable.karosel3
             )
         )
         promoAdapter = PromoAdapter(promos)
@@ -110,13 +109,17 @@ class ProductsFragment : Fragment() {
     }
 
     // ============================================================
-    // 🔹 KATEGORI PRODUK
+    // 🔹 KATEGORI PRODUK - FIXED ✅
     // ============================================================
     private fun setupCategories() {
         val categories = CategoryRepository.getCategories()
 
         categoryAdapter = CategoryAdapter(categories) { selectedCategory ->
-            filterByCategory(selectedCategory.categoryName)
+            // ✅ Gunakan fungsi di MainActivity untuk navigasi ke Categories
+            (activity as? MainActivity)?.openCategoriesWithFilter(
+                categoryId = selectedCategory.id,
+                categoryName = selectedCategory.categoryName
+            )
         }
 
         val horizontalLayout =
@@ -143,7 +146,6 @@ class ProductsFragment : Fragment() {
             }
         }
 
-
         val gridLayout = GridLayoutManager(requireContext(), 2, RecyclerView.VERTICAL, false)
 
         binding.rvProducts.apply {
@@ -156,7 +158,7 @@ class ProductsFragment : Fragment() {
     }
 
     // ============================================================
-    // 🔹 CLICK HANDLERS
+    // 🔹 CLICK HANDLERS - ADDED BACK ✅
     // ============================================================
     private fun setupClickListeners() {
         binding.fabAddProduct.setOnClickListener {
@@ -166,82 +168,30 @@ class ProductsFragment : Fragment() {
                 .commit()
         }
 
-        binding.swipeRefresh.setOnRefreshListener { loadDummyProducts() }
+        binding.swipeRefresh.setOnRefreshListener {
+            loadDummyProducts()
+        }
     }
 
     // ============================================================
     // 🔹 LOAD DUMMY DATA PRODUK
     // ============================================================
     private fun loadDummyProducts() {
-        // Menampilkan loading state
         showLoading(true)
 
-        // Kalau sudah ada data, langsung tampilkan
-        if (globalProductList.isNotEmpty()) {
-            products.clear()
-            products.addAll(globalProductList)
-            productAdapter.notifyDataSetChanged()
-            showLoading(false)
-            binding.swipeRefresh.isRefreshing = false
-            return
-        }
+        // ✅ Gunakan data dari ProductDataSource
+        ProductDataSource.loadDummyData()
+        val allData = ProductDataSource.getAllProducts()
 
-        // Kalau kosong → isi dummy baru
-        val dummyProducts = listOf(
-            Product(
-                id = 1,
-                name = "Cangkul Premium",
-                price = 150000.0,
-                description = "Cangkul berkualitas tinggi untuk mengolah tanah",
-                imageUrl = null,
-                categoryId = 1,
-                stock = 50,
-                categoryName = "Peralatan",
-                createdAt = "2025-01-01",
-                imageResId = R.drawable.cangkul
-            ), // Komponen Product 1 berakhir di sini (koma diperlukan)
-            Product(
-                id = 2,
-                name = "Pupuk Organik 25kg",
-                price = 200000.0,
-                description = "Pupuk organik alami berkualitas tinggi",
-                imageUrl = null,
-                categoryId = 2,
-                stock = 30,
-                categoryName = "Pupuk",
-                createdAt = "2025-01-01",
-                imageResId = R.drawable.pupuk
-            ), // Komponen Product 2 berakhir di sini (koma diperlukan)
-            Product(
-                id = 3,
-                name = "Benih Padi Premium",
-                price = 50000.0,
-                description = "Benih unggul padi hasil seleksi terbaik",
-                imageUrl = null,
-                imageResId = R.drawable.benih,
-                categoryId = 3,
-                stock = 100,
-                categoryName = "Benih",
-                createdAt = "2025-01-01"
-            ), // Komponen Product 3 berakhir di sini (koma diperlukan)
-            Product(
-                id = 4,
-                name = "Traktor Mini",
-                price = 5000000.0,
-                description = "Traktor pertanian mini untuk lahan kecil dan menengah",
-                imageUrl = null,
-                imageResId = R.drawable.traktor,
-                categoryId = 4,
-                stock = 5,
-                categoryName = "Peralatan",
-                createdAt = "2025-01-01"
-            )
-            // Kurung penutup ')' untuk 'listOf(' sudah benar
-        )
+        globalProductList.clear()
+        globalProductList.addAll(allData)
 
-        globalProductList.addAll(dummyProducts)
         products.clear()
         products.addAll(globalProductList)
+
+        allProducts.clear()
+        allProducts.addAll(globalProductList)
+
         productAdapter.notifyDataSetChanged()
 
         showLoading(false)
@@ -280,13 +230,21 @@ class ProductsFragment : Fragment() {
                     products.clear()
                     products.addAll(filtered)
                     productAdapter.notifyDataSetChanged()
-                    Toast.makeText(requireContext(), "Filter: $selected (${filtered.size} produk)", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        requireContext(),
+                        "Filter: $selected (${filtered.size} produk)",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
                 .setNegativeButton("Tampilkan Semua") { dialog, _ ->
                     products.clear()
                     products.addAll(allProducts)
                     productAdapter.notifyDataSetChanged()
-                    Toast.makeText(requireContext(), "Menampilkan semua produk (${allProducts.size})", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        requireContext(),
+                        "Menampilkan semua produk (${allProducts.size})",
+                        Toast.LENGTH_SHORT
+                    ).show()
                     dialog.dismiss()
                 }
                 .create()
@@ -294,9 +252,8 @@ class ProductsFragment : Fragment() {
         }
     }
 
-
     // ============================================================
-    // 🔹 UTILITAS
+    // 🔹 UTILITAS PRODUK
     // ============================================================
     private fun filterByCategory(category: String) {
         val filtered = ProductDataSource.getProductsByCategory(category)
@@ -317,7 +274,6 @@ class ProductsFragment : Fragment() {
             .commit()
     }
 
-
     private fun deleteProduct(product: Product) {
         AlertDialog.Builder(requireContext())
             .setTitle("Hapus Produk")
@@ -333,15 +289,12 @@ class ProductsFragment : Fragment() {
             .show()
     }
 
-
-
     private fun viewProduct(product: Product) {
         val detailFragment = ProductDetailFragment().apply {
             arguments = Bundle().apply {
                 putParcelable("product", product)
             }
         }
-
         parentFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, detailFragment)
             .addToBackStack(null)
@@ -361,6 +314,9 @@ class ProductsFragment : Fragment() {
         Toast.makeText(requireContext(), "Logout berhasil", Toast.LENGTH_SHORT).show()
     }
 
+    // ============================================================
+    // 🔹 UPDATE STORE INFO
+    // ============================================================
     fun updateStoreInfo() {
         val updatedName = StoreProfile.storeName
         val updatedContact = StoreProfile.storeContact
@@ -369,35 +325,32 @@ class ProductsFragment : Fragment() {
         val updatedPhoto = StoreProfile.storePhotoUri
 
         view?.let {
-            // 🔹 Update teks utama toko
             it.findViewById<TextView>(R.id.tvStoreName)?.text = updatedName
             it.findViewById<TextView>(R.id.tvStoreContact)?.text = updatedContact
             it.findViewById<TextView>(R.id.tvStoreAddress)?.text = updatedAddress
             it.findViewById<TextView>(R.id.tvStoreAbout)?.text = updatedAbout
 
-            // 🔹 Update gambar logo di header atas
             val imgLogo = it.findViewById<ImageView>(R.id.imgStoreLogo)
-            // 🔹 Update gambar profil toko di bagian bawah
-
-
             if (updatedPhoto != null) {
                 imgLogo?.setImageURI(updatedPhoto)
-
                 Log.d("ProductsFragment", "🟢 Updated store photo: $updatedPhoto")
             } else {
-                imgLogo?.setImageResource(R.drawable.ic_person) // fallback default
-
+                imgLogo?.setImageResource(R.drawable.ic_person)
                 Log.d("ProductsFragment", "⚪ Reset to default photo")
             }
         }
     }
 
+    // ============================================================
+    // 🔹 PUBLIC FUNCTIONS
+    // ============================================================
     fun addProduct(product: Product) {
         globalProductList.add(product)
         products.clear()
         products.addAll(globalProductList)
         productAdapter.notifyDataSetChanged()
     }
+
     fun updateProduct(updated: Product) {
         val index = globalProductList.indexOfFirst { it.id == updated.id }
         if (index != -1) {

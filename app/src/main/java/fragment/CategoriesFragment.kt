@@ -1,5 +1,6 @@
 package com.example.miniproject.fragment
 
+import android.app.AlertDialog
 import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -12,6 +13,7 @@ import com.example.miniproject.R
 import com.example.miniproject.adapter.CategoryAdapter
 import com.example.miniproject.adapter.ProductAdapter
 import com.example.miniproject.data.CategoryRepository
+import com.example.miniproject.data.ProductDataSource
 import com.example.miniproject.databinding.FragmentCategoriesBinding
 import com.example.miniproject.model.Category
 import com.example.miniproject.model.Product
@@ -72,15 +74,9 @@ class CategoriesFragment : Fragment() {
         userRole = sharedPref.getString("role", "user") ?: "user"
 
         if (userRole == "admin") {
-            // binding.fabAddCategory.visibility = View.VISIBLE
-            // Perbaikan: FAB mungkin tidak ada, gunakan findViewById jika benar-benar ada
-            // atau pastikan FAB berada di layout utama dan bukan di CollapsingToolbar yang disembunyikan.
-            // Jika FAB ada, error menunjukkan fabAddCategory tidak ada di FragmentCategoriesBinding
-            // Karena FAB ada di CoordinatorLayout, referensinya seharusnya benar jika Binding dibuat ulang.
-            // Untuk sementara, jika error tetap, coba cek import atau ID layout.
-            // Biarkan saja jika errornya hanya pada FAB (saya asumsikan FAB ini ada di layout Anda)
+            binding.fabAddCategory.visibility = View.VISIBLE
         } else {
-            // binding.fabAddCategory.visibility = View.GONE
+            binding.fabAddCategory.visibility = View.GONE
         }
     }
 
@@ -92,22 +88,44 @@ class CategoriesFragment : Fragment() {
 
         productAdapter = ProductAdapter(products, userRole) { product, action ->
             when (action) {
-                "view" -> Toast.makeText(requireContext(), "View: ${product.name}", Toast.LENGTH_SHORT).show()
-                "edit" -> Toast.makeText(requireContext(), "Edit: ${product.name}", Toast.LENGTH_SHORT).show()
-                "delete" -> Toast.makeText(requireContext(), "Delete: ${product.name}", Toast.LENGTH_SHORT).show()
+                "view" -> {
+                    val bundle = Bundle().apply { putParcelable("product", product) }
+                    val fragment = ProductDetailFragment().apply { arguments = bundle }
+                    parentFragmentManager.beginTransaction()
+                        .replace(R.id.fragment_container, fragment)
+                        .addToBackStack(null)
+                        .commit()
+                }
+                "edit" -> {
+                    val bundle = Bundle().apply { putParcelable("product", product) }
+                    val fragment = EditProductFragment().apply { arguments = bundle }
+                    parentFragmentManager.beginTransaction()
+                        .replace(R.id.fragment_container, fragment)
+                        .addToBackStack(null)
+                        .commit()
+                }
+                "delete" -> {
+                    AlertDialog.Builder(requireContext())
+                        .setTitle("Hapus Produk")
+                        .setMessage("Yakin ingin menghapus ${product.name}?")
+                        .setPositiveButton("Hapus") { dialog, _ ->
+                            ProductDataSource.deleteProduct(product)
+                            loadDummyProducts()
+                            showProductsForCategory(categories.find { it.id == product.categoryId }!!)
+                            Toast.makeText(context, "✅ Produk dihapus", Toast.LENGTH_SHORT).show()
+                            dialog.dismiss()
+                        }
+                        .setNegativeButton("Batal") { dialog, _ ->
+                            dialog.dismiss()
+                        }
+                        .show()
+                }
             }
         }
-        // Perbaikan: rvCategoryProducts
-        // rvCategoryProducts ada di dalam llProductsSection yang awalnya 'gone'.
-        // Error 'Unresolved reference' berarti ID ini tidak ada di FragmentCategoriesBinding.
-        // Asumsi: binding.rvCategoryProducts sudah benar jika FragmentCategoriesBinding diperbarui.
         binding.rvCategoryProducts.adapter = productAdapter
     }
 
     private fun setupClickListeners() {
-        // Perbaikan: fabAddCategory
-        // Sama dengan getUserData, jika FAB tidak diselesaikan di Binding, error ini muncul.
-        // Jika FAB benar ada, hapus baris ini jika error persisten.
         binding.fabAddCategory.setOnClickListener {
             parentFragmentManager.beginTransaction()
                 .replace(R.id.fragment_container, AddCategoryFragment())
@@ -125,38 +143,17 @@ class CategoriesFragment : Fragment() {
     }
 
     private fun loadDummyProducts() {
-        val dummyProducts = listOf(
-            Product(
-                id = 1, name = "Cangkul Premium", price = 150000.0, description = "Cangkul berkualitas tinggi.", categoryId = 1, stock = 50,
-                categoryName = "Peralatan", imageResId = R.drawable.cangkul, imageUrl = null, createdAt = null
-            ),
-            Product(
-                id = 2, name = "Pupuk Organik 25kg", price = 200000.0, description = "Pupuk untuk semua jenis tanaman.", categoryId = 2, stock = 30,
-                categoryName = "Pupuk", imageResId = R.drawable.pupuk, imageUrl = null, createdAt = null
-            ),
-            Product(
-                id = 3, name = "Benih Padi Premium", price = 50000.0, description = "Benih padi kualitas unggul.", categoryId = 3, stock = 100,
-                categoryName = "Benih", imageResId = R.drawable.benih, imageUrl = null, createdAt = null
-            ),
-            Product(
-                id = 4, name = "Traktor Mini", price = 5000000.0, description = "Traktor untuk sawah luas.", categoryId = 4, stock = 5,
-                categoryName = "Alat Pertanian", imageResId = R.drawable.traktor, imageUrl = null, createdAt = null
-            ),
-            Product(id = 5, name = "Pestisida Alami 500ml", price = 75000.0, description = "Pestisida dari bahan alami.", categoryId = 5, stock = 60, categoryName = "Pestisida", imageResId = null, imageUrl = null, createdAt = null),
-            Product(id = 6, name = "Benih Jagung Hibrida", price = 45000.0, description = "Benih jagung hibrida F1.", categoryId = 3, stock = 80, categoryName = "Benih", imageResId = null, imageUrl = null, createdAt = null),
-            Product(id = 7, name = "Pupuk NPK", price = 180000.0, description = "Pupuk NPK seimbang.", categoryId = 2, stock = 40, categoryName = "Pupuk", imageResId = null, imageUrl = null, createdAt = null),
-            Product(id = 8, name = "Sekop Tani Kuat", price = 120000.0, description = "Sekop dari bahan baja.", categoryId = 1, stock = 25, categoryName = "Peralatan", imageResId = null, imageUrl = null, createdAt = null)
-        )
+        // ✅ Gunakan data dari ProductDataSource
+        ProductDataSource.loadDummyData()
+
+        val allData = ProductDataSource.getAllProducts()
 
         allProducts.clear()
-        allProducts.addAll(dummyProducts)
+        allProducts.addAll(allData)
     }
 
     private fun showProductsForCategory(category: Category) {
-        // Perbaikan: tvCategoryTitle
         binding.tvCategoryTitle.text = "Products in ${category.categoryName}"
-
-        // Perbaikan: llProductsSection
         binding.llProductsSection.visibility = View.VISIBLE
 
         val filteredProducts = allProducts.filter { it.categoryId == category.id }
@@ -169,9 +166,7 @@ class CategoriesFragment : Fragment() {
             Toast.makeText(requireContext(), "No products found in ${category.categoryName}", Toast.LENGTH_SHORT).show()
         }
 
-        // Scroll to the product list
         binding.nestedScrollView.post {
-            // Perbaikan: llProductsSection.top
             binding.nestedScrollView.smoothScrollTo(0, binding.llProductsSection.top)
         }
     }

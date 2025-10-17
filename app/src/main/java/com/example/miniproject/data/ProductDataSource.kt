@@ -2,8 +2,6 @@ package com.example.miniproject.data
 
 import com.example.miniproject.R
 import com.example.miniproject.model.Product
-import com.example.miniproject.data.Review
-
 
 object ProductDataSource {
 
@@ -79,7 +77,7 @@ object ProductDataSource {
                     imageResId = R.drawable.traktor,
                     categoryId = 4,
                     stock = 5,
-                    categoryName = "Peralatan",
+                    categoryName = "Alat Pertanian",
                     createdAt = "2025-01-01"
                 ),
                 Product(
