@@ -24,8 +24,6 @@ class PromoAdapter(private val promos: List<Promo>) :
         RecyclerView.ViewHolder(binding.root) {
 
         fun bind(promo: Promo) {
-            binding.tvPromoTitle.text = promo.title
-            binding.tvPromoDescription.text = promo.description
             binding.ivPromoImage.setImageResource(promo.imageResId)
         }
     }

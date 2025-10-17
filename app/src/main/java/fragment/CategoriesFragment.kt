@@ -49,8 +49,8 @@ class CategoriesFragment : Fragment() {
         getUserData()
         setupRecyclerViews()
         setupClickListeners()
-        loadDummyCategories()
-        loadDummyProducts()
+        loadCategories()
+        loadProducts()
 
         val argId = arguments?.getInt("category_id", -1) ?: -1
         val argName = arguments?.getString("category_name")
@@ -69,6 +69,12 @@ class CategoriesFragment : Fragment() {
         }
     }
 
+    // ✅ Refresh otomatis saat kembali dari AddCategory/EditCategory
+    override fun onResume() {
+        super.onResume()
+        loadCategories()
+    }
+
     private fun getUserData() {
         val sharedPref = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
         userRole = sharedPref.getString("role", "user") ?: "user"
@@ -81,9 +87,19 @@ class CategoriesFragment : Fragment() {
     }
 
     private fun setupRecyclerViews() {
-        categoryAdapter = CategoryAdapter(categories) { category ->
-            showProductsForCategory(category)
-        }
+        categoryAdapter = CategoryAdapter(
+            categories = categories,
+            userRole = userRole, // Pass userRole ke adapter
+            onItemClick = { category ->
+                showProductsForCategory(category)
+            },
+            onEditClick = { category ->
+                editCategory(category)
+            },
+            onDeleteClick = { category ->
+                deleteCategory(category)
+            }
+        )
         binding.rvCategories.adapter = categoryAdapter
 
         productAdapter = ProductAdapter(products, userRole) { product, action ->
@@ -110,7 +126,7 @@ class CategoriesFragment : Fragment() {
                         .setMessage("Yakin ingin menghapus ${product.name}?")
                         .setPositiveButton("Hapus") { dialog, _ ->
                             ProductDataSource.deleteProduct(product)
-                            loadDummyProducts()
+                            loadProducts()
                             showProductsForCategory(categories.find { it.id == product.categoryId }!!)
                             Toast.makeText(context, "✅ Produk dihapus", Toast.LENGTH_SHORT).show()
                             dialog.dismiss()
@@ -134,7 +150,7 @@ class CategoriesFragment : Fragment() {
         }
     }
 
-    private fun loadDummyCategories() {
+    private fun loadCategories() {
         val repoCategories = CategoryRepository.getCategories()
 
         categories.clear()
@@ -142,8 +158,7 @@ class CategoriesFragment : Fragment() {
         categoryAdapter.notifyDataSetChanged()
     }
 
-    private fun loadDummyProducts() {
-        // ✅ Gunakan data dari ProductDataSource
+    private fun loadProducts() {
         ProductDataSource.loadDummyData()
 
         val allData = ProductDataSource.getAllProducts()
@@ -169,6 +184,42 @@ class CategoriesFragment : Fragment() {
         binding.nestedScrollView.post {
             binding.nestedScrollView.smoothScrollTo(0, binding.llProductsSection.top)
         }
+    }
+
+    // ✅ Edit kategori
+    private fun editCategory(category: Category) {
+        val fragment = EditCategoryFragment().apply {
+            arguments = Bundle().apply {
+                putInt("category_id", category.id)
+                putString("category_name", category.categoryName)
+            }
+        }
+        parentFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, fragment)
+            .addToBackStack(null)
+            .commit()
+    }
+
+    // ✅ Hapus kategori
+    private fun deleteCategory(category: Category) {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Hapus Kategori")
+            .setMessage("Yakin ingin menghapus kategori '${category.categoryName}'?")
+            .setPositiveButton("Hapus") { dialog, _ ->
+                val success = CategoryRepository.deleteCategory(category.id)
+                if (success) {
+                    Toast.makeText(context, "✅ Kategori dihapus", Toast.LENGTH_SHORT).show()
+                    loadCategories()
+                    binding.llProductsSection.visibility = View.GONE
+                } else {
+                    Toast.makeText(context, "❌ Gagal menghapus kategori", Toast.LENGTH_SHORT).show()
+                }
+                dialog.dismiss()
+            }
+            .setNegativeButton("Batal") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .show()
     }
 
     override fun onDestroyView() {

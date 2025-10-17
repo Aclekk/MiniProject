@@ -6,83 +6,12 @@
     app:cardCornerRadius="20dp"
     app:cardElevation="0dp">
 
-    <FrameLayout
+    <!-- 🎯 Gambar promo polos tanpa overlay atau teks -->
+    <ImageView
+        android:id="@+id/ivPromoImage"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-        <!-- 🖼️ Background Image -->
-        <ImageView
-            android:id="@+id/ivPromoImage"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:scaleType="centerCrop"
-            android:contentDescription="Promo Image" />
-
-        <!-- Gradient Overlay (Bottom to Top) -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@drawable/bg_promo_overlay" />
-
-        <!-- ✨ Content Container -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:padding="24dp">
-
-            <!-- Badge "PROMO" -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="⚡ PROMO SPESIAL"
-                android:textSize="12sp"
-                android:textStyle="bold"
-                android:textColor="@color/white"
-                android:background="@drawable/bg_promo_badge"
-                android:paddingHorizontal="16dp"
-                android:paddingVertical="6dp"
-                android:layout_marginBottom="12dp"
-                android:elevation="2dp" />
-
-            <!-- Judul Promo -->
-            <TextView
-                android:id="@+id/tvPromoTitle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Promo Title"
-                android:textSize="22sp"
-                android:textStyle="bold"
-                android:textColor="@color/white"
-                android:textAlignment="center"
-                android:shadowColor="#000000"
-                android:shadowDx="0"
-                android:shadowDy="2"
-                android:shadowRadius="4"
-                android:layout_marginBottom="8dp"
-                android:maxLines="2"
-                android:ellipsize="end" />
-
-            <!-- Deskripsi Promo -->
-            <TextView
-                android:id="@+id/tvPromoDescription"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Promo Description"
-                android:textSize="15sp"
-                android:textColor="@color/white"
-                android:textAlignment="center"
-                android:shadowColor="#000000"
-                android:shadowDx="0"
-                android:shadowDy="1"
-                android:shadowRadius="3"
-                android:maxLines="3"
-                android:ellipsize="end"
-                android:lineSpacingExtra="4dp" />
-
-        </LinearLayout>
-
-    </FrameLayout>
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:contentDescription="Promo Image" />
 
 </androidx.cardview.widget.CardView>

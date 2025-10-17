@@ -114,16 +114,23 @@ class ProductsFragment : Fragment() {
     private fun setupCategories() {
         val categories = CategoryRepository.getCategories()
 
-        categoryAdapter = CategoryAdapter(categories) { selectedCategory ->
-            // ✅ Gunakan fungsi di MainActivity untuk navigasi ke Categories
-            (activity as? MainActivity)?.openCategoriesWithFilter(
-                categoryId = selectedCategory.id,
-                categoryName = selectedCategory.categoryName
-            )
-        }
+        categoryAdapter = CategoryAdapter(
+            categories = categories,
+            userRole = userRole, // 🟢 tambahkan ini supaya sesuai konstruktor adapter
+            onItemClick = { selectedCategory ->
+                // Navigasi ke halaman kategori
+                (activity as? MainActivity)?.openCategoriesWithFilter(
+                    categoryId = selectedCategory.id,
+                    categoryName = selectedCategory.categoryName
+                )
+            }
+        )
 
-        val horizontalLayout =
-            LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+        val horizontalLayout = LinearLayoutManager(
+            requireContext(),
+            LinearLayoutManager.HORIZONTAL,
+            false
+        )
 
         binding.rvCategories.apply {
             layoutManager = horizontalLayout
@@ -133,6 +140,7 @@ class ProductsFragment : Fragment() {
             isNestedScrollingEnabled = false
         }
     }
+
 
     // ============================================================
     // 🔹 RECYCLER VIEW PRODUK (Grid)
@@ -179,24 +187,30 @@ class ProductsFragment : Fragment() {
     private fun loadDummyProducts() {
         showLoading(true)
 
-        // ✅ Gunakan data dari ProductDataSource
+        // ✅ Load data dari sumber utama
         ProductDataSource.loadDummyData()
         val allData = ProductDataSource.getAllProducts()
 
+        // Simpan semua data ke global list (buat referensi penuh)
         globalProductList.clear()
         globalProductList.addAll(allData)
 
+        // 🧩 Ambil hanya 4 produk terlaris (misal berdasarkan harga tertinggi atau stok terbanyak)
+        val featuredProducts = allData.take(4) // ✅ cuma ambil 4 produk pertama
+
+        // Update list yang tampil di layar
         products.clear()
-        products.addAll(globalProductList)
+        products.addAll(featuredProducts)
 
         allProducts.clear()
-        allProducts.addAll(globalProductList)
+        allProducts.addAll(allData)
 
         productAdapter.notifyDataSetChanged()
 
         showLoading(false)
         binding.swipeRefresh.isRefreshing = false
     }
+
 
     // ============================================================
     // 🔹 SEARCH & FILTER
