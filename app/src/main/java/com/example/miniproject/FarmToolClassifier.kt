@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Log
 import java.io.IOException
+import kotlin.math.abs
 
 /**
  * 🤖 FarmToolClassifier - ML Helper untuk Visual Search Alat Tani
@@ -24,7 +25,7 @@ class FarmToolClassifier(private val context: Context) {
             "pupuk" to listOf("pupuk", "fertilizer", "kompos", "organik"),
             "benih" to listOf("benih", "seed", "bibit", "padi", "jagung"),
             "traktor" to listOf("traktor", "tractor", "mesin", "kendaraan"),
-            "rotavator" to listOf("rotavator", "rotary", "penggembu r"),
+            "rotavator" to listOf("rotavator", "rotary", "penggembur"),
             "sekop" to listOf("sekop", "shovel", "spade"),
             "selang" to listOf("selang", "hose", "irigasi", "pipa"),
             "arit" to listOf("arit", "sickle", "sabit"),
@@ -54,7 +55,7 @@ class FarmToolClassifier(private val context: Context) {
     }
 
     /**
-     * 🔍 Classify bitmap langsung (ULTRA RELAXED VERSION)
+     * 🔍 Classify bitmap langsung (IMPROVED VERSION)
      */
     private fun classifyBitmap(bitmap: Bitmap): List<String> {
         Log.d(TAG, "🎨 Analyzing image: ${bitmap.width}x${bitmap.height}")
@@ -66,12 +67,18 @@ class FarmToolClassifier(private val context: Context) {
         // Log color distribution untuk debugging
         Log.d(TAG, "🎨 Color distribution: $dominantColors")
 
-        // 🚫 ONLY reject obvious skin tones (selfies)
+        // 🚫 STEP 1: Reject foto wajah/orang (IMPROVED!)
         val skinTone = isSkinTone(dominantColors)
         Log.d(TAG, "🧑 Skin tone detected: $skinTone")
 
         if (skinTone) {
             Log.d(TAG, "❌ REJECTED - Detected skin tone (likely selfie/face)")
+            return emptyList()
+        }
+
+        // 🚫 STEP 2: Reject foto yang terlalu blur/gelap
+        if (isTooBlurryOrDark(dominantColors)) {
+            Log.d(TAG, "❌ REJECTED - Image too blurry or dark")
             return emptyList()
         }
 
@@ -121,12 +128,12 @@ class FarmToolClassifier(private val context: Context) {
             Log.d(TAG, "🔵 Blue detected: $blueRatio → Added water tools")
         }
 
-        // 🎯 FALLBACK: If no predictions, suggest common hand tools ONLY
+        // 🎯 FALLBACK: If no predictions, suggest common tools
         if (predictions.isEmpty()) {
             Log.d(TAG, "⚠️ No color matches, using fallback suggestions")
-            predictions.add("cangkul" to 0.4f)
-            predictions.add("sekop" to 0.4f)
-            // Removed pupuk from fallback - only suggest tools with no color info
+            predictions.add("cangkul" to 0.5f)
+            predictions.add("sekop" to 0.5f)
+            predictions.add("pupuk" to 0.4f)
         }
 
         // 📊 Sort by confidence and return top 3
@@ -141,20 +148,116 @@ class FarmToolClassifier(private val context: Context) {
     }
 
     /**
-     * 🧑 Detect if image contains skin tones (reject selfies/people photos)
+     * 🧑 ULTRA STRICT: Detect if image contains skin tones (reject selfies/people photos)
      */
     private fun isSkinTone(colors: Map<String, Float>): Boolean {
         val redRatio = colors["red"]!!
         val greenRatio = colors["green"]!!
+        val blueRatio = colors["blue"]!!
+        val blackRatio = colors["black"]!!
+        val grayRatio = colors["gray"]!!
+        val brownRatio = colors["brown"]!!
+
+        // ✅ Pattern 1: Light skin tone (kulit terang) - LOWERED threshold
+        val isLightSkin = (redRatio > 0.20f &&
+                blackRatio < 0.12f &&
+                grayRatio < 0.18f &&
+                greenRatio > 0.05f &&
+                greenRatio < 0.20f)
+
+        // ✅ Pattern 2: Medium skin tone (kulit sawo matang) - EXPANDED range
+        val isMediumSkin = (redRatio > 0.15f &&
+                redRatio < 0.50f &&
+                brownRatio > 0.03f &&
+                blackRatio < 0.18f &&
+                greenRatio < 0.20f)
+
+        // ✅ Pattern 3: Balanced face photo (foto indoor/outdoor) - MORE AGGRESSIVE
+        val isBalancedFace = (redRatio > 0.12f &&
+                greenRatio > 0.08f &&
+                blueRatio > 0.05f &&
+                blackRatio < 0.20f &&
+                grayRatio < 0.25f &&
+                abs(redRatio - greenRatio) < 0.15f)
+
+        // ✅ Pattern 4: Close-up face (very high red) - LOWERED threshold
+        val isCloseUpFace = (redRatio > 0.30f &&
+                blackRatio < 0.15f &&
+                grayRatio < 0.20f)
+
+        // ✅ Pattern 5: ANY photo with human colors (BROADEST)
+        // Red is highest among RGB, with moderate values
+        val hasHumanColors = (redRatio > greenRatio &&
+                redRatio > blueRatio &&
+                redRatio > 0.12f &&
+                blackRatio < 0.20f &&
+                (grayRatio + blackRatio) < 0.35f)
+
+        // ✅ Pattern 6: Typical selfie lighting (balanced but red-dominant)
+        val isSelfie = (redRatio > 0.15f &&
+                greenRatio > 0.08f &&
+                abs(redRatio - greenRatio) < 0.12f &&
+                abs(greenRatio - blueRatio) < 0.08f &&
+                blackRatio < 0.18f)
+
+        val isSkin = isLightSkin || isMediumSkin || isBalancedFace ||
+                isCloseUpFace || hasHumanColors || isSelfie
+
+        if (isSkin) {
+            val matchedPattern = when {
+                isLightSkin -> "Light Skin"
+                isMediumSkin -> "Medium Skin"
+                isBalancedFace -> "Balanced Face"
+                isCloseUpFace -> "Close-up Face"
+                hasHumanColors -> "Human Colors"
+                isSelfie -> "Selfie Lighting"
+                else -> "Unknown"
+            }
+            Log.d(TAG, "🧑 SKIN DETECTED ($matchedPattern) - " +
+                    "red:$redRatio green:$greenRatio blue:$blueRatio " +
+                    "black:$blackRatio gray:$grayRatio brown:$brownRatio")
+        } else {
+            // Log untuk debugging kalau lolos
+            Log.d(TAG, "🧑 Skin check PASSED - " +
+                    "red:$redRatio green:$greenRatio blue:$blueRatio " +
+                    "black:$blackRatio gray:$grayRatio brown:$brownRatio")
+        }
+
+        return isSkin
+    }
+
+    /**
+     * 🌫️ NEW: Detect if image is too blurry or dark
+     */
+    private fun isTooBlurryOrDark(colors: Map<String, Float>): Boolean {
+        val redRatio = colors["red"]!!
+        val greenRatio = colors["green"]!!
+        val blueRatio = colors["blue"]!!
         val blackRatio = colors["black"]!!
         val grayRatio = colors["gray"]!!
 
-        // Very specific skin tone: high red, very low black/gray, low green
-        val isSkin = (redRatio > 0.35f && blackRatio < 0.05f &&
-                grayRatio < 0.10f && greenRatio < 0.12f)
+        // ❌ Pattern 1: Too dark (black dominance > 50%)
+        val tooDark = blackRatio > 0.50f
 
-        Log.d(TAG, "🧑 Skin check - red:$redRatio black:$blackRatio gray:$grayRatio green:$greenRatio → $isSkin")
-        return isSkin
+        // ❌ Pattern 2: Too monochrome (gray + black > 60%)
+        val tooMonochrome = (grayRatio + blackRatio) > 0.60f &&
+                redRatio < 0.08f &&
+                greenRatio < 0.08f &&
+                blueRatio < 0.08f
+
+        // ❌ Pattern 3: All colors extremely low (very dark/underexposed)
+        val extremelyDark = redRatio < 0.05f &&
+                greenRatio < 0.05f &&
+                blueRatio < 0.05f &&
+                blackRatio > 0.40f
+
+        val isBlurry = tooDark || tooMonochrome || extremelyDark
+
+        if (isBlurry) {
+            Log.d(TAG, "🌫️ BLURRY/DARK DETECTED - black:$blackRatio gray:$grayRatio")
+        }
+
+        return isBlurry
     }
 
     /**
@@ -186,7 +289,7 @@ class FarmToolClassifier(private val context: Context) {
                     r > g * 1.2 && r > b * 1.2 -> redCount++   // Red
                     b > r * 1.2 && b > g * 1.2 -> blueCount++  // Blue
                     r in 80..140 && g in 60..100 && b in 40..80 -> brownCount++ // Brown
-                    Math.abs(r - g) < 30 && Math.abs(g - b) < 30 && r < 100 -> grayCount++ // Gray
+                    abs(r - g) < 30 && abs(g - b) < 30 && r < 100 -> grayCount++ // Gray
                     r < 50 && g < 50 && b < 50 -> blackCount++ // Black
                 }
             }

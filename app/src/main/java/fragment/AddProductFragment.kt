@@ -1,6 +1,10 @@
 package com.example.miniproject.fragment
 
+import android.app.Activity
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -12,11 +16,17 @@ import com.example.miniproject.data.CategoryRepository
 import com.example.miniproject.data.ProductDataSource
 import com.example.miniproject.databinding.FragmentAddProductBinding
 import com.example.miniproject.model.Product
+import java.text.SimpleDateFormat
+import java.util.*
 
 class AddProductFragment : Fragment() {
 
     private var _binding: FragmentAddProductBinding? = null
     private val binding get() = _binding!!
+
+    // 📸 Tambahan variabel untuk simpan foto yang dipilih
+    private var selectedImageUri: Uri? = null
+    private val PICK_IMAGE_REQUEST = 100
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -53,8 +63,33 @@ class AddProductFragment : Fragment() {
         binding.btnCancel.setOnClickListener {
             parentFragmentManager.popBackStack()
         }
+
+        // 📸 Tambahan: tombol pilih foto
+        binding.btnPickImage.setOnClickListener {
+            openGallery()
+        }
     }
 
+    // ============================================================
+    // 📷 BUKA GALERI
+    // ============================================================
+    private fun openGallery() {
+        val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+        startActivityForResult(intent, PICK_IMAGE_REQUEST)
+    }
+
+    // 📸 Ambil hasil dari galeri dan tampilkan di ImageView
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == PICK_IMAGE_REQUEST && resultCode == Activity.RESULT_OK && data != null) {
+            selectedImageUri = data.data
+            binding.imgPreview.setImageURI(selectedImageUri)
+        }
+    }
+
+    // ============================================================
+    // 💾 SIMPAN PRODUK (dummy flow tetap)
+    // ============================================================
     private fun saveProduct() {
         val name = binding.etProductName.text.toString().trim()
         val priceStr = binding.etProductPrice.text.toString().trim()
@@ -76,7 +111,7 @@ class AddProductFragment : Fragment() {
             return
         }
 
-        // Generate ID baru (auto-increment dari ID terakhir)
+        // Generate ID baru (auto-increment)
         val allProducts = ProductDataSource.getAllProducts()
         val newId = if (allProducts.isEmpty()) 1 else (allProducts.maxOf { it.id } + 1)
 
@@ -85,22 +120,21 @@ class AddProductFragment : Fragment() {
         val selectedCategory = categories.find { it.categoryName == categoryName }
         val categoryId = selectedCategory?.id ?: 1
 
-        // Buat produk baru
+        // 🧩 Buat produk baru (dummy save)
         val newProduct = Product(
             id = newId,
             name = name,
             price = priceStr.toDouble(),
             description = description,
-            imageUrl = null,
+            imageUrl = selectedImageUri?.toString(), // ✅ simpan URI foto kalau ada
             imageResId = getDefaultImageForCategory(categoryName),
             categoryId = categoryId,
             stock = stockStr.toInt(),
             categoryName = categoryName,
-            createdAt = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
-                .format(java.util.Date())
+            createdAt = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
         )
 
-        // Tambahkan ke ProductDataSource
+        // Tambahkan ke data dummy (tidak permanen)
         ProductDataSource.getAllProducts().add(newProduct)
 
         Toast.makeText(context, "✅ Produk berhasil ditambahkan!", Toast.LENGTH_SHORT).show()

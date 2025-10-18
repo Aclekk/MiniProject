@@ -1,5 +1,6 @@
 package com.example.miniproject.adapter
 
+import android.net.Uri
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -38,13 +39,6 @@ class ProductAdapter(
         return products.size
     }
 
-    // ❌ HAPUS METHOD INI - TIDAK PERLU LAGI!
-    // fun updateList(newList: List<Product>) {
-    //     products.clear()
-    //     products.addAll(newList)
-    //     notifyDataSetChanged()
-    // }
-
     inner class ProductViewHolder(private val binding: ItemProductGridBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
@@ -53,33 +47,51 @@ class ProductAdapter(
             Log.d("ProductAdapter", "Binding product: ${product.name}")
             Log.d("ProductAdapter", "Current userRole: '$userRole'")
 
+            // Set teks produk
             binding.tvProductName.text = product.name
             binding.tvProductPrice.text = "Rp ${String.format("%,d", product.price.toInt())}"
 
-            // ✅ FIXED: Smart cast error — pakai null-safe
+            // =============================================================
+            // 🖼️ LOGIC BARU: Prioritaskan foto dari galeri (URI)
+            // =============================================================
             when {
+                // ✅ 1️⃣ Jika produk punya foto dari galeri (URI)
+                !product.imageUrl.isNullOrEmpty() -> {
+                    try {
+                        Glide.with(binding.root.context)
+                            .load(Uri.parse(product.imageUrl))
+                            .placeholder(R.drawable.bg_card)
+                            .error(R.drawable.bg_card)
+                            .into(binding.imgProduct)
+                        Log.d("ProductAdapter", "🌄 Loaded image from gallery URI: ${product.imageUrl}")
+                    } catch (e: Exception) {
+                        Log.e("ProductAdapter", "⚠️ Failed to load URI image for ${product.name}: ${e.message}")
+                        binding.imgProduct.setImageResource(R.drawable.bg_card)
+                    }
+                }
+
+                // ✅ 2️⃣ Jika tidak ada URI, tapi punya drawable bawaan
                 product.imageResId != null -> {
                     binding.imgProduct.setImageResource(product.imageResId ?: R.drawable.bg_card)
-                    Log.d("ProductAdapter", "🖼️ Using local resource image for ${product.name}")
+                    Log.d("ProductAdapter", "🖼️ Loaded drawable resource for ${product.name}")
                 }
-                !product.imageUrl.isNullOrEmpty() -> {
-                    Glide.with(binding.root.context)
-                        .load(product.imageUrl)
-                        .placeholder(R.drawable.bg_card)
-                        .into(binding.imgProduct)
-                    Log.d("ProductAdapter", "🌐 Using URL image for ${product.name}")
-                }
+
+                // ✅ 3️⃣ Kalau dua-duanya kosong → pakai default
                 else -> {
                     binding.imgProduct.setImageResource(R.drawable.bg_card)
-                    Log.d("ProductAdapter", "📦 Using default image for ${product.name}")
+                    Log.d("ProductAdapter", "📦 Loaded default image for ${product.name}")
                 }
             }
 
-            // 🔹 Set kategori & stok (jika ada di layout)
+            // =============================================================
+            // 🏷️ Kategori dan Stok
+            // =============================================================
             binding.tvProductCategory.text = product.categoryName ?: "Kategori"
             binding.tvProductStock.text = "Stok: ${product.stock}"
 
-            // ✅ Hanya tampilkan tombol edit/delete untuk admin
+            // =============================================================
+            // ⚙️ Tombol Admin (Edit/Delete)
+            // =============================================================
             if (userRole == "admin") {
                 binding.llAdminActions.visibility = View.VISIBLE
                 Log.d("ProductAdapter", "✅ Admin actions VISIBLE for: ${product.name}")
@@ -88,19 +100,19 @@ class ProductAdapter(
                 Log.d("ProductAdapter", "❌ Admin actions GONE for: ${product.name}, role: '$userRole'")
             }
 
-            // 🟡 Edit Produk
+            // =============================================================
+            // 🟡 Event Listener
+            // =============================================================
             binding.btnEdit.setOnClickListener {
                 Log.d("ProductAdapter", "✏️ Edit clicked for: ${product.name}")
                 onItemClick(product, "edit")
             }
 
-            // 🔴 Hapus Produk
             binding.btnDelete.setOnClickListener {
                 Log.d("ProductAdapter", "🗑️ Delete clicked for: ${product.name}")
                 onItemClick(product, "delete")
             }
 
-            // 👁️ Klik card produk (detail)
             binding.root.setOnClickListener {
                 Log.d("ProductAdapter", "👀 View clicked for: ${product.name}")
                 onItemClick(product, "view")
