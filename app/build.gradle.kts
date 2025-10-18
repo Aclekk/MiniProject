@@ -39,6 +39,12 @@ android {
 
     buildFeatures {
         viewBinding = true
+        mlModelBinding = true  // ✅ Enable ML Model Binding
+    }
+
+    // ✅ TensorFlow Lite options (updated syntax)
+    androidResources {
+        noCompress += "tflite"
     }
 }
 
@@ -61,7 +67,6 @@ dependencies {
     // ✅ Glide (Image loading)
     implementation("com.github.bumptech.glide:glide:4.16.0")
 
-
     // ✅ Lifecycle components
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.7.0")
@@ -77,6 +82,16 @@ dependencies {
 
     // ✅ Native Feature: Lokasi
     implementation("com.google.android.gms:play-services-location:21.3.0")
+
+    // 🆕 TensorFlow Lite Dependencies
+    implementation("org.tensorflow:tensorflow-lite:2.14.0")
+    implementation("org.tensorflow:tensorflow-lite-support:0.4.4")
+    implementation("org.tensorflow:tensorflow-lite-task-vision:0.4.4")
+
+    // 🆕 CameraX Dependencies (untuk ambil foto)
+    implementation("androidx.camera:camera-camera2:1.3.1")
+    implementation("androidx.camera:camera-lifecycle:1.3.1")
+    implementation("androidx.camera:camera-view:1.3.1")
 
     // ✅ Unit Test
     testImplementation("junit:junit:4.13.2")

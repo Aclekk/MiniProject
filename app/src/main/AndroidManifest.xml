@@ -6,7 +6,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
-    <!-- 📸 CAMERA -->
+    <!-- 📸 CAMERA (untuk Visual Search) -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
@@ -27,6 +27,8 @@
 
     <application
         android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.NiagaTani"
@@ -51,7 +53,7 @@
             android:theme="@style/Theme.NiagaTani.NoActionBar"
             android:windowSoftInputMode="adjustPan" />
 
-        <!-- 🟢 Main Activity (HANYA 1 DEKLARASI!) -->
+        <!-- 🟢 Main Activity (dengan Visual Search) -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -64,7 +66,7 @@
             android:exported="true"
             android:windowSoftInputMode="adjustPan" />
 
-        <!-- 🟢 Provider untuk kamera -->
+        <!-- 🟢 Provider untuk kamera & file access -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.provider"

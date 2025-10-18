@@ -43,7 +43,7 @@
                 android:textSize="13sp" />
         </LinearLayout>
 
-        <!-- 🔍 SEARCH & FILTER BAR -->
+        <!-- 🔍 SEARCH & FILTER BAR dengan VISUAL SEARCH -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -77,6 +77,19 @@
                     android:textColor="#2D5016"
                     android:textColorHint="#B0B0B0"
                     android:textSize="14sp" />
+
+                <!-- 🆕 VISUAL SEARCH BUTTON (CAMERA ICON) - ENHANCED -->
+                <ImageButton
+                    android:id="@+id/btnVisualSearch"
+                    android:layout_width="52dp"
+                    android:layout_height="52dp"
+                    android:background="@drawable/bg_camera_button"
+                    android:contentDescription="Cari dengan Foto"
+                    android:padding="10dp"
+                    android:src="@android:drawable/ic_menu_camera"
+                    app:tint="#FFFFFF"
+                    android:scaleType="centerInside"
+                    android:layout_marginEnd="4dp" />
 
                 <View
                     android:layout_width="1dp"

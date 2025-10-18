@@ -9,6 +9,8 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.miniproject.R
 import com.example.miniproject.adapter.CategoryAdapter
 import com.example.miniproject.adapter.ProductAdapter
@@ -100,6 +102,9 @@ class CategoriesFragment : Fragment() {
                 deleteCategory(category)
             }
         )
+
+        // ✅ Tambahkan layoutManager agar kategori tampil
+        binding.rvCategories.layoutManager = GridLayoutManager(requireContext(), 2)
         binding.rvCategories.adapter = categoryAdapter
 
         productAdapter = ProductAdapter(products, userRole) { product, action ->
@@ -112,6 +117,7 @@ class CategoriesFragment : Fragment() {
                         .addToBackStack(null)
                         .commit()
                 }
+
                 "edit" -> {
                     val bundle = Bundle().apply { putParcelable("product", product) }
                     val fragment = EditProductFragment().apply { arguments = bundle }
@@ -120,6 +126,7 @@ class CategoriesFragment : Fragment() {
                         .addToBackStack(null)
                         .commit()
                 }
+
                 "delete" -> {
                     AlertDialog.Builder(requireContext())
                         .setTitle("Hapus Produk")
@@ -138,6 +145,9 @@ class CategoriesFragment : Fragment() {
                 }
             }
         }
+
+        // ✅ Tambahkan layout manager untuk produk juga
+        binding.rvCategoryProducts.layoutManager = LinearLayoutManager(requireContext())
         binding.rvCategoryProducts.adapter = productAdapter
     }
 
@@ -178,7 +188,11 @@ class CategoriesFragment : Fragment() {
         productAdapter.notifyDataSetChanged()
 
         if (products.isEmpty()) {
-            Toast.makeText(requireContext(), "No products found in ${category.categoryName}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                requireContext(),
+                "No products found in ${category.categoryName}",
+                Toast.LENGTH_SHORT
+            ).show()
         }
 
         binding.nestedScrollView.post {
