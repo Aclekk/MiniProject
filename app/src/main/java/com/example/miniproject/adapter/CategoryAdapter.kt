@@ -49,7 +49,10 @@ class CategoryAdapter(
 
 
             // ✅ Tampilkan tombol edit/delete hanya untuk admin
-            if (userRole == "admin") {
+            // ✅ Tampilkan tombol edit/delete hanya untuk seller
+            val isSeller = userRole == "seller"
+
+            if (isSeller) {
                 btnEdit?.visibility = View.VISIBLE
                 btnDelete?.visibility = View.VISIBLE
 
@@ -59,6 +62,7 @@ class CategoryAdapter(
                 btnEdit?.visibility = View.GONE
                 btnDelete?.visibility = View.GONE
             }
+
 
             // ✅ Klik item untuk lihat produk
             itemView.setOnClickListener { onItemClick(category) }

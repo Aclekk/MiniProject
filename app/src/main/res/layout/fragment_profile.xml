@@ -20,7 +20,7 @@
             android:clipChildren="false"
             android:paddingBottom="60dp">
 
-            <!-- 📸 FOTO PROFIL (klik langsung untuk ganti PP) -->
+            <!-- 📸 FOTO PROFIL -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardProfile"
                 android:layout_width="140dp"
@@ -39,7 +39,7 @@
                     android:scaleType="centerCrop"
                     android:src="@drawable/ic_person" />
 
-                <!-- Overlay klik transparan -->
+                <!-- overlay klik -->
                 <View
                     android:id="@+id/btnTakePhoto"
                     android:layout_width="match_parent"
@@ -49,7 +49,7 @@
                     android:focusable="true" />
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Label kecil di bawah foto -->
+            <!-- Label kecil -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -73,9 +73,9 @@
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:backgroundTint="@android:color/white"
                 app:cardCornerRadius="28dp"
-                app:cardElevation="6dp"
-                android:backgroundTint="@android:color/white">
+                app:cardElevation="6dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -95,12 +95,12 @@
                         android:textSize="18sp"
                         android:layout_marginBottom="16dp" />
 
-                    <!-- Input Fields -->
+                    <!-- Username -->
                     <com.google.android.material.textfield.TextInputLayout
                         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="Nama Lengkap / Toko"
+                        android:hint="Username"
                         app:boxCornerRadiusTopStart="12dp"
                         app:boxCornerRadiusTopEnd="12dp"
                         app:boxCornerRadiusBottomEnd="12dp"
@@ -108,27 +108,66 @@
                         app:boxStrokeColor="@color/primary_green_premium">
 
                         <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/etName"
+                            android:id="@+id/etUsername"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:enabled="false"
                             android:textColor="@color/text_primary" />
                     </com.google.android.material.textfield.TextInputLayout>
 
+                    <!-- Nama Lengkap -->
                     <com.google.android.material.textfield.TextInputLayout
                         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
-                        android:hint="Kontak / Email"
+                        android:hint="Nama Lengkap"
+                        app:boxStrokeColor="@color/primary_green_premium">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etFullName"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:enabled="false"
+                            android:textColor="@color/text_primary" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Email -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:hint="Email"
                         app:boxStrokeColor="@color/primary_green_premium">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/etEmail"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:enabled="false"
                             android:textColor="@color/text_primary" />
                     </com.google.android.material.textfield.TextInputLayout>
 
+                    <!-- No Telepon -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:hint="No Telepon"
+                        app:boxStrokeColor="@color/primary_green_premium">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etPhone"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:enabled="false"
+                            android:inputType="phone"
+                            android:textColor="@color/text_primary" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Alamat -->
                     <com.google.android.material.textfield.TextInputLayout
                         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                         android:layout_width="match_parent"
@@ -141,24 +180,9 @@
                             android:id="@+id/etAddress"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:textColor="@color/text_primary" />
-                    </com.google.android.material.textfield.TextInputLayout>
-
-                    <!-- Tentang Kami -->
-                    <com.google.android.material.textfield.TextInputLayout
-                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:hint="Tentang Kami / Bio"
-                        app:boxStrokeColor="@color/primary_green_premium">
-
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/etAbout"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
+                            android:enabled="false"
                             android:inputType="textMultiLine"
-                            android:lines="3"
+                            android:minLines="2"
                             android:textColor="@color/text_primary" />
                     </com.google.android.material.textfield.TextInputLayout>
 
@@ -173,52 +197,11 @@
                             android:id="@+id/btnSaveProfile"
                             android:layout_width="match_parent"
                             android:layout_height="52dp"
-                            android:text="💾 Simpan Profil"
-                            app:cornerRadius="16dp"
+                            android:text="💾 Simpan Foto Profil"
+                            android:textColor="@android:color/white"
+                            android:textStyle="bold"
                             app:backgroundTint="@color/primary_green_premium"
-                            android:textColor="@android:color/white"
-                            android:textStyle="bold" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnSalesReport"
-                            android:layout_width="match_parent"
-                            android:layout_height="52dp"
-                            android:text="📊 Laporan Penjualan"
-                            android:layout_marginTop="12dp"
-                            android:visibility="gone"
-                            app:backgroundTint="@color/teal_700"
-                            app:cornerRadius="16dp"
-                            android:textColor="@android:color/white" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnViewReviews"
-                            android:layout_width="match_parent"
-                            android:layout_height="52dp"
-                            android:text="⭐ Lihat Ulasan Pembeli"
-                            android:layout_marginTop="12dp"
-                            app:backgroundTint="@color/primary_green_premium"
-                            android:textColor="@android:color/white"
-                            android:visibility="gone" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnSendNotification"
-                            android:layout_width="match_parent"
-                            android:layout_height="52dp"
-                            android:text="📢 Kirim Notifikasi"
-                            android:layout_marginTop="12dp"
-                            app:backgroundTint="@color/teal_700"
-                            android:textColor="@android:color/white"
-                            android:visibility="gone" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnViewNotifications"
-                            android:layout_width="match_parent"
-                            android:layout_height="52dp"
-                            android:text="🔔 Lihat Notifikasi"
-                            android:layout_marginTop="12dp"
-                            app:backgroundTint="@color/primary_green_premium"
-                            android:textColor="@android:color/white"
-                            android:visibility="gone" />
+                            app:cornerRadius="16dp" />
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnLogout"
@@ -226,10 +209,21 @@
                             android:layout_height="52dp"
                             android:text="🚪 Keluar"
                             android:textColor="@color/error_red"
-                            app:backgroundTint="@color/white"
-                            app:cornerRadius="16dp"
                             android:layout_marginTop="16dp"
-                            android:elevation="2dp" />
+                            android:elevation="2dp"
+                            app:backgroundTint="@color/white"
+                            app:cornerRadius="16dp" />
+
+                        <ProgressBar
+                            android:id="@+id/progressBar"
+                            style="?android:attr/progressBarStyle"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:layout_gravity="center"
+                            android:layout_marginTop="16dp"
+                            android:visibility="gone"
+                            android:indeterminate="true"
+                            android:indeterminateTint="@color/primary_green_premium" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>

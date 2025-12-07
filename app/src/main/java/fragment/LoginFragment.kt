@@ -1,32 +1,25 @@
 package com.example.miniproject.fragment
 
 import android.content.Context
-import android.graphics.RenderEffect
-import android.graphics.Shader
-import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-import com.example.miniproject.R
+import androidx.lifecycle.lifecycleScope
 import com.example.miniproject.MainActivity
+import com.example.miniproject.R
+import com.example.miniproject.data.api.ApiClient
+import com.example.miniproject.data.model.LoginRequest
+import com.example.miniproject.data.model.User
 import com.example.miniproject.databinding.FragmentLoginBinding
+import kotlinx.coroutines.launch
 
 class LoginFragment : Fragment() {
 
     private var _binding: FragmentLoginBinding? = null
     private val binding get() = _binding!!
-
-    private val dummyUsers = listOf(
-        DummyUser(1, "budi", "123456", "user"),
-        DummyUser(2, "admin", "123456", "admin"),
-        DummyUser(3, "siti", "123456", "user")
-    )
-
-    data class DummyUser(val id: Int, val username: String, val password: String, val role: String)
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -41,7 +34,6 @@ class LoginFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         setupClickListeners()
     }
-
 
     private fun setupClickListeners() {
         binding.btnLogin.setOnClickListener {
@@ -77,43 +69,77 @@ class LoginFragment : Fragment() {
     private fun performLogin(username: String, password: String) {
         showLoading(true)
 
-        val user = dummyUsers.find { it.username == username && it.password == password }
+        val request = LoginRequest(
+            username = username,
+            password = password
+        )
 
-        if (user != null) {
-            showLoading(false)
-            saveUserData(user.id, user.username, user.role)
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val response = ApiClient.apiService.login(request)
 
-            Toast.makeText(
-                requireContext(),
-                "✅ Selamat datang, ${user.username.capitalize()}!",
-                Toast.LENGTH_SHORT
-            ).show()
+                if (response.isSuccessful) {
+                    val body = response.body()   // BaseResponse<LoginResponse>
 
-            navigateToProducts(user.username, user.role)
-        } else {
-            showLoading(false)
-            Toast.makeText(
-                requireContext(),
-                "❌ Username atau password salah!",
-                Toast.LENGTH_SHORT
-            ).show()
+                    if (body?.success == true && body.data != null) {
+                        val loginData = body.data      // LoginResponse
+                        val user = loginData.user      // User
+                        val token = loginData.token    // String
+
+                        // ✅ SIMPAN SEMUA DATA USER
+                        saveCompleteUserData(user, token)
+
+                        Toast.makeText(
+                            requireContext(),
+                            "✅ Selamat datang, ${user.fullName}!",
+                            Toast.LENGTH_SHORT
+                        ).show()
+
+                        navigateToProducts(user.username ?: user.fullName, user.role)
+                    } else {
+                        Toast.makeText(
+                            requireContext(),
+                            body?.message ?: "Username atau password salah!",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                } else {
+                    val errorText = response.errorBody()?.string()
+                    Toast.makeText(
+                        requireContext(),
+                        errorText ?: "Username atau password salah!",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(
+                    requireContext(),
+                    "Gagal konek ke server: ${e.localizedMessage}",
+                    Toast.LENGTH_LONG
+                ).show()
+            } finally {
+                showLoading(false)
+            }
         }
-
-
     }
-
 
     private fun showLoading(show: Boolean) {
         binding.progressBar.visibility = if (show) View.VISIBLE else View.GONE
         binding.btnLogin.isEnabled = !show
     }
 
-    private fun saveUserData(userId: Int, username: String, role: String) {
+    // ✅ FUNGSI: Simpan semua data user ke SharedPreferences
+    private fun saveCompleteUserData(user: User, token: String) {
         val sharedPref = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
         with(sharedPref.edit()) {
-            putInt("user_id", userId)
-            putString("username", username)
-            putString("role", role)
+            putInt("user_id", user.id)
+            putString("username", user.username ?: "")
+            putString("full_name", user.fullName)
+            putString("email", user.email)
+            putString("phone", user.phone ?: "")
+            putString("role", user.role)
+            putString("profile_image", user.profileImage ?: "")
+            putString("token", token)
             putBoolean("is_logged_in", true)
             apply()
         }
@@ -122,8 +148,6 @@ class LoginFragment : Fragment() {
     private fun navigateToProducts(username: String, role: String) {
         (requireActivity() as MainActivity).onLoginSuccess(username, role)
     }
-
-
 
     override fun onDestroyView() {
         super.onDestroyView()

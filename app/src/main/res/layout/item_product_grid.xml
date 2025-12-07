@@ -221,6 +221,13 @@
                     android:text="DELETE"
                     android:textColor="#FFFFFF"
                     android:backgroundTint="#E53935" />
+                <ImageButton
+                    android:id="@+id/btnBestSeller"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@drawable/ic_star_outline"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Toggle Best Seller" />
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>

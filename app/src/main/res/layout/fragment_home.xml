@@ -126,7 +126,36 @@
             android:scrollbars="vertical"
             app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
             app:spanCount="2" />
+        <!-- Best Seller Section -->
+        <LinearLayout
+            android:id="@+id/layoutBestSeller"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="8dp">
 
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Produk Terlaris"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/green_primary"
+                android:drawableStart="@drawable/ic_star_filled"
+                android:drawablePadding="8dp"
+                android:layout_marginBottom="8dp"/>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvBestSeller"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                tools:listitem="@layout/item_product"/>
+
+        </LinearLayout>
     </LinearLayout>
 
     <!-- ➕ FAB ADD PRODUCT (Hanya untuk Admin) -->

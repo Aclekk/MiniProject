@@ -1,6 +1,5 @@
 package com.example.miniproject.fragment
 
-import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -10,23 +9,34 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
-import com.example.miniproject.R
+import androidx.lifecycle.lifecycleScope
 import com.example.miniproject.data.CategoryRepository
-import com.example.miniproject.data.ProductDataSource
+import com.example.miniproject.data.api.ApiClient
 import com.example.miniproject.databinding.FragmentAddProductBinding
-import com.example.miniproject.model.Product
-import java.text.SimpleDateFormat
-import java.util.*
+import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 
 class AddProductFragment : Fragment() {
 
     private var _binding: FragmentAddProductBinding? = null
     private val binding get() = _binding!!
 
-    // 📸 Tambahan variabel untuk simpan foto yang dipilih
     private var selectedImageUri: Uri? = null
-    private val PICK_IMAGE_REQUEST = 100
+
+    // ✅ Modern way untuk pick image
+    private val pickImageLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            selectedImageUri = result.data?.data
+            binding.imgPreview.setImageURI(selectedImageUri)
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -64,32 +74,19 @@ class AddProductFragment : Fragment() {
             parentFragmentManager.popBackStack()
         }
 
-        // 📸 Tambahan: tombol pilih foto
         binding.btnPickImage.setOnClickListener {
             openGallery()
         }
     }
 
-    // ============================================================
-    // 📷 BUKA GALERI
-    // ============================================================
     private fun openGallery() {
         val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-        startActivityForResult(intent, PICK_IMAGE_REQUEST)
+        pickImageLauncher.launch(intent)
     }
 
-    // 📸 Ambil hasil dari galeri dan tampilkan di ImageView
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == PICK_IMAGE_REQUEST && resultCode == Activity.RESULT_OK && data != null) {
-            selectedImageUri = data.data
-            binding.imgPreview.setImageURI(selectedImageUri)
-        }
-    }
-
-    // ============================================================
-    // 💾 SIMPAN PRODUK (dummy flow tetap)
-    // ============================================================
+    // =======================
+    // ✅ saveProduct FINAL (pakai API + Multipart)
+    // =======================
     private fun saveProduct() {
         val name = binding.etProductName.text.toString().trim()
         val priceStr = binding.etProductPrice.text.toString().trim()
@@ -97,7 +94,7 @@ class AddProductFragment : Fragment() {
         val stockStr = binding.etProductStock.text.toString().trim()
         val categoryName = binding.spinnerCategory.selectedItem.toString()
 
-        // Validasi
+        // ==== VALIDASI ====
         if (name.isEmpty()) {
             binding.etProductName.error = "Nama produk harus diisi"
             return
@@ -111,42 +108,100 @@ class AddProductFragment : Fragment() {
             return
         }
 
-        // Generate ID baru (auto-increment)
-        val allProducts = ProductDataSource.getAllProducts()
-        val newId = if (allProducts.isEmpty()) 1 else (allProducts.maxOf { it.id } + 1)
+        val price = priceStr.toDoubleOrNull()
+        val stock = stockStr.toIntOrNull()
 
-        // Get category ID
+        if (price == null || price <= 0) {
+            binding.etProductPrice.error = "Harga tidak valid"
+            return
+        }
+        if (stock == null || stock < 0) {
+            binding.etProductStock.error = "Stok tidak valid"
+            return
+        }
+
+        // Ambil category_id dari DB lokal (pastikan mapping-nya sama dengan backend)
         val categories = CategoryRepository.getCategories()
         val selectedCategory = categories.find { it.categoryName == categoryName }
         val categoryId = selectedCategory?.id ?: 1
 
-        // 🧩 Buat produk baru (dummy save)
-        val newProduct = Product(
-            id = newId,
-            name = name,
-            price = priceStr.toDouble(),
-            description = description,
-            imageUrl = selectedImageUri?.toString(), // ✅ simpan URI foto kalau ada
-            imageResId = getDefaultImageForCategory(categoryName),
-            categoryId = categoryId,
-            stock = stockStr.toInt(),
-            categoryName = categoryName,
-            createdAt = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-        )
+        // Ambil token dari SharedPreferences
+        val sp = requireActivity().getSharedPreferences("user_pref", android.content.Context.MODE_PRIVATE)
+        val token = sp.getString("token", null)
+        if (token.isNullOrEmpty()) {
+            Toast.makeText(requireContext(), "Token tidak ada, silakan login ulang", Toast.LENGTH_SHORT).show()
+            return
+        }
 
-        // Tambahkan ke data dummy (tidak permanen)
-        ProductDataSource.getAllProducts().add(newProduct)
+        // ==== KONVERSI KE RequestBody ====
+        val textMedia = "text/plain".toMediaType()
 
-        Toast.makeText(context, "✅ Produk berhasil ditambahkan!", Toast.LENGTH_SHORT).show()
-        parentFragmentManager.popBackStack()
-    }
+        val nameBody: RequestBody = name.toRequestBody(textMedia)
+        val priceBody: RequestBody = price.toString().toRequestBody(textMedia)
+        val stockBody: RequestBody = stock.toString().toRequestBody(textMedia)
+        val descBody: RequestBody = description.toString().toRequestBody(textMedia)
+        val categoryIdBody: RequestBody = categoryId.toString().toRequestBody(textMedia)
 
-    private fun getDefaultImageForCategory(categoryName: String): Int {
-        return when (categoryName) {
-            "Peralatan" -> R.drawable.cangkul
-            "Pupuk" -> R.drawable.pupuk
-            "Benih" -> R.drawable.benih
-            else -> R.drawable.bg_card
+        // ==== HANDLE IMAGE (optional) ====
+        var imagePart: MultipartBody.Part? = null
+        if (selectedImageUri != null) {
+            val inputStream = requireContext().contentResolver.openInputStream(selectedImageUri!!)
+            val bytes = inputStream?.readBytes()
+            inputStream?.close()
+
+            if (bytes != null) {
+                val imageRequestBody = bytes.toRequestBody("image/*".toMediaType())
+                imagePart = MultipartBody.Part.createFormData(
+                    "image",   // ← HARUS SAMA DENGAN KEY di PHP ($_FILES['image'])
+                    "product_${System.currentTimeMillis()}.jpg",
+                    imageRequestBody
+                )
+            }
+        }
+
+        // ==== PANGGIL API ====
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                binding.btnSave.isEnabled = false
+
+                val response = ApiClient.apiService.createProduct(
+                    "Bearer $token",
+                    nameBody,
+                    categoryIdBody,
+                    priceBody,
+                    stockBody,
+                    descBody,
+                    imagePart
+                )
+
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    if (body?.success == true) {
+                        Toast.makeText(requireContext(), "✅ Produk berhasil ditambahkan!", Toast.LENGTH_SHORT).show()
+                        parentFragmentManager.popBackStack()
+                    } else {
+                        Toast.makeText(
+                            requireContext(),
+                            body?.message ?: "Gagal menambah produk",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                } else {
+                    Toast.makeText(
+                        requireContext(),
+                        "Error ${response.code()}: ${response.errorBody()?.string()}",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(
+                    requireContext(),
+                    "Gagal konek server: ${e.localizedMessage}",
+                    Toast.LENGTH_LONG
+                ).show()
+            } finally {
+                binding.btnSave.isEnabled = true
+            }
         }
     }
 

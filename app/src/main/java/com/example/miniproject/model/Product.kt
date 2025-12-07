@@ -15,5 +15,6 @@ data class Product(
     var stock: Int,
     @Json(name = "category_name") var categoryName: String?,
     @Json(name = "created_at") var createdAt: String?,
+    @Json(name = "is_best_seller") var isBestSeller: Int? = 0, // ✅ TAMBAHAN BARU
     var imageResId: Int? = null
 ) : Parcelable

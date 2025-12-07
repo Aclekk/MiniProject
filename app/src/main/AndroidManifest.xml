@@ -10,7 +10,8 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="29" />
 
     <!-- 📍 GEOLOCATION -->
@@ -23,15 +24,19 @@
         tools:targetApi="33" />
 
     <!-- ⚙️ Hardware declaration -->
-    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
 
     <application
+        android:name=".MyApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.NiagaTani"
+        android:usesCleartextTraffic="true"
         tools:replace="android:label">
 
         <!-- 🟢 Splash sebagai launcher -->
@@ -66,6 +71,13 @@
             android:exported="true"
             android:windowSoftInputMode="adjustPan" />
 
+        <!-- 🟢 Seller Main Activity -->
+        <activity
+            android:name=".SellerMainActivity"
+            android:exported="false"
+            android:theme="@style/Theme.NiagaTani.NoActionBar"
+            android:windowSoftInputMode="adjustPan" />
+
         <!-- 🟢 Provider untuk kamera & file access -->
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -76,6 +88,7 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+
     </application>
 
 </manifest>

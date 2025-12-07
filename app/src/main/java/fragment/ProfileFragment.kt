@@ -1,44 +1,43 @@
 package com.example.miniproject.fragment
 
-import android.Manifest
 import android.app.Activity
-import android.app.AlertDialog
+import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.graphics.Bitmap
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import com.example.miniproject.MainActivity
+import androidx.lifecycle.lifecycleScope
+import com.bumptech.glide.Glide
 import com.example.miniproject.R
+import com.example.miniproject.WelcomeActivity
+import com.example.miniproject.data.api.ApiClient
+import com.example.miniproject.data.model.ProfileData
 import com.example.miniproject.databinding.FragmentProfileBinding
-import com.example.miniproject.model.StoreProfile
-import com.example.miniproject.model.UserProfile // ✅ TAMBAHAN
+import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 
 class ProfileFragment : Fragment() {
 
     private var _binding: FragmentProfileBinding? = null
     private val binding get() = _binding!!
 
-    private val REQUEST_GALLERY = 100
-    private val REQUEST_CAMERA = 101
-    private val REQ_PERM_CAMERA = 201
-    private val REQ_PERM_READ = 202
+    private var selectedImagePart: MultipartBody.Part? = null
 
-    private var selectedPhotoUri: Uri? = null
-    private var isAdminMode = false // ✅ TAMBAHAN: flag untuk cek mode
+    companion object {
+        private const val REQ_PICK_IMAGE = 101
+    }
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
+        inflater: LayoutInflater,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentProfileBinding.inflate(inflater, container, false)
@@ -48,282 +47,250 @@ class ProfileFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val isAdmin = (activity as? MainActivity)?.isAdmin() ?: false
-        isAdminMode = isAdmin // ✅ Simpan status admin
+        setupClicks()
+        loadProfile()
+    }
 
-        if (isAdmin) setupAdminMode() else setupUserMode()
+    // ================== CLICK HANDLERS ==================
+
+    private fun setupClicks() {
+        // klik kartu atau overlay buat ganti foto
+        binding.cardProfile.setOnClickListener { openGallery() }
+        binding.btnTakePhoto.setOnClickListener { openGallery() }
+
+        // cuma simpan FOTO, data lain read-only
+        binding.btnSaveProfile.setOnClickListener {
+            updateProfilePhotoOnly()
+        }
 
         binding.btnLogout.setOnClickListener {
-            (activity as? MainActivity)?.onLogout()
-            Toast.makeText(requireContext(), "Logout berhasil!", Toast.LENGTH_SHORT).show()
+            logout()
         }
     }
 
-    /** 🔑 ADMIN MODE **/
-    private fun setupAdminMode() {
-        binding.tvSectionTitle.text = "🏪 Kelola Profil Toko"
+    // ================== LOAD PROFILE DARI API ==================
 
-        // ✅ Load data dari StoreProfile (khusus admin)
-        binding.etName.setText(StoreProfile.storeName)
-        binding.etEmail.setText(StoreProfile.storeContact)
-        binding.etAddress.setText(StoreProfile.storeAddress)
-        binding.etAbout.setText(StoreProfile.storeAbout)
+    private fun loadProfile() {
+        val prefs = requireActivity()
+            .getSharedPreferences("user_pref", Context.MODE_PRIVATE)
 
-        binding.etAbout.visibility = View.GONE
+        val token = prefs.getString("token", null)
 
-        // ✅ Load foto toko dari StoreProfile
-        StoreProfile.storePhotoUri?.let { binding.imgProfile.setImageURI(it) }
-
-
-        binding.btnTakePhoto.setOnClickListener { showPhotoPickerDialog() }
-
-        binding.btnSaveProfile.visibility = View.VISIBLE
-        binding.btnSaveProfile.setOnClickListener {
-            val name = binding.etName.text.toString().trim()
-            val contact = binding.etEmail.text.toString().trim()
-            val address = binding.etAddress.text.toString().trim()
-            val about = binding.etAbout.text.toString().trim()
-
-            if (name.isNotEmpty() && contact.isNotEmpty() && address.isNotEmpty()) {
-                // ✅ Update STORE PROFILE (khusus admin)
-                StoreProfile.updateProfile(name, address, contact, about, selectedPhotoUri)
-                Toast.makeText(requireContext(), "✅ Profil toko berhasil diperbarui!", Toast.LENGTH_SHORT).show()
-
-                // ✅ Update langsung ProductsFragment yang aktif
-                refreshProductsFragment()
-            } else {
-                Toast.makeText(requireContext(), "⚠️ Lengkapi semua data!", Toast.LENGTH_SHORT).show()
-            }
+        if (token.isNullOrEmpty()) {
+            Toast.makeText(requireContext(), "Belum login, silakan login dulu", Toast.LENGTH_SHORT).show()
+            return
         }
 
-        // 🆕 Tombol laporan penjualan
-        binding.btnSalesReport.visibility = View.VISIBLE
-        binding.btnSalesReport.setOnClickListener {
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, SalesReportFragment())
-                .addToBackStack(null)
-                .commit()
-        }
+        showLoading(true)
 
-        // 🆕 Tombol lihat semua ulasan
-        binding.btnViewReviews.visibility = View.VISIBLE
-        binding.btnViewReviews.setOnClickListener {
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, ReviewListFragment())
-                .addToBackStack(null)
-                .commit()
-        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val response = ApiClient.apiService.getProfile("Bearer $token")
 
-        // 🆕 Tombol kirim notifikasi
-        binding.btnSendNotification.visibility = View.VISIBLE
-        binding.btnSendNotification.setOnClickListener {
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, SendNotificationFragment())
-                .addToBackStack(null)
-                .commit()
-        }
-    }
-
-    /** 👤 USER MODE **/
-    private fun setupUserMode() {
-        val username = (activity as? MainActivity)?.getCurrentUsername() ?: "User"
-        binding.tvSectionTitle.text = "👤 Profil Saya"
-
-        // ✅ Load data dari UserProfile (khusus user)
-        binding.etName.setText(UserProfile.userName)
-        binding.etEmail.setText(UserProfile.userEmail)
-        binding.etAddress.setText(UserProfile.userAddress)
-        binding.etAbout.visibility = View.GONE
-
-
-        // ✅ Load foto profil user
-        UserProfile.userPhotoUri?.let { binding.imgProfile.setImageURI(it) }
-
-
-        binding.btnTakePhoto.setOnClickListener { showPhotoPickerDialog() }
-
-        binding.etName.isEnabled = true
-        binding.etEmail.isEnabled = true
-        binding.etAddress.isEnabled = true
-
-        binding.btnSaveProfile.visibility = View.VISIBLE
-        binding.btnSaveProfile.setOnClickListener {
-            val name = binding.etName.text.toString().trim()
-            val email = binding.etEmail.text.toString().trim()
-            val address = binding.etAddress.text.toString().trim()
-
-            if (name.isNotEmpty() && email.isNotEmpty() && address.isNotEmpty()) {
-                // ✅ Update USER PROFILE (khusus user)
-                UserProfile.updateProfile(name, email, address, selectedPhotoUri)
-                Toast.makeText(requireContext(), "✅ Profil berhasil diperbarui!", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(requireContext(), "⚠️ Lengkapi semua data!", Toast.LENGTH_SHORT).show()
-            }
-        }
-
-        // 🆕 Tombol lihat notifikasi untuk USER
-        binding.btnViewNotifications.visibility = View.VISIBLE
-        binding.btnViewNotifications.setOnClickListener {
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, NotificationListFragment())
-                .addToBackStack(null)
-                .commit()
-        }
-    }
-
-    /** 📸 PILIH FOTO **/
-    private fun showPhotoPickerDialog() {
-        val options = arrayOf("Pilih dari Galeri", "Ambil dari Kamera")
-        AlertDialog.Builder(requireContext())
-            .setTitle("Pilih Sumber Foto")
-            .setItems(options) { _, which ->
-                when (which) {
-                    0 -> checkReadPermission()
-                    1 -> checkCameraPermission()
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    if (body?.success == true && body.data != null) {
+                        bindProfileToUi(body.data)
+                    } else {
+                        Toast.makeText(
+                            requireContext(),
+                            body?.message ?: "Gagal memuat profil",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                } else {
+                    Toast.makeText(
+                        requireContext(),
+                        "Error ${response.code()} saat getProfile",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
-            }.show()
-    }
-
-    private fun checkReadPermission() {
-        val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            Manifest.permission.READ_MEDIA_IMAGES
-        } else {
-            Manifest.permission.READ_EXTERNAL_STORAGE
-        }
-
-        if (ContextCompat.checkSelfPermission(requireContext(), permission)
-            != PackageManager.PERMISSION_GRANTED
-        ) {
-            ActivityCompat.requestPermissions(
-                requireActivity(),
-                arrayOf(permission),
-                REQ_PERM_READ
-            )
-        } else {
-            openGallery()
+            } catch (e: Exception) {
+                Toast.makeText(
+                    requireContext(),
+                    "Gagal konek ke server: ${e.localizedMessage}",
+                    Toast.LENGTH_LONG
+                ).show()
+            } finally {
+                showLoading(false)
+            }
         }
     }
 
-    private fun checkCameraPermission() {
-        if (ContextCompat.checkSelfPermission(
-                requireContext(),
-                Manifest.permission.CAMERA
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            ActivityCompat.requestPermissions(
-                requireActivity(),
-                arrayOf(Manifest.permission.CAMERA),
-                REQ_PERM_CAMERA
-            )
+    private fun bindProfileToUi(data: ProfileData) {
+        val user = data.user
+        val address = data.addresses?.firstOrNull()
+
+        // isi field sesuai layout BARU
+        binding.etUsername.setText(user.username)
+        binding.etFullName.setText(user.fullName)
+        binding.etEmail.setText(user.email)
+        binding.etPhone.setText(user.phone)
+
+        // gabung alamat: "Jl X, Kota Y, Prov Z 12345"
+        val addressText = if (address != null) {
+            buildString {
+                append(address.address ?: "")
+                if (!address.city.isNullOrEmpty()) {
+                    if (isNotEmpty()) append(", ")
+                    append(address.city)
+                }
+                if (!address.province.isNullOrEmpty()) {
+                    if (isNotEmpty()) append(", ")
+                    append(address.province)
+                }
+                if (!address.postalCode.isNullOrEmpty()) {
+                    append(" ")
+                    append(address.postalCode)
+                }
+            }
         } else {
-            openCamera()
+            ""
+        }
+        binding.etAddress.setText(addressText)
+
+        // foto profil
+        val imageUrl = ApiClient.getImageUrl(user.profileImage)
+        Glide.with(this)
+            .load(imageUrl)
+            .placeholder(R.drawable.ic_person)
+            .error(R.drawable.ic_person)
+            .into(binding.imgProfile)
+    }
+
+    // ================== UPDATE: FOTO DOANG ==================
+
+    private fun updateProfilePhotoOnly() {
+        val prefs = requireActivity()
+            .getSharedPreferences("user_pref", Context.MODE_PRIVATE)
+        val token = prefs.getString("token", null)
+
+        if (token.isNullOrEmpty()) {
+            Toast.makeText(requireContext(), "Token hilang, login ulang dulu", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        if (selectedImagePart == null) {
+            Toast.makeText(requireContext(), "Pilih foto dulu ngab", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // semua field teks dikosongin biar backend cuma update foto
+        fun emptyPart(): RequestBody? = null
+
+        showLoading(true)
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val response = ApiClient.apiService.updateProfile(
+                    token = "Bearer $token",
+                    fullName = emptyPart(),       // ga diupdate
+                    email = emptyPart(),
+                    phone = emptyPart(),
+                    address = emptyPart(),
+                    city = emptyPart(),
+                    province = emptyPart(),
+                    postalCode = emptyPart(),
+                    recipientName = emptyPart(),
+                    recipientPhone = emptyPart(),
+                    profileImage = selectedImagePart
+                )
+
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    if (body?.success == true && body.data != null) {
+                        Toast.makeText(
+                            requireContext(),
+                            body.message.ifEmpty { "Foto profil berhasil diperbarui" },
+                            Toast.LENGTH_LONG
+                        ).show()
+                        // refresh tampilan (kalau backend balikin URL baru)
+                        bindProfileToUi(body.data)
+                    } else {
+                        Toast.makeText(
+                            requireContext(),
+                            body?.message ?: "Gagal update foto profil",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                } else {
+                    val err = response.errorBody()?.string()
+                    Toast.makeText(
+                        requireContext(),
+                        "Error ${response.code()}: ${err ?: "Gagal update"}",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(
+                    requireContext(),
+                    "Gagal konek ke server: ${e.localizedMessage}",
+                    Toast.LENGTH_LONG
+                ).show()
+            } finally {
+                showLoading(false)
+            }
         }
     }
+
+    // ================== PICK IMAGE ==================
 
     private fun openGallery() {
-        val intent = Intent(Intent.ACTION_PICK).apply {
-            type = "image/*"
-        }
-
-        if (intent.resolveActivity(requireContext().packageManager) == null) {
-            intent.action = Intent.ACTION_GET_CONTENT
-        }
-
-        startActivityForResult(intent, REQUEST_GALLERY)
+        val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+        startActivityForResult(intent, REQ_PICK_IMAGE)
     }
 
-    private fun openCamera() {
-        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-        if (intent.resolveActivity(requireContext().packageManager) != null) {
-            startActivityForResult(intent, REQUEST_CAMERA)
-        } else {
-            Toast.makeText(requireContext(), "📷 Kamera tidak tersedia", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
-        if (resultCode != Activity.RESULT_OK) {
-            Log.w("ProfileFragment", "Activity result not OK: $resultCode")
-            return
-        }
+        if (requestCode == REQ_PICK_IMAGE && resultCode == Activity.RESULT_OK && data != null) {
+            val uri: Uri = data.data ?: return
+            prepareImagePart(uri)
 
-        when (requestCode) {
-            REQUEST_GALLERY -> {
-                val uri = data?.data
-                if (uri != null) {
-                    try {
-                        requireContext().contentResolver.takePersistableUriPermission(
-                            uri,
-                            Intent.FLAG_GRANT_READ_URI_PERMISSION
-                        )
-                    } catch (e: SecurityException) {
-                        Log.w("ProfileFragment", "Persistent permission denied, continue anyway")
-                    }
-
-                    selectedPhotoUri = uri
-                    binding.imgProfile.setImageURI(uri)
-
-                    // ✅ PENTING: Cek mode admin atau user!
-                    if (isAdminMode) {
-                        // ADMIN → Update logo toko
-                        StoreProfile.storePhotoUri = uri
-                        Toast.makeText(requireContext(), "✅ Foto toko dari galeri dipilih!", Toast.LENGTH_SHORT).show()
-                        refreshProductsFragment() // Update logo di ProductsFragment
-                    } else {
-                        // USER → Update foto profil user sendiri
-                        UserProfile.userPhotoUri = uri
-                        Toast.makeText(requireContext(), "✅ Foto profil dari galeri dipilih!", Toast.LENGTH_SHORT).show()
-                    }
-                } else {
-                    Toast.makeText(requireContext(), "⚠️ Gagal memilih foto", Toast.LENGTH_SHORT).show()
-                }
-            }
-
-            REQUEST_CAMERA -> {
-                val bitmap = data?.extras?.get("data") as? Bitmap
-                if (bitmap != null) {
-                    binding.imgProfile.setImageBitmap(bitmap)
-
-                    // ✅ Untuk camera, kita hanya set ke ImageView
-                    // Kalau mau persisten, harus save bitmap ke file dulu
-                    if (isAdminMode) {
-                        Toast.makeText(requireContext(), "✅ Foto toko dari kamera berhasil diambil!", Toast.LENGTH_SHORT).show()
-                    } else {
-                        Toast.makeText(requireContext(), "✅ Foto profil dari kamera berhasil diambil!", Toast.LENGTH_SHORT).show()
-                    }
-                } else {
-                    Toast.makeText(requireContext(), "⚠️ Gagal mengambil foto", Toast.LENGTH_SHORT).show()
-                }
-            }
+            Glide.with(this)
+                .load(uri)
+                .placeholder(R.drawable.ic_person)
+                .into(binding.imgProfile)
         }
     }
 
-    private fun refreshProductsFragment() {
-        parentFragmentManager.fragments.forEach { fragment ->
-            if (fragment is ProductsFragment && fragment.isAdded) {
-                fragment.updateStoreInfo()
-            }
-        }
+    private fun prepareImagePart(uri: Uri) {
+        val contentResolver = requireContext().contentResolver
+        val inputStream = contentResolver.openInputStream(uri) ?: return
+        val bytes = inputStream.readBytes()
+        inputStream.close()
+
+        val mediaType = "image/*".toMediaTypeOrNull()
+        val requestBody = bytes.toRequestBody(mediaType, 0, bytes.size)
+        selectedImagePart = MultipartBody.Part.createFormData(
+            "profile_image",
+            "profile_${System.currentTimeMillis()}.jpg",
+            requestBody
+        )
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (grantResults.isEmpty() || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-            Toast.makeText(requireContext(), "⚠️ Izin ditolak", Toast.LENGTH_SHORT).show()
-            return
-        }
+    // ================== LOGOUT ==================
 
-        when (requestCode) {
-            REQ_PERM_READ -> openGallery()
-            REQ_PERM_CAMERA -> openCamera()
-        }
+    private fun logout() {
+        val prefs = requireActivity()
+            .getSharedPreferences("user_pref", Context.MODE_PRIVATE)
+
+        prefs.edit()
+            .clear()
+            .apply()
+
+        Toast.makeText(requireContext(), "Berhasil logout", Toast.LENGTH_SHORT).show()
+
+        val intent = Intent(requireContext(), WelcomeActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+    }
+
+    // ================== UTIL ==================
+
+    private fun showLoading(show: Boolean) {
+        binding.progressBar.visibility = if (show) View.VISIBLE else View.GONE
+        binding.btnSaveProfile.isEnabled = !show
     }
 
     override fun onDestroyView() {

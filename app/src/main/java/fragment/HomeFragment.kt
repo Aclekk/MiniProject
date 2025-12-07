@@ -15,14 +15,17 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.miniproject.R
 import com.example.miniproject.adapter.ProductAdapter
-import com.example.miniproject.data.ProductDataSource
+import com.example.miniproject.data.api.ApiClient
 import com.example.miniproject.databinding.FragmentHomeBinding
 import com.example.miniproject.ml.FarmToolClassifier
 import com.example.miniproject.model.Product
 import com.google.android.material.slider.RangeSlider
+import kotlinx.coroutines.launch
 
 class HomeFragment : Fragment() {
 
@@ -30,7 +33,11 @@ class HomeFragment : Fragment() {
     private val binding get() = _binding!!
 
     private lateinit var productAdapter: ProductAdapter
+    private lateinit var bestSellerAdapter: ProductAdapter
+
     private val displayProducts = mutableListOf<Product>()
+    private val bestSellerProducts = mutableListOf<Product>()
+
     private var userRole = "user"
 
     // 🆕 ML Classifier
@@ -69,11 +76,12 @@ class HomeFragment : Fragment() {
         farmToolClassifier = FarmToolClassifier(requireContext())
 
         setupUserRole()
+        setupBestSellerRecyclerView() // ✅ NEW: Setup best seller section
         setupRecyclerView()
         loadProducts()
         setupSearch()
         setupFilter()
-        setupVisualSearch() // 🆕 Setup visual search button
+        setupVisualSearch()
         setupFAB()
     }
 
@@ -83,7 +91,7 @@ class HomeFragment : Fragment() {
     }
 
     private fun setupFAB() {
-        if (userRole == "admin") {
+        if (userRole == "seller") {
             binding.fabAddProduct.visibility = View.VISIBLE
             binding.fabAddProduct.setOnClickListener {
                 val fragment = AddProductFragment()
@@ -103,46 +111,28 @@ class HomeFragment : Fragment() {
 
         // ✅ Skip refresh jika baru selesai visual search
         if (!isVisualSearchActive) {
-            refreshProducts()
+            loadProductsFromApi()
         } else {
             Log.d("HomeFragment", "⏭️ Skipping refreshProducts() - visual search active")
         }
     }
 
+    // ✅ NEW: Setup Best Seller RecyclerView (Horizontal)
+    private fun setupBestSellerRecyclerView() {
+        bestSellerAdapter = ProductAdapter(bestSellerProducts, userRole) { product, action ->
+            handleProductAction(product, action)
+        }
+
+        binding.rvBestSeller.apply {
+            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+            adapter = bestSellerAdapter
+            setHasFixedSize(true)
+        }
+    }
+
     private fun setupRecyclerView() {
-        // ✅ Pass displayProducts langsung ke adapter (shared reference)
         productAdapter = ProductAdapter(displayProducts, userRole) { product, action ->
-            when (action) {
-                "edit" -> {
-                    val bundle = Bundle().apply { putParcelable("product", product) }
-                    val fragment = EditProductFragment().apply { arguments = bundle }
-                    parentFragmentManager.beginTransaction()
-                        .replace(R.id.fragment_container, fragment)
-                        .addToBackStack(null)
-                        .commit()
-                }
-                "delete" -> {
-                    AlertDialog.Builder(requireContext())
-                        .setTitle("Hapus Produk")
-                        .setMessage("Yakin ingin menghapus ${product.name}?")
-                        .setPositiveButton("Hapus") { dialog, _ ->
-                            ProductDataSource.deleteProduct(product)
-                            refreshProducts()
-                            Toast.makeText(context, "✅ Produk dihapus", Toast.LENGTH_SHORT).show()
-                            dialog.dismiss()
-                        }
-                        .setNegativeButton("Batal") { dialog, _ -> dialog.dismiss() }
-                        .show()
-                }
-                "view" -> {
-                    val bundle = Bundle().apply { putParcelable("product", product) }
-                    val fragment = ProductDetailFragment().apply { arguments = bundle }
-                    parentFragmentManager.beginTransaction()
-                        .replace(R.id.fragment_container, fragment)
-                        .addToBackStack(null)
-                        .commit()
-                }
-            }
+            handleProductAction(product, action)
         }
 
         binding.rvHomeProducts.apply {
@@ -154,68 +144,227 @@ class HomeFragment : Fragment() {
         }
     }
 
-    private fun loadProducts() {
-        ProductDataSource.loadDummyData()
-        refreshProducts()
+    // ✅ NEW: Handle product actions (edit, delete, view, toggle_best_seller)
+    private fun handleProductAction(product: Product, action: String) {
+        when (action) {
+            "edit" -> {
+                val bundle = Bundle().apply { putParcelable("product", product) }
+                val fragment = EditProductFragment().apply { arguments = bundle }
+                parentFragmentManager.beginTransaction()
+                    .replace(R.id.fragment_container, fragment)
+                    .addToBackStack(null)
+                    .commit()
+            }
+            "delete" -> {
+                deleteProduct(product)
+            }
+            "view" -> {
+                val bundle = Bundle().apply { putParcelable("product", product) }
+                val fragment = ProductDetailFragment().apply { arguments = bundle }
+                parentFragmentManager.beginTransaction()
+                    .replace(R.id.fragment_container, fragment)
+                    .addToBackStack(null)
+                    .commit()
+            }
+            "toggle_best_seller" -> {
+                toggleBestSeller(product)
+            }
+        }
     }
 
-    private fun refreshProducts() {
-        // 🔒 Skip jika displayProducts sedang di-lock
+    // ✅ NEW: Toggle Best Seller Status
+    private fun toggleBestSeller(product: Product) {
+        val newStatus = if (product.isBestSeller == 1) 0 else 1
+        val statusText = if (newStatus == 1) "terlaris" else "biasa"
+
+        val sharedPref = requireContext()
+            .getSharedPreferences("user_pref", Context.MODE_PRIVATE)
+        val token = sharedPref.getString("token", "") ?: ""
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                // Update via API
+                val response = ApiClient.apiService.toggleBestSeller(
+                    token = "Bearer $token",
+                    productId = product.id,
+                    isBestSeller = newStatus
+                )
+
+
+                if (response.isSuccessful) {
+                    Toast.makeText(
+                        requireContext(),
+                        "✅ Produk ditandai sebagai $statusText",
+                        Toast.LENGTH_SHORT
+                    ).show()
+
+                    // ✅ Auto refresh untuk update tampilan
+                    loadProductsFromApi()
+                } else {
+                    Toast.makeText(
+                        requireContext(),
+                        "❌ Gagal update status: ${response.code()}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(
+                    requireContext(),
+                    "❌ Error: ${e.localizedMessage}",
+                    Toast.LENGTH_LONG
+                ).show()
+                Log.e("HomeFragment", "Error toggle best seller: ${e.message}")
+            }
+        }
+    }
+
+    private fun deleteProduct(product: Product) {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Hapus Produk")
+            .setMessage("Yakin ingin menghapus ${product.name}?")
+            .setPositiveButton("Hapus") { dialog, _ ->
+
+                val sharedPref = requireContext()
+                    .getSharedPreferences("user_pref", Context.MODE_PRIVATE)
+                val token = sharedPref.getString("token", "") ?: ""
+
+                viewLifecycleOwner.lifecycleScope.launch {
+                    try {
+                        val response = ApiClient.apiService.deleteProduct(
+                            token = "Bearer $token",
+                            productId = product.id
+                        )
+
+                        if (response.isSuccessful) {
+                            Toast.makeText(
+                                requireContext(),
+                                "✅ Produk berhasil dihapus",
+                                Toast.LENGTH_SHORT
+                            ).show()
+
+                            loadProductsFromApi()
+                        } else {
+                            Toast.makeText(
+                                requireContext(),
+                                "❌ Gagal hapus: ${response.code()}",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    } catch (e: Exception) {
+                        Toast.makeText(
+                            requireContext(),
+                            "❌ Error: ${e.localizedMessage}",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+
+                dialog.dismiss()
+            }
+            .setNegativeButton("Batal") { dialog, _ -> dialog.dismiss() }
+            .show()
+    }
+
+    private fun loadProducts() {
+        loadProductsFromApi()
+    }
+
+    // ✅ UPDATED: Load products + separate best sellers
+    private fun loadProductsFromApi() {
         if (isDisplayProductsLocked) {
-            Log.d("HomeFragment", "🔒 displayProducts LOCKED - skipping refresh")
+            Log.d("HomeFragment", "🔒 displayProducts LOCKED - skipping API load")
             return
         }
 
-        val allProducts = ProductDataSource.getAllProducts()
-        displayProducts.clear()
-        displayProducts.addAll(allProducts)
+        val sharedPref = requireContext()
+            .getSharedPreferences("user_pref", Context.MODE_PRIVATE)
+        val token = sharedPref.getString("token", "") ?: ""
 
-        // ✅ Karena displayProducts adalah shared reference, cukup notify
-        productAdapter.notifyDataSetChanged()
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val response = ApiClient.apiService.getProducts(
+                    page = 1,
+                    limit = 50,
+                    categoryId = null,
+                    search = null
+                )
 
-        Log.d("HomeFragment", "🔄 refreshProducts() - displayProducts size: ${displayProducts.size}")
+                if (response.isSuccessful) {
+                    val list = response.body()?.data?.products ?: emptyList()
+
+                    // ✅ Separate best sellers
+                    val bestSellers = list.filter { it.isBestSeller == 1 }
+                    val allProducts = list
+
+                    // Update Best Seller section
+                    bestSellerProducts.clear()
+                    bestSellerProducts.addAll(bestSellers)
+                    bestSellerAdapter.notifyDataSetChanged()
+
+                    // Update All Products section
+                    displayProducts.clear()
+                    displayProducts.addAll(allProducts)
+                    productAdapter.notifyDataSetChanged()
+
+                    // ✅ Show/Hide Best Seller section
+                    if (bestSellers.isEmpty()) {
+                        binding.layoutBestSeller.visibility = View.GONE
+                    } else {
+                        binding.layoutBestSeller.visibility = View.VISIBLE
+                    }
+
+                    Log.d("HomeFragment", "✅ Loaded ${list.size} products (${bestSellers.size} best sellers)")
+                } else {
+                    Toast.makeText(
+                        requireContext(),
+                        "Gagal load produk: ${response.code()}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(
+                    requireContext(),
+                    "Gagal konek server: ${e.localizedMessage}",
+                    Toast.LENGTH_LONG
+                ).show()
+                Log.e("HomeFragment", "Error loading products: ${e.message}")
+            }
+        }
     }
 
     private fun setupSearch() {
         binding.etSearchHome.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                // 🔒 Skip jika displayProducts sedang di-lock
                 if (isDisplayProductsLocked) {
                     Log.d("HomeFragment", "🔒 displayProducts LOCKED - skipping search")
                     return
                 }
 
                 val query = s.toString().lowercase().trim()
-                val allProducts = ProductDataSource.getAllProducts()
+
                 val filtered = if (query.isEmpty()) {
-                    allProducts
+                    displayProducts
                 } else {
-                    allProducts.filter {
+                    displayProducts.filter {
                         it.name.lowercase().contains(query) ||
                                 it.categoryName?.lowercase()?.contains(query) == true ||
                                 it.description?.lowercase()?.contains(query) == true
                     }
                 }
 
-                displayProducts.clear()
-                displayProducts.addAll(filtered)
-
-                // ✅ Karena shared reference, cukup notify
-                productAdapter.notifyDataSetChanged()
+                productAdapter.updateList(filtered)
             }
             override fun afterTextChanged(s: Editable?) {}
         })
     }
 
-    // 🆕 Setup Visual Search Button
     private fun setupVisualSearch() {
         binding.btnVisualSearch.setOnClickListener {
             showImageSourceDialog()
         }
     }
 
-    // 🆕 Show dialog: Camera or Gallery
     private fun showImageSourceDialog() {
         val options = arrayOf("📸 Ambil Foto", "🖼️ Pilih dari Galeri")
 
@@ -232,27 +381,21 @@ class HomeFragment : Fragment() {
             .show()
     }
 
-    // 🆕 Open Camera
     private fun openCamera() {
-        // TODO: Implement camera capture (need CameraX implementation)
         Toast.makeText(requireContext(), "📸 Fitur kamera akan segera hadir!", Toast.LENGTH_SHORT).show()
-        // For now, fallback to gallery
         openGallery()
     }
 
-    // 🆕 Open Gallery
     private fun openGallery() {
         val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
         pickImageLauncher.launch(intent)
     }
 
-    // 🆕 Perform Visual Search with ML (✅ FINAL FIXED VERSION with LOCK)
     private fun performVisualSearch(imageUri: Uri) {
         try {
             Log.d("HomeFragment", "🔍 Starting visual search...")
             Toast.makeText(requireContext(), "🤖 Menganalisis gambar...", Toast.LENGTH_SHORT).show()
 
-            // 🎯 Classify image using ML
             val predictions = farmToolClassifier.classifyImage(imageUri)
 
             Log.d("HomeFragment", "✅ ML Predictions: $predictions")
@@ -269,11 +412,9 @@ class HomeFragment : Fragment() {
                 return
             }
 
-            // 🔍 Filter products based on predictions
-            val allProducts = ProductDataSource.getAllProducts()
-            Log.d("HomeFragment", "📦 Total products in DB: ${allProducts.size}")
+            Log.d("HomeFragment", "📦 Total products in list: ${displayProducts.size}")
 
-            val matchedProducts = allProducts.filter { product ->
+            val matchedProducts = displayProducts.filter { product ->
                 val productName = product.name.lowercase()
                 val categoryName = product.categoryName?.lowercase() ?: ""
                 val description = product.description?.lowercase() ?: ""
@@ -293,27 +434,22 @@ class HomeFragment : Fragment() {
 
             Log.d("HomeFragment", "🎯 Total matched products: ${matchedProducts.size}")
 
-            // 📊 Update UI (✅ FINAL FIX with LOCK)
             if (matchedProducts.isNotEmpty()) {
                 Log.d("HomeFragment", "✅ Updating UI with ${matchedProducts.size} products")
 
-                // 🔒🔒🔒 LOCK displayProducts agar tidak bisa diubah!
                 isDisplayProductsLocked = true
                 isVisualSearchActive = true
 
-                // ✅ Update displayProducts (shared reference dengan adapter)
                 displayProducts.clear()
                 displayProducts.addAll(matchedProducts)
 
                 Log.d("HomeFragment", "📋 displayProducts updated: ${displayProducts.map { it.name }}")
                 Log.d("HomeFragment", "📋 displayProducts size NOW: ${displayProducts.size}")
 
-                // 🔥 PENTING: Notify LANGSUNG setelah update list!
                 productAdapter.notifyDataSetChanged()
 
                 Log.d("HomeFragment", "✅ notifyDataSetChanged() called, adapter size: ${productAdapter.itemCount}")
 
-                // 🔄 Scroll dan reset flag
                 binding.rvHomeProducts.post {
                     Log.d("HomeFragment", "🔄 Post-scroll started...")
                     Log.d("HomeFragment", "📊 displayProducts size in post: ${displayProducts.size}")
@@ -321,10 +457,9 @@ class HomeFragment : Fragment() {
 
                     binding.rvHomeProducts.scrollToPosition(0)
 
-                    // ✅ Reset SEMUA flag setelah 2 detik
                     binding.rvHomeProducts.postDelayed({
                         isVisualSearchActive = false
-                        isDisplayProductsLocked = false  // 🔓 UNLOCK!
+                        isDisplayProductsLocked = false
                         Log.d("HomeFragment", "🚩 Visual search flags reset (unlocked)")
                     }, 2000)
                 }
@@ -335,7 +470,6 @@ class HomeFragment : Fragment() {
                     Toast.LENGTH_LONG
                 ).show()
 
-                // ✅ Clear search text
                 binding.etSearchHome.setText("")
 
             } else {
@@ -367,9 +501,8 @@ class HomeFragment : Fragment() {
             val sliderView = layoutInflater.inflate(R.layout.dialog_price_filter, null)
             val slider = sliderView.findViewById<RangeSlider>(R.id.sliderPrice)
 
-            val allProducts = ProductDataSource.getAllProducts()
-            val minPrice = allProducts.minOfOrNull { it.price } ?: 0.0
-            val maxPrice = allProducts.maxOfOrNull { it.price } ?: 10000000.0
+            val minPrice = displayProducts.minOfOrNull { it.price } ?: 0.0
+            val maxPrice = displayProducts.maxOfOrNull { it.price } ?: 10000000.0
 
             slider.valueFrom = minPrice.toFloat()
             slider.valueTo = maxPrice.toFloat()
@@ -383,23 +516,15 @@ class HomeFragment : Fragment() {
                     val minVal = values[0].toInt()
                     val maxVal = values[1].toInt()
 
-                    val filtered = allProducts.filter {
+                    val filtered = displayProducts.filter {
                         it.price.toInt() in minVal..maxVal
                     }
 
-                    displayProducts.clear()
-                    displayProducts.addAll(filtered)
-
-                    // ✅ Changed from updateList() - karena shared reference
-                    productAdapter.notifyDataSetChanged()
+                    productAdapter.updateList(filtered)
                     dialog.dismiss()
                 }
                 .setNegativeButton("Tampilkan Semua") { dialog, _ ->
-                    displayProducts.clear()
-                    displayProducts.addAll(allProducts)
-
-                    // ✅ Changed from updateList() - karena shared reference
-                    productAdapter.notifyDataSetChanged()
+                    loadProductsFromApi()
                     dialog.dismiss()
                 }
                 .show()

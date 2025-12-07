@@ -5,13 +5,13 @@ import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import com.example.miniproject.data.model.Product
 import com.example.miniproject.fragment.ProductsFragment
 import com.example.miniproject.fragment.HomeFragment
 import com.example.miniproject.fragment.ProfileFragment
 import com.example.miniproject.fragment.CategoriesFragment
 import com.example.miniproject.fragment.CartFragment
 import com.example.miniproject.fragment.LoginFragment
-import com.example.miniproject.model.StoreProfile
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class MainActivity : AppCompatActivity() {
@@ -24,38 +24,33 @@ class MainActivity : AppCompatActivity() {
 
         bottomNavigation = findViewById(R.id.bottomNavigation)
 
-        // Cek apakah user sudah login
+        // Cek login
         if (isUserLoggedIn()) {
             showMainApp()
         } else {
             showLoginFragment()
         }
 
-        // Listener navigasi bottom bar
+        // Bottom nav - DIPERBAIKI
         bottomNavigation.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_home -> {
-                    // Home = ProductsFragment (tampilan promo/top selling)
-                    open(ProductsFragment())
+                    open(ProductsFragment())  // ✅ HOME = ProductsFragment
                     true
                 }
                 R.id.nav_products -> {
-                    // Products = HomeFragment (katalog grid penuh)
-                    open(HomeFragment())
+                    open(HomeFragment())      // ✅ PRODUCTS = HomeFragment
                     true
                 }
                 R.id.nav_profile -> {
-                    // Profil Pembeli / Admin
                     open(ProfileFragment())
                     true
                 }
                 R.id.nav_categories -> {
-                    // Kategori produk
                     open(CategoriesFragment())
                     true
                 }
                 R.id.nav_cart -> {
-                    // Keranjang
                     open(CartFragment())
                     true
                 }
@@ -63,7 +58,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Jika ada intent dari notifikasi ke tab tertentu (misal: Cart)
+        // Kalau ada intent ke cart
         val navigateTo = intent.getStringExtra("navigate_to")
         if (navigateTo == "cart") {
             bottomNavigation.selectedItemId = R.id.nav_cart
@@ -71,7 +66,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Fungsi buka fragment
     private fun open(fragment: Fragment) {
         supportFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, fragment)
@@ -79,7 +73,6 @@ class MainActivity : AppCompatActivity() {
             .commit()
     }
 
-    // Panggil ini untuk buka Category Page dengan filter kategori tertentu
     fun openCategoriesWithFilter(categoryId: Int?, categoryName: String?) {
         val fragment = CategoriesFragment().apply {
             arguments = Bundle().apply {
@@ -87,7 +80,6 @@ class MainActivity : AppCompatActivity() {
                 if (!categoryName.isNullOrBlank()) putString("category_name", categoryName)
             }
         }
-        // Pindah tab + buka fragment
         bottomNavigation.selectedItemId = R.id.nav_categories
         supportFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, fragment)
@@ -95,57 +87,52 @@ class MainActivity : AppCompatActivity() {
             .commit()
     }
 
-    // Saat user sudah login
+    // User sudah login
     private fun showMainApp() {
         bottomNavigation.visibility = View.VISIBLE
+        // default: Home (yang sekarang ProductsFragment)
         bottomNavigation.selectedItemId = R.id.nav_home
-        open(ProductsFragment()) // default tampilan pertama
+        open(ProductsFragment())  // ✅ Default = ProductsFragment
     }
 
-    // Saat user belum login
+    // Belum login
     private fun showLoginFragment() {
         bottomNavigation.visibility = View.GONE
         open(LoginFragment())
     }
 
-    // Simpan status login (dengan role)
+    // Dipanggil dari LoginFragment
     fun onLoginSuccess(username: String, role: String) {
         getSharedPreferences("user_pref", Context.MODE_PRIVATE)
             .edit()
             .putBoolean("is_logged_in", true)
             .putString("username", username)
-            .putString("role", role)
+            .putString("role", role)   // "buyer" / "seller"
             .apply()
+
         showMainApp()
     }
 
-    // Logout
     fun onLogout() {
         getSharedPreferences("user_pref", Context.MODE_PRIVATE)
             .edit()
             .clear()
             .apply()
 
-        // ❌ JANGAN reset StoreProfile
-        // StoreProfile tetap disimpan biar toko nggak hilang saat pindah role
-
         showLoginFragment()
     }
 
-
-    // Cek apakah user sudah login
     private fun isUserLoggedIn(): Boolean {
         val sp = getSharedPreferences("user_pref", Context.MODE_PRIVATE)
         return sp.getBoolean("is_logged_in", false)
     }
 
-    // Cek apakah user adalah admin
     fun isAdmin(): Boolean {
         val sp = getSharedPreferences("user_pref", Context.MODE_PRIVATE)
-        return sp.getString("role", "user") == "admin"
+        val role = sp.getString("role", "buyer")
+        return role == "seller"
     }
 
-    // Get username yang sedang login
     fun getCurrentUsername(): String {
         val sp = getSharedPreferences("user_pref", Context.MODE_PRIVATE)
         return sp.getString("username", "User") ?: "User"
