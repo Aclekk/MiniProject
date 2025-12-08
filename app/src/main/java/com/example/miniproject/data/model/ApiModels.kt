@@ -97,7 +97,9 @@ data class Category(
     val id: Int,
     val name: String,
     val description: String? = null,
-    val icon: String? = null
+    val icon: String? = null,
+    @Json(name = "created_at")
+    val createdAt: String? = null
 ) : Parcelable
 
 // ========== Cart Models ==========

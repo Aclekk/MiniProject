@@ -9,6 +9,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.miniproject.R
@@ -19,6 +20,7 @@ import com.example.miniproject.data.ProductDataSource
 import com.example.miniproject.databinding.FragmentCategoriesBinding
 import com.example.miniproject.model.Category
 import com.example.miniproject.model.Product
+import kotlinx.coroutines.launch
 
 class CategoriesFragment : Fragment() {
 
@@ -33,6 +35,7 @@ class CategoriesFragment : Fragment() {
     private val allProducts = mutableListOf<Product>()
 
     private var userRole = ""
+    private var hasHandledInitialCategorySelection = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -53,22 +56,6 @@ class CategoriesFragment : Fragment() {
         setupClickListeners()
         loadCategories()
         loadProducts()
-
-        val argId = arguments?.getInt("category_id", -1) ?: -1
-        val argName = arguments?.getString("category_name")
-
-        if (argId != -1 || !argName.isNullOrBlank()) {
-            val preselect = categories.find { it.id == argId }
-                ?: categories.find { it.categoryName.equals(argName, ignoreCase = true) }
-
-            preselect?.let { cat ->
-                view.post {
-                    showProductsForCategory(cat)
-                    val idx = categories.indexOf(cat)
-                    if (idx >= 0) binding.rvCategories.scrollToPosition(idx)
-                }
-            }
-        }
     }
 
     override fun onResume() {
@@ -81,7 +68,7 @@ class CategoriesFragment : Fragment() {
         val sharedPref = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
         userRole = sharedPref.getString("role", "buyer") ?: "buyer"
 
-        // ✅ FIX: Tampilkan FAB untuk seller/admin
+        // ✅ FAB hanya untuk seller
         if (userRole == "seller") {
             binding.fabAddCategory.visibility = View.VISIBLE
         } else {
@@ -136,7 +123,6 @@ class CategoriesFragment : Fragment() {
                             if (success) {
                                 Toast.makeText(context, "✅ Produk dihapus", Toast.LENGTH_SHORT).show()
                                 loadProducts()
-                                // Refresh tampilan kategori yang sedang aktif
                                 categories.find { it.id == product.categoryId }?.let {
                                     showProductsForCategory(it)
                                 }
@@ -166,12 +152,37 @@ class CategoriesFragment : Fragment() {
         }
     }
 
+    // =========================
+    // LOAD CATEGORIES DARI API
+    // =========================
     private fun loadCategories() {
-        val repoCategories = CategoryRepository.getCategories()
+        viewLifecycleOwner.lifecycleScope.launch {
+            val repoCategories = CategoryRepository.getCategories()
 
-        categories.clear()
-        categories.addAll(repoCategories)
-        categoryAdapter.notifyDataSetChanged()
+            categories.clear()
+            categories.addAll(repoCategories)
+            categoryAdapter.notifyDataSetChanged()
+
+            // Handling preselect (jika fragment dipanggil dengan argumen category_id / category_name)
+            if (!hasHandledInitialCategorySelection && categories.isNotEmpty()) {
+                val argId = arguments?.getInt("category_id", -1) ?: -1
+                val argName = arguments?.getString("category_name")
+
+                if (argId != -1 || !argName.isNullOrBlank()) {
+                    val preselect = categories.find { it.id == argId }
+                        ?: categories.find { it.categoryName.equals(argName, ignoreCase = true) }
+
+                    preselect?.let { cat ->
+                        view?.post {
+                            showProductsForCategory(cat)
+                            val idx = categories.indexOf(cat)
+                            if (idx >= 0) binding.rvCategories.scrollToPosition(idx)
+                        }
+                    }
+                }
+                hasHandledInitialCategorySelection = true
+            }
+        }
     }
 
     private fun loadProducts() {
@@ -217,21 +228,26 @@ class CategoriesFragment : Fragment() {
             .commit()
     }
 
+    // =========================
+    // DELETE CATEGORY VIA API
+    // =========================
     private fun deleteCategory(category: Category) {
         AlertDialog.Builder(requireContext())
             .setTitle("Hapus Kategori")
             .setMessage("Yakin ingin menghapus kategori '${category.categoryName}'? Semua produk dalam kategori ini juga akan terhapus.")
             .setPositiveButton("Hapus") { dialog, _ ->
-                val success = CategoryRepository.deleteCategory(category.id)
-                if (success) {
-                    Toast.makeText(context, "✅ Kategori dihapus", Toast.LENGTH_SHORT).show()
-                    loadCategories()
-                    loadProducts()
-                    binding.llProductsSection.visibility = View.GONE
-                } else {
-                    Toast.makeText(context, "❌ Gagal menghapus kategori", Toast.LENGTH_SHORT).show()
+                viewLifecycleOwner.lifecycleScope.launch {
+                    val success = CategoryRepository.deleteCategory(category.id)
+                    if (success) {
+                        Toast.makeText(context, "✅ Kategori dihapus", Toast.LENGTH_SHORT).show()
+                        loadCategories()
+                        loadProducts()
+                        binding.llProductsSection.visibility = View.GONE
+                    } else {
+                        Toast.makeText(context, "❌ Gagal menghapus kategori", Toast.LENGTH_SHORT).show()
+                    }
+                    dialog.dismiss()
                 }
-                dialog.dismiss()
             }
             .setNegativeButton("Batal") { dialog, _ ->
                 dialog.dismiss()

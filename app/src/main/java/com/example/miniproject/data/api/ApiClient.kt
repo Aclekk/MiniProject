@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit
 object ApiClient {
 
     // ✅ PENTING: Ganti dengan IP komputer Anda yang menjalankan PHP server
-    private const val BASE_URL = "http://192.168.100.18/agritools_api/"
+    private const val BASE_URL = "http://192.168.137.1/agritools_api/"
 
     private val moshi: Moshi = Moshi.Builder()
         .add(KotlinJsonAdapterFactory())

@@ -83,7 +83,7 @@ interface ApiService {
         @Part image: MultipartBody.Part?
     ): Response<BaseResponse<Product>>
 
-    // ✅ FIXED: UPDATE - Backend expect "product_id" dan "image" (bukan @Query)
+    // ✅ UPDATE PRODUCT
     @Multipart
     @POST("products/update.php")
     suspend fun updateProduct(
@@ -97,21 +97,19 @@ interface ApiService {
         @Part image: MultipartBody.Part?
     ): Response<BaseResponse<Product>>
 
-
-    // ✅ FIXED: DELETE - Backend expect "id" dari POST (sudah benar)
+    // ✅ DELETE PRODUCT
     @FormUrlEncoded
     @POST("products/delete.php")
     suspend fun deleteProduct(
         @Header("Authorization") token: String,
-        @Field("id") productId: Int                      // ✅ INI SUDAH BENAR
+        @Field("id") productId: Int
     ): Response<BaseResponse<Any>>
 
-    // Ambil produk terlaris untuk tampilan Home (ProductFragment)
+    // Produk terlaris (Home / Products)
     @GET("products/best_sellers.php")
     suspend fun getBestSellerProducts(
     ): Response<BaseResponse<ProductListResponse>>
 
-    // Admin toggle produk terlaris
     @FormUrlEncoded
     @POST("products/toggle_best_seller.php")
     suspend fun toggleBestSeller(
@@ -123,6 +121,28 @@ interface ApiService {
     // ========== CATEGORIES ==========
     @GET("categories/list.php")
     suspend fun getCategories(): Response<BaseResponse<CategoriesData>>
+
+    @FormUrlEncoded
+    @POST("categories/add.php")
+    suspend fun addCategory(
+        @Field("name") name: String,
+        @Field("description") description: String?
+    ): Response<BaseResponse<Any>>
+
+    @FormUrlEncoded
+    @POST("categories/update.php")
+    suspend fun updateCategory(
+        @Field("id") id: Int,
+        @Field("name") name: String,
+        @Field("description") description: String?
+    ): Response<BaseResponse<Any>>
+
+    @FormUrlEncoded
+    @POST("categories/delete.php")
+    suspend fun deleteCategory(
+        @Field("id") id: Int
+    ): Response<BaseResponse<Any>>
+
 
     // ========== CART ==========
     @GET("cart/list.php")

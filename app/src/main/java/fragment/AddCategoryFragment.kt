@@ -6,9 +6,11 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import com.example.miniproject.R
 import com.example.miniproject.data.CategoryRepository
 import com.example.miniproject.databinding.FragmentAddCategoryBinding
+import kotlinx.coroutines.launch
 
 class AddCategoryFragment : Fragment() {
 
@@ -26,7 +28,6 @@ class AddCategoryFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         setupButtons()
     }
 
@@ -43,7 +44,7 @@ class AddCategoryFragment : Fragment() {
     private fun saveCategory() {
         val categoryName = binding.etCategoryName.text.toString().trim()
 
-        // Validasi input
+        // Validasi input (tetap sama)
         if (categoryName.isEmpty()) {
             binding.etCategoryName.error = "Nama kategori tidak boleh kosong"
             return
@@ -54,38 +55,46 @@ class AddCategoryFragment : Fragment() {
             return
         }
 
-        // Cek duplikat
-        if (CategoryRepository.isCategoryNameExists(categoryName)) {
-            binding.etCategoryName.error = "Kategori '$categoryName' sudah ada"
-            Toast.makeText(
-                requireContext(),
-                "⚠️ Kategori '$categoryName' sudah ada!",
-                Toast.LENGTH_SHORT
-            ).show()
-            return
-        }
+        // Operasi ke server pakai coroutine
+        viewLifecycleOwner.lifecycleScope.launch {
 
-        // Simpan kategori ke repository
-        val success = CategoryRepository.addCategory(
-            name = categoryName,
-            iconResId = R.drawable.ic_category // Default icon
-        )
+            binding.btnSaveCategory.isEnabled = false
 
-        if (success) {
-            Toast.makeText(
-                requireContext(),
-                "✅ Kategori '$categoryName' berhasil ditambahkan!",
-                Toast.LENGTH_SHORT
-            ).show()
+            // Cek duplikat ke server
+            val exists = CategoryRepository.isCategoryNameExists(categoryName)
+            if (exists) {
+                binding.etCategoryName.error = "Kategori '$categoryName' sudah ada"
+                Toast.makeText(
+                    requireContext(),
+                    "⚠️ Kategori '$categoryName' sudah ada!",
+                    Toast.LENGTH_SHORT
+                ).show()
+                binding.btnSaveCategory.isEnabled = true
+                return@launch
+            }
 
-            // Kembali ke CategoriesFragment
-            parentFragmentManager.popBackStack()
-        } else {
-            Toast.makeText(
-                requireContext(),
-                "❌ Gagal menambahkan kategori!",
-                Toast.LENGTH_SHORT
-            ).show()
+            // Simpan kategori lewat API
+            val success = CategoryRepository.addCategory(
+                name = categoryName,
+                iconResId = R.drawable.ic_category // masih kirim, meski tidak dipakai di server
+            )
+
+            if (success) {
+                Toast.makeText(
+                    requireContext(),
+                    "✅ Kategori '$categoryName' berhasil ditambahkan!",
+                    Toast.LENGTH_SHORT
+                ).show()
+                parentFragmentManager.popBackStack()
+            } else {
+                Toast.makeText(
+                    requireContext(),
+                    "❌ Gagal menambahkan kategori!",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+
+            binding.btnSaveCategory.isEnabled = true
         }
     }
 
