@@ -16,6 +16,9 @@ import com.example.miniproject.data.ProductDataSource
 import com.example.miniproject.databinding.FragmentProductDetailBinding
 import com.example.miniproject.model.Product
 import com.example.miniproject.ui.CheckoutActivity
+import androidx.lifecycle.lifecycleScope
+import com.example.miniproject.data.api.ApiClient
+import kotlinx.coroutines.launch
 
 class ProductDetailFragment : Fragment() {
 
@@ -44,6 +47,63 @@ class ProductDetailFragment : Fragment() {
             setupAddToCartButton()
             setupBuyNowButton()
             setupReviews(product.id) // ✅ Aktifkan ulasan di sini
+        }
+    }
+
+    private fun createOrderForCurrentProduct() {
+        val product = currentProduct ?: return
+
+        // ambil token dari SharedPreferences
+        val sp = requireActivity().getSharedPreferences("user_pref", android.content.Context.MODE_PRIVATE)
+        val token = sp.getString("token", null)
+
+        if (token.isNullOrEmpty()) {
+            Toast.makeText(requireContext(), "Silakan login dulu", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                // optional: disable button biar ga spam
+                binding.btnBuyNow.isEnabled = false
+
+                val response = ApiClient.apiService.createOrder(
+                    token = "Bearer $token",
+                    productId = product.id,
+                    quantity = quantity
+                )
+
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    if (body?.success == true) {
+                        Toast.makeText(
+                            requireContext(),
+                            "Pesanan dibuat ✅ (cek notif di device seller)",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        Toast.makeText(
+                            requireContext(),
+                            body?.message ?: "Gagal membuat pesanan",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                } else {
+                    Toast.makeText(
+                        requireContext(),
+                        "Error ${response.code()}: ${response.errorBody()?.string()}",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(
+                    requireContext(),
+                    "Gagal konek server: ${e.localizedMessage}",
+                    Toast.LENGTH_LONG
+                ).show()
+            } finally {
+                binding.btnBuyNow.isEnabled = true
+            }
         }
     }
 
@@ -133,12 +193,8 @@ class ProductDetailFragment : Fragment() {
 
     private fun setupBuyNowButton() {
         binding.btnBuyNow.setOnClickListener {
-            currentProduct?.let { product ->
-                val intent = Intent(requireContext(), CheckoutActivity::class.java)
-                intent.putExtra("product", product)
-                intent.putExtra("quantity", quantity)
-                startActivity(intent)
-            }
+            createOrderForCurrentProduct()
+            // nanti kalau flow checkout sudah rapi, baru balik pakai CheckoutActivity lagi
         }
     }
 

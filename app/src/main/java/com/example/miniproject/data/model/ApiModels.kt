@@ -252,3 +252,13 @@ data class SellerProfile(
     @Json(name = "shop_address")
     val shopAddress: String? = null
 )
+data class OrderResponse(
+    val order_id: Int,
+    val product_id: Int,
+    val seller_id: Int,
+    val quantity: Int,
+    val total_price: Double,
+    val status: String
+)
+
+

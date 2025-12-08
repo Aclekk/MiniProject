@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.google.services)
     id("kotlin-parcelize")
 }
 
@@ -100,4 +101,8 @@ dependencies {
 
     // OkHttp Logging (untuk debug API)
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+    // ✅ Firebase
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
+
 }

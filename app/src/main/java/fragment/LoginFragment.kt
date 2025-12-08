@@ -14,6 +14,7 @@ import com.example.miniproject.data.api.ApiClient
 import com.example.miniproject.data.model.LoginRequest
 import com.example.miniproject.data.model.User
 import com.example.miniproject.databinding.FragmentLoginBinding
+import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.launch
 
 class LoginFragment : Fragment() {
@@ -89,6 +90,9 @@ class LoginFragment : Fragment() {
                         // ✅ SIMPAN SEMUA DATA USER
                         saveCompleteUserData(user, token)
 
+                        // ✅ SYNC FCM TOKEN SETELAH LOGIN (BUYER & SELLER)
+                        syncFcmTokenWithServer(token)
+
                         Toast.makeText(
                             requireContext(),
                             "✅ Selamat datang, ${user.fullName}!",
@@ -128,9 +132,10 @@ class LoginFragment : Fragment() {
         binding.btnLogin.isEnabled = !show
     }
 
-    // ✅ FUNGSI: Simpan semua data user ke SharedPreferences
+    // ✅ Simpan semua data user ke SharedPreferences
     private fun saveCompleteUserData(user: User, token: String) {
-        val sharedPref = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
+        val sharedPref =
+            requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
         with(sharedPref.edit()) {
             putInt("user_id", user.id)
             putString("username", user.username ?: "")
@@ -143,6 +148,43 @@ class LoginFragment : Fragment() {
             putBoolean("is_logged_in", true)
             apply()
         }
+    }
+
+    // ✅ Sinkronkan FCM token ke backend SETIAP kali login
+    private fun syncFcmTokenWithServer(authToken: String) {
+        val prefs = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
+        val localFcm = prefs.getString("fcm_token", null)
+
+        fun sendToServer(token: String) {
+            viewLifecycleOwner.lifecycleScope.launch {
+                try {
+                    val body = mapOf("fcm_token" to token)
+                    ApiClient.apiService.updateFcmToken(
+                        "Bearer $authToken",
+                        body
+                    )
+                    // Bisa ditambah log kalau mau
+                } catch (_: Exception) {
+                    // diem aja, ini cuma sync tambahan
+                }
+            }
+        }
+
+        // Kalau sudah punya FCM token di prefs → langsung kirim ke server
+        if (!localFcm.isNullOrEmpty()) {
+            sendToServer(localFcm)
+            return
+        }
+
+        // Kalau belum ada → minta ke Firebase dulu
+        FirebaseMessaging.getInstance().token
+            .addOnSuccessListener { token ->
+                prefs.edit().putString("fcm_token", token).apply()
+                sendToServer(token)
+            }
+            .addOnFailureListener {
+                // kalau gagal ya sudah, nanti akan nyusul di onNewToken
+            }
     }
 
     private fun navigateToProducts(username: String, role: String) {

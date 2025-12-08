@@ -1,6 +1,5 @@
 package com.example.miniproject.fragment
 
-import android.app.AlertDialog
 import android.content.Context
 import android.os.Bundle
 import android.text.Editable
@@ -12,6 +11,7 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
+import com.bumptech.glide.Glide
 import com.example.miniproject.R
 import com.example.miniproject.adapter.ProductAdapter
 import com.example.miniproject.data.CategoryRepository
@@ -28,7 +28,7 @@ class ProductsFragment : Fragment() {
     private lateinit var productAdapter: ProductAdapter
     private val products = mutableListOf<Product>()
     private val allProducts = mutableListOf<Product>()
-    private var userRole = ""
+    private var userRole: String = "buyer"
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -46,22 +46,31 @@ class ProductsFragment : Fragment() {
         setupRecyclerView()
         setupClickListeners()
         setupSearch()
-        loadBestSellerProducts() // ✅ GANTI: Load best sellers aja
+        loadBestSellerProducts()
         setupCategories()
+
+        // 🔥 Load info toko (nama, tagline, footer, logo)
+        loadStoreInfo()
     }
 
     override fun onResume() {
         super.onResume()
-        loadBestSellerProducts() // ✅ Refresh best sellers
+        // Refresh produk & info toko ketika balik ke fragment
+        loadBestSellerProducts()
+        loadStoreInfo()
     }
+
+    // ================== USER DATA / ROLE ==================
 
     private fun getUserData() {
         val sharedPref = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
         userRole = sharedPref.getString("role", "buyer") ?: "buyer"
 
-        // ❌ FAB DIMATIKAN UNTUK SEMUA ROLE
+        // FAB dimatikan untuk semua role di halaman ini
         binding.fabAddProduct.visibility = View.GONE
     }
+
+    // ================== RECYCLER VIEW ==================
 
     private fun setupRecyclerView() {
         productAdapter = ProductAdapter(products, userRole) { product, action ->
@@ -89,13 +98,16 @@ class ProductsFragment : Fragment() {
 
     private fun setupCategories() {
         val categories = CategoryRepository.getCategories()
-        // TODO: setup adapter kategori kalau mau dipakai
+        // TODO: pasang adapter kategori kalau mau
         // binding.rvCategories.adapter = ...
     }
+
+    // ================== CLICK LISTENERS ==================
 
     private fun setupClickListeners() {
         binding.swipeRefresh.setOnRefreshListener {
             loadBestSellerProducts()
+            loadStoreInfo()
             binding.swipeRefresh.isRefreshing = false
         }
 
@@ -103,6 +115,8 @@ class ProductsFragment : Fragment() {
             Toast.makeText(context, "Filter coming soon", Toast.LENGTH_SHORT).show()
         }
     }
+
+    // ================== SEARCH ==================
 
     private fun setupSearch() {
         binding.etSearch.addTextChangedListener(object : TextWatcher {
@@ -135,7 +149,8 @@ class ProductsFragment : Fragment() {
         }
     }
 
-    // ✅ LOAD BEST SELLER PRODUCTS (untuk customer di Home)
+    // ================== LOAD BEST SELLERS ==================
+
     private fun loadBestSellerProducts() {
         binding.progressBar.visibility = View.VISIBLE
 
@@ -180,6 +195,66 @@ class ProductsFragment : Fragment() {
             }
         }
     }
+
+    // ================== LOAD STORE INFO (HEADER + FOOTER) ==================
+
+    private fun loadStoreInfo() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val response = ApiClient.apiService.getSettings()
+
+                if (response.isSuccessful && response.body()?.success == true) {
+                    // Sama seperti di ProfileFragment: data = Map<String, Any>
+                    val settings = response.body()?.data as? Map<String, Any> ?: emptyMap()
+
+                    val appName = settings["app_name"]?.toString().orEmpty()
+                    val appTagline = settings["app_tagline"]?.toString().orEmpty()
+                    val contactEmail = settings["contact_email"]?.toString().orEmpty()
+                    val contactPhone = settings["contact_phone"]?.toString().orEmpty()
+                    val appAddress = settings["app_address"]?.toString().orEmpty()
+                    val logoPath = settings["app_logo"]?.toString()
+
+                    // 🔹 HEADER (atas)
+                    binding.tvStoreName.text =
+                        if (appName.isNotBlank()) appName else "🌾 Niaga Tani"
+
+                    binding.tvStoreTagline.text =
+                        if (appTagline.isNotBlank()) appTagline else "Solusi Pertanian Modern Indonesia"
+
+                    // 🔹 FOOTER (Tentang kami)
+                    if (appTagline.isNotBlank()) {
+                        binding.tvAboutTagline.text = appTagline
+                    }
+
+                    if (appAddress.isNotBlank()) {
+                        binding.tvAboutAddress.text = "📍 $appAddress"
+                    }
+
+                    if (contactPhone.isNotBlank()) {
+                        binding.tvAboutPhone.text = "📞 $contactPhone"
+                    }
+
+                    if (contactEmail.isNotBlank()) {
+                        binding.tvAboutEmail.text = "📧 $contactEmail"
+                    }
+
+                    // 🔹 Logo toko
+                    if (!logoPath.isNullOrEmpty()) {
+                        val logoUrl = ApiClient.getImageUrl(logoPath)
+                        Glide.with(this@ProductsFragment)
+                            .load(logoUrl)
+                            .placeholder(R.drawable.ic_person)
+                            .error(R.drawable.ic_person)
+                            .into(binding.imgStoreLogo)
+                    }
+                }
+            } catch (e: Exception) {
+                // Jangan spam toast di home, cukup diam kalau gagal
+            }
+        }
+    }
+
+    // ================== CLEANUP ==================
 
     override fun onDestroyView() {
         super.onDestroyView()

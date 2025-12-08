@@ -17,6 +17,7 @@ import com.example.miniproject.adapter.CategoryAdapter
 import com.example.miniproject.adapter.ProductAdapter
 import com.example.miniproject.data.CategoryRepository
 import com.example.miniproject.data.ProductDataSource
+import com.example.miniproject.data.api.ApiClient
 import com.example.miniproject.databinding.FragmentCategoriesBinding
 import com.example.miniproject.model.Category
 import com.example.miniproject.model.Product
@@ -64,6 +65,9 @@ class CategoriesFragment : Fragment() {
         loadProducts()
     }
 
+    // =========================
+    // USER / ROLE
+    // =========================
     private fun getUserData() {
         val sharedPref = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
         userRole = sharedPref.getString("role", "buyer") ?: "buyer"
@@ -76,6 +80,9 @@ class CategoriesFragment : Fragment() {
         }
     }
 
+    // =========================
+    // RECYCLER SETUP
+    // =========================
     private fun setupRecyclerViews() {
         categoryAdapter = CategoryAdapter(
             categories = categories,
@@ -119,15 +126,22 @@ class CategoriesFragment : Fragment() {
                         .setTitle("Hapus Produk")
                         .setMessage("Yakin ingin menghapus ${product.name}?")
                         .setPositiveButton("Hapus") { dialog, _ ->
+                            // MASIH pakai ProductDataSource (dummy).
+                            // Nanti idealnya diganti ke API delete.php.
                             val success = ProductDataSource.deleteProduct(product)
                             if (success) {
-                                Toast.makeText(context, "✅ Produk dihapus", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "✅ Produk dihapus", Toast.LENGTH_SHORT)
+                                    .show()
                                 loadProducts()
                                 categories.find { it.id == product.categoryId }?.let {
                                     showProductsForCategory(it)
                                 }
                             } else {
-                                Toast.makeText(context, "❌ Gagal menghapus produk", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(
+                                    context,
+                                    "❌ Gagal menghapus produk",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             }
                             dialog.dismiss()
                         }
@@ -163,14 +177,19 @@ class CategoriesFragment : Fragment() {
             categories.addAll(repoCategories)
             categoryAdapter.notifyDataSetChanged()
 
-            // Handling preselect (jika fragment dipanggil dengan argumen category_id / category_name)
+            // preselect kalau fragment dipanggil pakai argumen
             if (!hasHandledInitialCategorySelection && categories.isNotEmpty()) {
                 val argId = arguments?.getInt("category_id", -1) ?: -1
                 val argName = arguments?.getString("category_name")
 
                 if (argId != -1 || !argName.isNullOrBlank()) {
                     val preselect = categories.find { it.id == argId }
-                        ?: categories.find { it.categoryName.equals(argName, ignoreCase = true) }
+                        ?: categories.find {
+                            it.categoryName.equals(
+                                argName,
+                                ignoreCase = true
+                            )
+                        }
 
                     preselect?.let { cat ->
                         view?.post {
@@ -185,13 +204,51 @@ class CategoriesFragment : Fragment() {
         }
     }
 
+    // =========================
+    // LOAD PRODUCTS VIA API
+    // =========================
     private fun loadProducts() {
-        val allData = ProductDataSource.getAllProducts()
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val response = ApiClient.apiService.getProducts(
+                    page = 1,
+                    limit = 200,
+                    categoryId = null,
+                    search = null,
+                    minPrice = null,
+                    maxPrice = null
+                )
 
-        allProducts.clear()
-        allProducts.addAll(allData)
+                if (response.isSuccessful && response.body()?.success == true) {
+                    val body = response.body()
+                    val list = body?.data?.products ?: emptyList()
+
+                    allProducts.clear()
+                    allProducts.addAll(list)
+
+                    // tidak langsung tampil; baru muncul setelah kategori dipilih
+                    products.clear()
+                    productAdapter.notifyDataSetChanged()
+                } else {
+                    Toast.makeText(
+                        requireContext(),
+                        "Gagal load produk: ${response.code()}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(
+                    requireContext(),
+                    "Gagal konek server: ${e.localizedMessage}",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
     }
 
+    // =========================
+    // FILTER & TAMPILKAN PER KATEGORI
+    // =========================
     private fun showProductsForCategory(category: Category) {
         binding.tvCategoryTitle.text = "Products in ${category.categoryName}"
         binding.llProductsSection.visibility = View.VISIBLE
@@ -244,7 +301,11 @@ class CategoriesFragment : Fragment() {
                         loadProducts()
                         binding.llProductsSection.visibility = View.GONE
                     } else {
-                        Toast.makeText(context, "❌ Gagal menghapus kategori", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            context,
+                            "❌ Gagal menghapus kategori",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                     dialog.dismiss()
                 }

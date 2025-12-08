@@ -71,6 +71,12 @@ interface ApiService {
         @Query("id") productId: Int
     ): Response<BaseResponse<Product>>
 
+    @POST("user/update_fcm_token.php")
+    suspend fun updateFcmToken(
+        @Header("Authorization") token: String,
+        @Body body: Map<String, String>
+    ): Response<BaseResponse<Any>>
+
     @Multipart
     @POST("products/create.php")
     suspend fun createProduct(
@@ -143,7 +149,6 @@ interface ApiService {
         @Field("id") id: Int
     ): Response<BaseResponse<Any>>
 
-
     // ========== CART ==========
     @GET("cart/list.php")
     suspend fun getCart(
@@ -169,6 +174,20 @@ interface ApiService {
     ): Response<BaseResponse<Any>>
 
     // ========== ORDERS ==========
+
+    // ✅ NEW: createOrder sederhana (dipanggil dari ProductDetailFragment)
+    // ========== SIMPLE ORDER (BUY NOW) ==========
+
+    @FormUrlEncoded
+    @POST("orders/create.php")
+    suspend fun createOrder(
+        @Header("Authorization") token: String,
+        @Field("product_id") productId: Int,
+        @Field("quantity") quantity: Int
+    ): Response<BaseResponse<OrderResponse>>
+
+
+
     @POST("orders/create.php")
     suspend fun checkout(
         @Header("Authorization") token: String,
@@ -233,6 +252,23 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Query("id") wishlistId: Int
     ): Response<BaseResponse<Any>>
+
+    // ========== SETTINGS (TAMBAHKAN DI AKHIR ApiService.kt) ==========
+    @GET("settings/get.php")
+    suspend fun getSettings(): Response<BaseResponse<Map<String, Any>>>
+
+    @POST("settings/update.php")
+    suspend fun updateSettings(
+        @Header("Authorization") token: String,
+        @Body request: Map<String, String>
+    ): Response<BaseResponse<Map<String, Any>>>
+
+    @Multipart
+    @POST("settings/upload_logo.php")
+    suspend fun uploadStoreLogo(
+        @Header("Authorization") token: String,
+        @Part logo: MultipartBody.Part
+    ): Response<BaseResponse<Map<String, String>>>
 
     // ========== SELLER DASHBOARD ==========
     @GET("api/seller/dashboard.php")

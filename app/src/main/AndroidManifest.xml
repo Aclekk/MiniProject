@@ -58,7 +58,7 @@
             android:theme="@style/Theme.NiagaTani.NoActionBar"
             android:windowSoftInputMode="adjustPan" />
 
-        <!-- 🟢 Main Activity (dengan Visual Search) -->
+        <!-- 🟢 Main Activity (buyer / seller sama2 lewat sini) -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -70,15 +70,14 @@
             android:name=".ui.CheckoutActivity"
             android:exported="true"
             android:windowSoftInputMode="adjustPan" />
-
-        <!-- 🟢 Seller Main Activity -->
-        <activity
-            android:name=".SellerMainActivity"
-            android:exported="false"
-            android:theme="@style/Theme.NiagaTani.NoActionBar"
-            android:windowSoftInputMode="adjustPan" />
-
-        <!-- 🟢 Provider untuk kamera & file access -->
+        <service
+            android:name=".firebase.MyFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+        <!-- 🟢 FileProvider untuk kamera & file -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.provider"
@@ -88,6 +87,9 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+
+        <!-- 🟢 Firebase Messaging Service (pastikan packagenya benar) -->
+
 
     </application>
 
