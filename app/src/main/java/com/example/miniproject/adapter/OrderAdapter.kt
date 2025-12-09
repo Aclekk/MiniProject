@@ -15,15 +15,10 @@ class OrderAdapter(
 ) : RecyclerView.Adapter<OrderAdapter.OrderViewHolder>() {
 
     inner class OrderViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        // ID disesuaikan dengan item_order_history.xml
         val tvOrderId: TextView = itemView.findViewById(R.id.tvOrderId)
-
-        // ⚠️ DI SINI YANG TADI BIKIN ERROR:
-        // xml: tvOrderStatus & tvOrderTotal, jadi kita mapping ke sana
         val tvStatus: TextView = itemView.findViewById(R.id.tvOrderStatus)
         val tvTotalPayment: TextView = itemView.findViewById(R.id.tvOrderTotal)
 
-        // Gunakan btnNextStatus kalau ada, kalau tidak pakai btnDetail yang lama
         val btnNextStatus: Button? =
             itemView.findViewById<Button?>(R.id.btnNextStatus)
                 ?: itemView.findViewById<Button?>(R.id.btnDetail)
@@ -45,23 +40,32 @@ class OrderAdapter(
         holder.tvTotalPayment.text =
             "Total: Rp ${String.format("%,d", order.totalPrice.toInt())}"
 
-        // Tombol ubah status dipakai di AdminOrderListFragment.
-        // Sekarang belum ke database, cuma ubah status di memori.
         if (onNextStatus != null && holder.btnNextStatus != null) {
             holder.btnNextStatus.visibility = View.VISIBLE
 
-            holder.btnNextStatus.text = when (order.status) {
-                "Belum Bayar" -> "Proses"
-                "Dikemas"     -> "Kirim Pesanan"
-                "Dikirim"     -> "Selesai"
-                else          -> "Ubah Status"
+            val statusLower = order.status.lowercase()
+
+            holder.btnNextStatus.text = when {
+                statusLower == "belum bayar" ->
+                    "Tandai Dibayar"
+
+                statusLower == "pending" || statusLower == "menunggu konfirmasi" ->
+                    "Konfirmasi Pesanan"     // 🔥 di sinilah tombol yang kamu mau
+
+                statusLower == "dikemas" ->
+                    "Kirim Pesanan"
+
+                statusLower == "dikirim" ->
+                    "Selesai"
+
+                else ->
+                    "Ubah Status"
             }
 
             holder.btnNextStatus.setOnClickListener {
                 onNextStatus.invoke(order)
             }
         } else {
-            // Kalau adapter dipakai tanpa aksi next status → sembunyikan
             holder.btnNextStatus?.visibility = View.GONE
         }
     }

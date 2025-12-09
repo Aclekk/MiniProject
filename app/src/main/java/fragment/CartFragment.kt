@@ -25,7 +25,8 @@ class CartFragment : Fragment() {
     private lateinit var cartAdapter: CartAdapter
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
+        inflater: LayoutInflater,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentCartBinding.inflate(inflater, container, false)
@@ -57,6 +58,7 @@ class CartFragment : Fragment() {
             CartManager.cartItems.remove(product)
             updateCartSummary()
         }
+
         binding.rvCart.layoutManager = LinearLayoutManager(requireContext())
         binding.rvCart.adapter = cartAdapter
     }
@@ -67,19 +69,20 @@ class CartFragment : Fragment() {
 
         val pagerAdapter = object : FragmentStateAdapter(this) {
             override fun getItemCount(): Int = 2
+
             override fun createFragment(position: Int): Fragment {
-                // 🔥 BACA ROLE DARI SHAREDPREFERENCES
-                val sharedPref = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
-                val userRole = sharedPref.getString("role", "user") ?: "user"
+                val prefs = requireActivity()
+                    .getSharedPreferences("user_pref", Context.MODE_PRIVATE)
+                val userRole = prefs.getString("role", "user") ?: "user"
 
-                Log.d("CartFragment", "User role: $userRole")
+                Log.d("CartFragment", "ROLE = $userRole")
 
-                return if (userRole == "admin") {
-                    // ADMIN: Pakai fragment dengan button
+                val isSellerOrAdmin = userRole == "seller" || userRole == "admin"
+
+                return if (isSellerOrAdmin) {
                     if (position == 0) AdminOrderListFragment()
                     else AdminOrderHistoryFragment()
                 } else {
-                    // USER: Pakai fragment tanpa button
                     if (position == 0) ActiveOrdersFragment()
                     else CompletedOrdersFragment()
                 }
@@ -88,8 +91,8 @@ class CartFragment : Fragment() {
 
         viewPager.adapter = pagerAdapter
 
-        TabLayoutMediator(tabLayout, viewPager) { tab, position ->
-            tab.text = if (position == 0) "Pesanan Aktif" else "Riwayat Pesanan"
+        TabLayoutMediator(tabLayout, viewPager) { tab, pos ->
+            tab.text = if (pos == 0) "Pesanan Aktif" else "Riwayat Pesanan"
         }.attach()
     }
 

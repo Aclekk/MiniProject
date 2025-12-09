@@ -184,11 +184,6 @@ interface ApiService {
         @Body request: CheckoutRequest
     ): BaseResponse<CreateOrderResult>
 
-
-
-
-
-
     @GET("orders/list.php")
     suspend fun getOrders(
         @Header("Authorization") token: String,
@@ -201,11 +196,13 @@ interface ApiService {
         @Query("id") orderId: Int
     ): Response<BaseResponse<Order>>
 
-    @PUT("orders/update_status.php")
+    @POST("orders/update_status.php")
     suspend fun updateOrderStatus(
         @Header("Authorization") token: String,
-        @Body request: Map<String, Any>
-    ): Response<BaseResponse<Any>>
+        @Body body: Map<String, String>    // ⬅️ WAJIB Map<String, String>, BUKAN Any
+    ): Response<BaseResponse<OrderResponse>>
+
+
 
 
     // ========== PAYMENTS ==========
