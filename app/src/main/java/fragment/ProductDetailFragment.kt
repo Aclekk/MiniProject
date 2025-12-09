@@ -1,5 +1,6 @@
 package com.example.miniproject.fragment
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -7,15 +8,19 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import com.example.miniproject.R
 import com.example.miniproject.adapter.ReviewAdapter
 import com.example.miniproject.data.CartManager
 import com.example.miniproject.data.ProductDataSource
+import com.example.miniproject.data.api.ApiClient
+import com.example.miniproject.data.model.AddToCartRequest
 import com.example.miniproject.databinding.FragmentProductDetailBinding
 import com.example.miniproject.model.Product
 import com.example.miniproject.ui.CheckoutActivity
+import kotlinx.coroutines.launch
 
 class ProductDetailFragment : Fragment() {
 
@@ -57,9 +62,7 @@ class ProductDetailFragment : Fragment() {
 
         when {
             product.imageResId != null -> {
-                binding.ivProductImage.setImageResource(
-                    product.imageResId ?: R.drawable.bg_card
-                )
+                binding.ivProductImage.setImageResource(product.imageResId ?: R.drawable.bg_card)
             }
             !product.imageUrl.isNullOrEmpty() -> {
                 Glide.with(requireContext())
@@ -129,23 +132,65 @@ class ProductDetailFragment : Fragment() {
         }
     }
 
+    /** ✅ + Keranjang → call API cart/add.php */
     private fun setupAddToCartButton() {
         binding.btnAddToCart.setOnClickListener {
-            currentProduct?.let { product ->
-                repeat(quantity) {
-                    CartManager.addToCart(product)
+            val product = currentProduct ?: run {
+                Toast.makeText(requireContext(), "Produk tidak valid", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            val sp = requireActivity()
+                .getSharedPreferences("user_pref", Context.MODE_PRIVATE)
+            val token = sp.getString("token", null)
+
+            if (token.isNullOrEmpty()) {
+                Toast.makeText(requireContext(), "Silakan login dulu", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            viewLifecycleOwner.lifecycleScope.launch {
+                try {
+                    binding.btnAddToCart.isEnabled = false
+
+                    val resp = ApiClient.apiService.addToCart(
+                        token = "Bearer $token",
+                        request = AddToCartRequest(
+                            productId = product.id,
+                            quantity = quantity
+                        )
+                    )
+
+                    if (resp.isSuccessful && resp.body()?.success == true) {
+                        // optional: biar UI keranjang lokalmu tetap jalan
+                        repeat(quantity) { CartManager.addToCart(product) }
+
+                        Toast.makeText(
+                            requireContext(),
+                            "Berhasil menambah ${quantity}x ${product.name} ke keranjang",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        Toast.makeText(
+                            requireContext(),
+                            resp.body()?.message ?: "Gagal menambah ke keranjang",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                } catch (e: Exception) {
+                    Toast.makeText(
+                        requireContext(),
+                        "Gagal konek server: ${e.localizedMessage}",
+                        Toast.LENGTH_LONG
+                    ).show()
+                } finally {
+                    binding.btnAddToCart.isEnabled = true
                 }
-                Toast.makeText(
-                    requireContext(),
-                    "Menambahkan ${quantity}x ${product.name} ke keranjang...",
-                    Toast.LENGTH_SHORT
-                ).show()
             }
         }
     }
 
-    // 🔁 Kembali ke versi checkpoint:
-    // tombol Beli Sekarang hanya buka CheckoutActivity
+    /** Beli Sekarang → CheckoutActivity */
     private fun setupBuyNowButton() {
         binding.btnBuyNow.setOnClickListener {
             currentProduct?.let { product ->

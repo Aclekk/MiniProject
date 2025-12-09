@@ -7,12 +7,17 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import com.example.miniproject.databinding.ActivityCheckoutBinding
-import com.example.miniproject.model.Product
+import androidx.lifecycle.lifecycleScope
 import com.example.miniproject.data.CartManager
 import com.example.miniproject.data.Order
+import com.example.miniproject.data.api.ApiClient
+import com.example.miniproject.data.api.CheckoutRequest
+import com.example.miniproject.data.api.CreateOrderResult
+import com.example.miniproject.databinding.ActivityCheckoutBinding
+import com.example.miniproject.model.Product
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 class CheckoutActivity : AppCompatActivity() {
@@ -112,7 +117,7 @@ class CheckoutActivity : AppCompatActivity() {
                         )
                         if (!addresses.isNullOrEmpty()) {
                             val address = addresses[0]
-                            val fullAddress = "${address.getAddressLine(0)}"
+                            val fullAddress = address.getAddressLine(0) ?: ""
                             binding.tvUserAddress.text = fullAddress
                             binding.tvAddress.text =
                                 "📍 Lat: ${String.format("%.4f", location.latitude)}, " +
@@ -131,7 +136,7 @@ class CheckoutActivity : AppCompatActivity() {
     }
 
     private fun processPayment() {
-        val selectedPaymentMethod = when {
+        val paymentMethod = when {
             binding.rbTransfer.isChecked -> "Transfer Bank"
             binding.rbEwallet.isChecked -> "E-Wallet"
             else -> {
@@ -146,40 +151,79 @@ class CheckoutActivity : AppCompatActivity() {
 
         val prod = product ?: return
 
-        val subtotal = prod.price * quantity
-        val total = subtotal + shippingCost
-        val userAddress = binding.tvUserAddress.text.toString()
+        // Ambil token login
+        val sp = getSharedPreferences("user_pref", MODE_PRIVATE)
+        val token = sp.getString("token", null)
 
-        // ✅ Order lokal, disimpan di CartManager (BELUM ke database)
-        val newOrder = Order(
-            id = CartManager.orders.size + 1,
-            products = listOf(prod),
-            totalPrice = total,
-            status = "Dikemas",
-            paymentMethod = selectedPaymentMethod,
-            address = userAddress
-        )
-
-        CartManager.orders.add(newOrder)
-
-        // Kalau datang dari Cart, hapus item-nya
-        if (isFromCart) {
-            CartManager.cartItems.remove(prod)
+        if (token.isNullOrEmpty()) {
+            Toast.makeText(this, "Silakan login dulu", Toast.LENGTH_SHORT).show()
+            return
         }
 
-        Toast.makeText(
-            this,
-            "Pesanan berhasil! Metode: $selectedPaymentMethod\nTotal: Rp ${String.format("%,d", total.toInt())}",
-            Toast.LENGTH_LONG
-        ).show()
+        lifecycleScope.launch {
+            try {
+                binding.btnPayNow.isEnabled = false
+                binding.btnPayNow.text = "Memproses..."
 
-        binding.btnPayNow.isEnabled = false
-        binding.btnPayNow.text = "Memproses..."
+                // Call ke API orders/create.php
+                val resp = ApiClient.apiService.checkout(
+                    token = "Bearer $token",
+                    request = CheckoutRequest(
+                        product_id = prod.id,
+                        quantity = quantity
+                    )
+                )
 
-        binding.btnPayNow.postDelayed({
-            Toast.makeText(this, "Pembayaran berhasil! ✅", Toast.LENGTH_SHORT).show()
-            finish()
-        }, 2000)
+                if (resp.success) {
+                    val apiData = resp.data   // biarin dia infer
+
+
+                    val subtotal = prod.price * quantity
+                    val total = subtotal + shippingCost
+                    val userAddress = binding.tvUserAddress.text.toString()
+
+                    val newOrder = Order(
+                        id = apiData?.orderId ?: (CartManager.orders.size + 1),
+                        products = listOf(prod),
+                        totalPrice = total,
+                        status = apiData?.status ?: "Dikemas",
+                        paymentMethod = paymentMethod,
+                        address = userAddress
+                    )
+
+                    // Masuk ke Pesanan Aktif
+                    CartManager.orders.add(newOrder)
+
+                    // Kalau dari cart, hapus item lokal
+                    if (isFromCart) {
+                        CartManager.cartItems.remove(prod)
+                    }
+
+                    Toast.makeText(
+                        this@CheckoutActivity,
+                        "Pesanan berhasil dibuat. Seller dapat notifikasi 🚚",
+                        Toast.LENGTH_LONG
+                    ).show()
+
+                    finish()
+                } else {
+                    Toast.makeText(
+                        this@CheckoutActivity,
+                        resp.message ?: "Gagal membuat pesanan",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(
+                    this@CheckoutActivity,
+                    "Gagal konek server: ${e.localizedMessage}",
+                    Toast.LENGTH_LONG
+                ).show()
+            } finally {
+                binding.btnPayNow.isEnabled = true
+                binding.btnPayNow.text = "Bayar Sekarang"
+            }
+        }
     }
 
     override fun onRequestPermissionsResult(

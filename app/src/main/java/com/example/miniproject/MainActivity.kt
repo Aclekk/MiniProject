@@ -123,8 +123,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun isUserLoggedIn(): Boolean {
-        val sp = getSharedPreferences("user_pref", Context.MODE_PRIVATE)
-        return sp.getBoolean("is_logged_in", false)
+            val sp = getSharedPreferences("user_pref", Context.MODE_PRIVATE)
+            return sp.getBoolean("is_logged_in", false)
     }
 
     fun isAdmin(): Boolean {

@@ -62,6 +62,11 @@ data class User(
     val createdAt: String? = null
 ) : Parcelable
 
+// data/model/CheckoutRequest.kt
+data class CheckoutRequest(
+    val product_id: Int,
+    val quantity: Int
+)
 
 
 // ========== Product Models ==========
@@ -168,11 +173,11 @@ data class Order(
 
 // 🔹 HASIL KHUSUS DARI orders/create.php
 data class CreateOrderResult(
-    @Json(name = "order_id") val orderId: Int,
-    @Json(name = "product_id") val productId: Int,
-    @Json(name = "seller_id") val sellerId: Int?,
+    val orderId: Int,
+    val productId: Int,
+    val sellerId: Int,
     val quantity: Int,
-    @Json(name = "total_price") val totalPrice: Double,
+    val totalPrice: Double,
     val status: String
 )
 
@@ -259,5 +264,4 @@ data class OrderResponse(
     val total_price: Double,
     val status: String
 )
-
 

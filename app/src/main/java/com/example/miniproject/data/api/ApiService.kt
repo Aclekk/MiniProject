@@ -6,7 +6,7 @@ import okhttp3.RequestBody
 import retrofit2.Response
 import retrofit2.http.*
 import com.example.miniproject.data.model.CreateOrderResult
-
+import com.example.miniproject.data.model.BaseResponse
 interface ApiService {
 
     // ========== AUTH ==========
@@ -156,11 +156,12 @@ interface ApiService {
         @Header("Authorization") token: String
     ): Response<BaseResponse<CartResponse>>
 
-    @POST("api/cart/add.php")
+    @POST("cart/add.php")
     suspend fun addToCart(
         @Header("Authorization") token: String,
         @Body request: AddToCartRequest
     ): Response<BaseResponse<Any>>
+
 
     @DELETE("cart/remove.php")
     suspend fun removeFromCart(
@@ -179,9 +180,10 @@ interface ApiService {
     @POST("orders/create.php")
     suspend fun checkout(
         @Header("Authorization") token: String,
-        @Body request: Map<String, Any>
-    ): Response<BaseResponse<CreateOrderResult>>
-    // ⬅️ pakai Any karena response data sederhana
+        @Body request: CheckoutRequest
+    ): BaseResponse<CreateOrderResult>
+
+
 
     @GET("orders/list.php")
     suspend fun getOrders(
