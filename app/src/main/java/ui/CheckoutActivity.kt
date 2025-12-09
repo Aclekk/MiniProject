@@ -7,7 +7,6 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import com.example.miniproject.R
 import com.example.miniproject.databinding.ActivityCheckoutBinding
 import com.example.miniproject.model.Product
 import com.example.miniproject.data.CartManager
@@ -25,7 +24,7 @@ class CheckoutActivity : AppCompatActivity() {
     private var product: Product? = null
     private var quantity: Int = 1
     private val shippingCost = 20000.0
-    private var isFromCart: Boolean = false // 🆕 Deteksi sumber checkout
+    private var isFromCart: Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,7 +37,7 @@ class CheckoutActivity : AppCompatActivity() {
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
-        // 🔹 Deteksi apakah dari Cart atau Product Detail
+        // Data dari Intent
         product = intent.getParcelableExtra("product")
         quantity = intent.getIntExtra("quantity", 1)
         isFromCart = intent.getBooleanExtra("from_cart", false)
@@ -48,34 +47,35 @@ class CheckoutActivity : AppCompatActivity() {
     }
 
     private fun setupUI() {
-        product?.let { prod ->
-            binding.tvProductName.text = prod.name
-            binding.tvQuantity.text = "x$quantity"
+        val prod = product ?: return
 
-            val subtotal = prod.price * quantity
-            val total = subtotal + shippingCost
+        binding.tvProductName.text = prod.name
+        binding.tvQuantity.text = "x$quantity"
 
-            binding.tvPrice.text = "Rp ${String.format("%,d", subtotal.toInt())}"
-            binding.tvSubtotal.text = "Rp ${String.format("%,d", subtotal.toInt())}"
-            binding.tvShipping.text = "Rp ${String.format("%,d", shippingCost.toInt())}"
-            binding.tvShippingCost.text = "Rp ${String.format("%,d", shippingCost.toInt())}"
-            binding.tvTotal.text = "Rp ${String.format("%,d", total.toInt())}"
-            binding.tvTotalBottom.text = "Rp ${String.format("%,d", total.toInt())}"
+        val subtotal = prod.price * quantity
+        val total = subtotal + shippingCost
 
-            // Default payment method
-            binding.rbTransfer.isChecked = true
+        fun Double.toCurrency(): String =
+            "Rp ${String.format("%,d", this.toInt())}"
 
-            // 🆕 FIX: Radio button manual listener
-            binding.rbTransfer.setOnClickListener {
-                binding.rbEwallet.isChecked = false
-            }
-            binding.rbEwallet.setOnClickListener {
-                binding.rbTransfer.isChecked = false
-            }
+        binding.tvPrice.text = subtotal.toCurrency()
+        binding.tvSubtotal.text = subtotal.toCurrency()
+        binding.tvShipping.text = shippingCost.toCurrency()
+        binding.tvShippingCost.text = shippingCost.toCurrency()
+        binding.tvTotal.text = total.toCurrency()
+        binding.tvTotalBottom.text = total.toCurrency()
 
-            binding.btnPayNow.setOnClickListener {
-                processPayment()
-            }
+        // Default payment method
+        binding.rbTransfer.isChecked = true
+        binding.rbTransfer.setOnClickListener {
+            binding.rbEwallet.isChecked = false
+        }
+        binding.rbEwallet.setOnClickListener {
+            binding.rbTransfer.isChecked = false
+        }
+
+        binding.btnPayNow.setOnClickListener {
+            processPayment()
         }
     }
 
@@ -114,8 +114,9 @@ class CheckoutActivity : AppCompatActivity() {
                             val address = addresses[0]
                             val fullAddress = "${address.getAddressLine(0)}"
                             binding.tvUserAddress.text = fullAddress
-                            binding.tvAddress.text = "📍 Lat: ${String.format("%.4f", location.latitude)}, " +
-                                    "Lon: ${String.format("%.4f", location.longitude)}"
+                            binding.tvAddress.text =
+                                "📍 Lat: ${String.format("%.4f", location.latitude)}, " +
+                                        "Lon: ${String.format("%.4f", location.longitude)}"
                         }
                     } catch (e: Exception) {
                         binding.tvUserAddress.text = "Gagal mendapatkan alamat"
@@ -143,42 +144,42 @@ class CheckoutActivity : AppCompatActivity() {
             }
         }
 
-        product?.let { prod ->
-            val subtotal = prod.price * quantity
-            val total = subtotal + shippingCost
-            val userAddress = binding.tvUserAddress.text.toString()
+        val prod = product ?: return
 
-            // 🆕 Buat pesanan baru dan masukkan ke CartManager
-            val newOrder = Order(
-                id = CartManager.orders.size + 1,
-                products = listOf(prod),
-                totalPrice = total,
-                status = "Dikemas", // Status awal setelah bayar
-                paymentMethod = selectedPaymentMethod,
-                address = userAddress
-            )
+        val subtotal = prod.price * quantity
+        val total = subtotal + shippingCost
+        val userAddress = binding.tvUserAddress.text.toString()
 
-            CartManager.orders.add(newOrder)
+        // ✅ Order lokal, disimpan di CartManager (BELUM ke database)
+        val newOrder = Order(
+            id = CartManager.orders.size + 1,
+            products = listOf(prod),
+            totalPrice = total,
+            status = "Dikemas",
+            paymentMethod = selectedPaymentMethod,
+            address = userAddress
+        )
 
-            // 🆕 FIX: Hapus barang dari cart kalau checkout dari cart
-            if (isFromCart) {
-                CartManager.cartItems.remove(prod)
-            }
+        CartManager.orders.add(newOrder)
 
-            Toast.makeText(
-                this,
-                "Pesanan berhasil! Metode: $selectedPaymentMethod\nTotal: Rp ${String.format("%,d", total.toInt())}",
-                Toast.LENGTH_LONG
-            ).show()
-
-            binding.btnPayNow.isEnabled = false
-            binding.btnPayNow.text = "Memproses..."
-
-            binding.btnPayNow.postDelayed({
-                Toast.makeText(this, "Pembayaran berhasil! ✅", Toast.LENGTH_SHORT).show()
-                finish()
-            }, 2000)
+        // Kalau datang dari Cart, hapus item-nya
+        if (isFromCart) {
+            CartManager.cartItems.remove(prod)
         }
+
+        Toast.makeText(
+            this,
+            "Pesanan berhasil! Metode: $selectedPaymentMethod\nTotal: Rp ${String.format("%,d", total.toInt())}",
+            Toast.LENGTH_LONG
+        ).show()
+
+        binding.btnPayNow.isEnabled = false
+        binding.btnPayNow.text = "Memproses..."
+
+        binding.btnPayNow.postDelayed({
+            Toast.makeText(this, "Pembayaran berhasil! ✅", Toast.LENGTH_SHORT).show()
+            finish()
+        }, 2000)
     }
 
     override fun onRequestPermissionsResult(
@@ -188,7 +189,9 @@ class CheckoutActivity : AppCompatActivity() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            if (grantResults.isNotEmpty() &&
+                grantResults[0] == PackageManager.PERMISSION_GRANTED
+            ) {
                 getUserLocation()
             } else {
                 binding.tvUserAddress.text = "Izin lokasi ditolak"

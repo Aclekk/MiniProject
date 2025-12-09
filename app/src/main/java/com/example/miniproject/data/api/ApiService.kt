@@ -5,6 +5,7 @@ import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Response
 import retrofit2.http.*
+import com.example.miniproject.data.model.CreateOrderResult
 
 interface ApiService {
 
@@ -175,24 +176,12 @@ interface ApiService {
 
     // ========== ORDERS ==========
 
-    // ✅ NEW: createOrder sederhana (dipanggil dari ProductDetailFragment)
-    // ========== SIMPLE ORDER (BUY NOW) ==========
-
-    @FormUrlEncoded
-    @POST("orders/create.php")
-    suspend fun createOrder(
-        @Header("Authorization") token: String,
-        @Field("product_id") productId: Int,
-        @Field("quantity") quantity: Int
-    ): Response<BaseResponse<OrderResponse>>
-
-
-
     @POST("orders/create.php")
     suspend fun checkout(
         @Header("Authorization") token: String,
         @Body request: Map<String, Any>
-    ): Response<BaseResponse<Order>>
+    ): Response<BaseResponse<CreateOrderResult>>
+    // ⬅️ pakai Any karena response data sederhana
 
     @GET("orders/list.php")
     suspend fun getOrders(
@@ -212,17 +201,6 @@ interface ApiService {
         @Body request: Map<String, Any>
     ): Response<BaseResponse<Any>>
 
-    // ========== REVIEWS ==========
-    @GET("reviews/list.php")
-    suspend fun getProductReviews(
-        @Query("product_id") productId: Int
-    ): Response<BaseResponse<ReviewsData>>
-
-    @POST("reviews/create.php")
-    suspend fun addReview(
-        @Header("Authorization") token: String,
-        @Body request: AddReviewRequest
-    ): Response<BaseResponse<Review>>
 
     // ========== PAYMENTS ==========
     @Multipart

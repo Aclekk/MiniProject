@@ -1,125 +1,68 @@
 package com.example.miniproject.adapter
 
-import android.Manifest
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.content.Context
-import android.content.pm.PackageManager
-import android.os.Build
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat
+import android.widget.Button
+import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.miniproject.R
 import com.example.miniproject.data.Order
-import com.example.miniproject.databinding.ItemOrderBinding
 
 class OrderAdapter(
-    private val orders: List<Order>,
-    private val onNextStatus: ((Order) -> Unit)?
+    var orders: List<Order>,
+    private val onNextStatus: ((Order) -> Unit)? // boleh null kalau cuma mau tampilkan list
 ) : RecyclerView.Adapter<OrderAdapter.OrderViewHolder>() {
 
-    inner class OrderViewHolder(val binding: ItemOrderBinding) :
-        RecyclerView.ViewHolder(binding.root)
+    inner class OrderViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        // ID disesuaikan dengan item_order_history.xml
+        val tvOrderId: TextView = itemView.findViewById(R.id.tvOrderId)
+
+        // ⚠️ DI SINI YANG TADI BIKIN ERROR:
+        // xml: tvOrderStatus & tvOrderTotal, jadi kita mapping ke sana
+        val tvStatus: TextView = itemView.findViewById(R.id.tvOrderStatus)
+        val tvTotalPayment: TextView = itemView.findViewById(R.id.tvOrderTotal)
+
+        // Gunakan btnNextStatus kalau ada, kalau tidak pakai btnDetail yang lama
+        val btnNextStatus: Button? =
+            itemView.findViewById<Button?>(R.id.btnNextStatus)
+                ?: itemView.findViewById<Button?>(R.id.btnDetail)
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): OrderViewHolder {
-        val binding = ItemOrderBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return OrderViewHolder(binding)
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_order_history, parent, false)
+        return OrderViewHolder(view)
     }
+
+    override fun getItemCount(): Int = orders.size
 
     override fun onBindViewHolder(holder: OrderViewHolder, position: Int) {
         val order = orders[position]
-        val context = holder.binding.root.context
 
-        // 🔥 LOG DEBUGGING
-        Log.d("OrderAdapter", "Binding order #${order.id} at position $position")
-        Log.d("OrderAdapter", "Status: ${order.status}")
+        holder.tvOrderId.text = "Order #${order.id}"
+        holder.tvStatus.text = order.status
+        holder.tvTotalPayment.text =
+            "Total: Rp ${String.format("%,d", order.totalPrice.toInt())}"
 
-        holder.binding.tvOrderId.text = "Order #${order.id}"
-        holder.binding.tvOrderStatus.text = order.status
-        holder.binding.tvOrderTotal.text =
-            "Rp ${String.format("%,d", order.totalPrice.toInt())}"
+        // Tombol ubah status dipakai di AdminOrderListFragment.
+        // Sekarang belum ke database, cuma ubah status di memori.
+        if (onNextStatus != null && holder.btnNextStatus != null) {
+            holder.btnNextStatus.visibility = View.VISIBLE
 
-        val productNames = order.products.joinToString { it.name }
-        holder.binding.tvOrderItems.text = productNames
-
-        // 🔥 BUTTON ADMIN - PASTIKAN VISIBLE
-        holder.binding.btnNextStatus.apply {
-            visibility = View.VISIBLE
-
-            text = when (order.status) {
-                "Belum Bayar" -> "✅ Konfirmasi Pembayaran"
-                "Dikemas" -> "🚚 Tandai Dikirim"
-                "Dikirim" -> "✔️ Tandai Selesai"
-                "Selesai" -> "✅ Selesai"
-                else -> "Update"
+            holder.btnNextStatus.text = when (order.status) {
+                "Belum Bayar" -> "Proses"
+                "Dikemas"     -> "Kirim Pesanan"
+                "Dikirim"     -> "Selesai"
+                else          -> "Ubah Status"
             }
 
-            isEnabled = order.status != "Selesai"
-
-            // 🔥 LOG BUTTON
-            Log.d("OrderAdapter", "Button text: $text, Visible: $visibility, Enabled: $isEnabled")
-
-            setOnClickListener {
-                if (order.status != "Selesai") {
-                    Log.d("OrderAdapter", "Button clicked for order #${order.id}")
-                    onNextStatus?.invoke(order)
-                }
+            holder.btnNextStatus.setOnClickListener {
+                onNextStatus.invoke(order)
             }
-        }
-    }
-
-    override fun getItemCount() = orders.size
-
-    private fun showStatusNotification(context: Context, status: String) {
-        val channelId = "order_status_channel"
-        val notificationId = System.currentTimeMillis().toInt()
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                channelId,
-                "Status Pesanan",
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = "Notifikasi perubahan status pesanan"
-            }
-            val manager = context.getSystemService(NotificationManager::class.java)
-            manager.createNotificationChannel(channel)
-        }
-
-        val message = when (status) {
-            "Dikirim" -> "Pesananmu sedang dalam perjalanan 🚚"
-            "Selesai" -> "Pesananmu telah tiba 🎉"
-            else -> "Status pesanan: $status"
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val hasPermission = ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) == PackageManager.PERMISSION_GRANTED
-
-            if (!hasPermission) {
-                return
-            }
-        }
-
-        val notification = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(R.drawable.baseline_notifications_24)
-            .setContentTitle("Status Pesanan 📦")
-            .setContentText(message)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setAutoCancel(true)
-            .build()
-
-        try {
-            NotificationManagerCompat.from(context).notify(notificationId, notification)
-        } catch (e: Exception) {
-            Log.e("OrderAdapter", "❌ Error showing notification: ${e.message}")
+        } else {
+            // Kalau adapter dipakai tanpa aksi next status → sembunyikan
+            holder.btnNextStatus?.visibility = View.GONE
         }
     }
 }

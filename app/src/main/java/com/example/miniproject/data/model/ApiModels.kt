@@ -146,6 +146,7 @@ data class AddToCartRequest(
 )
 
 // ========== Order Models ==========
+
 data class Order(
     val id: Int,
     @Json(name = "user_id")
@@ -165,18 +166,16 @@ data class Order(
     val updatedAt: String
 )
 
-data class OrderItem(
-    val id: Int,
-    @Json(name = "order_id")
-    val orderId: Int,
-    @Json(name = "product_id")
-    val productId: Int,
-    @Json(name = "product_name")
-    val productName: String,
-    val price: Double,
+// 🔹 HASIL KHUSUS DARI orders/create.php
+data class CreateOrderResult(
+    @Json(name = "order_id") val orderId: Int,
+    @Json(name = "product_id") val productId: Int,
+    @Json(name = "seller_id") val sellerId: Int?,
     val quantity: Int,
-    val subtotal: Double
+    @Json(name = "total_price") val totalPrice: Double,
+    val status: String
 )
+
 
 // ========== Review Models ==========
 data class Review(

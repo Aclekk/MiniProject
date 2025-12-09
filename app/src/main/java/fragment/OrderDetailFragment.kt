@@ -81,10 +81,10 @@ class OrderDetailFragment : Fragment() {
     // 🔥 LOGIC TAMPILKAN BUTTON SESUAI STATUS
     private fun updateButtonVisibility(order: com.example.miniproject.data.Order) {
         when {
-            // Status "Dikirim" → Tampilkan button "Pesanan Telah Sampai"
+            // Status "Dikirim" → Tampilkan button "Selesai" (user menyelesaikan pesanan)
             order.status == "Dikirim" -> {
                 binding.btnNextStatus.visibility = View.VISIBLE
-                binding.btnNextStatus.text = "✅ Pesanan Telah Sampai"
+                binding.btnNextStatus.text = "Selesai"           // ⬅️ dulu: "✅ Pesanan Telah Sampai"
                 binding.btnRateNow.visibility = View.GONE
             }
 
@@ -108,6 +108,7 @@ class OrderDetailFragment : Fragment() {
             }
         }
     }
+
 
     // 🌟 Dialog Rating & Review
     private fun showRatingDialog(order: com.example.miniproject.data.Order) {

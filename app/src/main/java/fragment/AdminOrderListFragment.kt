@@ -10,8 +10,15 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.miniproject.adapter.OrderAdapter
 import com.example.miniproject.data.CartManager
+import com.example.miniproject.data.Order
 import com.example.miniproject.databinding.FragmentActiveOrdersBinding
 
+/**
+ * Fragment untuk SELLER – menampilkan pesanan aktif dan
+ * menyediakan tombol untuk mengubah status pesanan.
+ *
+ * Semua masih LOCAL menggunakan CartManager.orders (belum ke database).
+ */
 class AdminOrderListFragment : Fragment() {
 
     private var _binding: FragmentActiveOrdersBinding? = null
@@ -30,38 +37,26 @@ class AdminOrderListFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        // 🔥 LOG DEBUGGING
-        Log.d("AdminOrderList", "Total orders: ${CartManager.orders.size}")
-        CartManager.orders.forEach { order ->
-            Log.d("AdminOrderList", "Order #${order.id} - Status: ${order.status}")
-        }
-
         setupRecyclerView()
     }
 
     private fun setupRecyclerView() {
-        val activeOrders = CartManager.orders.filter { it.status != "Selesai" }
+        // Ambil semua order yang BELUM selesai
+        val activeOrders: List<Order> = CartManager.orders.filter { it.status != "Selesai" }
 
-        // 🔥 LOG ACTIVE ORDERS
-        Log.d("AdminOrderList", "Active orders count: ${activeOrders.size}")
-
-        if (activeOrders.isEmpty()) {
-            Toast.makeText(requireContext(), "Tidak ada pesanan aktif", Toast.LENGTH_SHORT).show()
-        }
+        Log.d("AdminOrderList", "Active orders: ${activeOrders.size}")
 
         adapter = OrderAdapter(
             orders = activeOrders,
             onNextStatus = { order ->
                 val oldStatus = order.status
+
+                // Flow sederhana: Dikemas -> Dikirim -> (optional) Selesai
                 order.status = when (order.status) {
-                    "Belum Bayar" -> "Dikemas"
                     "Dikemas" -> "Dikirim"
                     "Dikirim" -> "Selesai"
                     else -> order.status
                 }
-
-                Log.d("AdminOrderList", "Status changed: $oldStatus → ${order.status}")
 
                 Toast.makeText(
                     requireContext(),
@@ -69,48 +64,23 @@ class AdminOrderListFragment : Fragment() {
                     Toast.LENGTH_SHORT
                 ).show()
 
+                // Refresh tampilan list
                 refreshList()
             }
         )
 
         binding.rvActiveOrders.layoutManager = LinearLayoutManager(requireContext())
         binding.rvActiveOrders.adapter = adapter
-
-        // 🔥 LOG ADAPTER SET
-        Log.d("AdminOrderList", "Adapter set with ${adapter.itemCount} items")
     }
 
     private fun refreshList() {
         val updatedOrders = CartManager.orders.filter { it.status != "Selesai" }
-
-        adapter = OrderAdapter(
-            orders = updatedOrders,
-            onNextStatus = { order ->
-                val oldStatus = order.status
-                order.status = when (order.status) {
-                    "Belum Bayar" -> "Dikemas"
-                    "Dikemas" -> "Dikirim"
-                    "Dikirim" -> "Selesai"
-                    else -> order.status
-                }
-
-                Toast.makeText(
-                    requireContext(),
-                    "Status diubah: $oldStatus → ${order.status}",
-                    Toast.LENGTH_SHORT
-                ).show()
-
-                refreshList()
-            }
-        )
-
-        binding.rvActiveOrders.adapter = adapter
-        Log.d("AdminOrderList", "List refreshed with ${adapter.itemCount} items")
+        adapter.orders = updatedOrders
+        adapter.notifyDataSetChanged()
     }
 
     override fun onResume() {
         super.onResume()
-        Log.d("AdminOrderList", "onResume called")
         refreshList()
     }
 
