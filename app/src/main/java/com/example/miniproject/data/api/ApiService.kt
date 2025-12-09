@@ -78,6 +78,7 @@ interface ApiService {
         @Body body: Map<String, String>
     ): Response<BaseResponse<Any>>
 
+
     @Multipart
     @POST("products/create.php")
     suspend fun createProduct(
@@ -177,10 +178,14 @@ interface ApiService {
 
     // ========== ORDERS ==========
 
+    // ========== ORDERS ==========
     @POST("orders/create.php")
     suspend fun checkout(
         @Body request: CheckoutRequest
     ): BaseResponse<CreateOrderResult>
+
+
+
 
 
 

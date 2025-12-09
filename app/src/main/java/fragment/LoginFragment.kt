@@ -85,7 +85,8 @@ class LoginFragment : Fragment() {
                     if (body?.success == true && body.data != null) {
                         val loginData = body.data      // LoginResponse
                         val user = loginData.user      // User
-                        val token = loginData.token    // String
+                        val token = loginData.token    // <-- INI yang dipakai
+
 
                         // ✅ SIMPAN SEMUA DATA USER
                         saveCompleteUserData(user, token)
@@ -151,41 +152,42 @@ class LoginFragment : Fragment() {
     }
 
     // ✅ Sinkronkan FCM token ke backend SETIAP kali login
+    // ✅ Sinkronkan FCM token ke backend SETIAP kali login
     private fun syncFcmTokenWithServer(authToken: String) {
         val prefs = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
         val localFcm = prefs.getString("fcm_token", null)
 
-        fun sendToServer(token: String) {
+        fun sendToServer(fcm: String) {
             viewLifecycleOwner.lifecycleScope.launch {
                 try {
-                    val body = mapOf("fcm_token" to token)
+                    val body = mapOf("fcm_token" to fcm)
                     ApiClient.apiService.updateFcmToken(
                         "Bearer $authToken",
                         body
                     )
-                    // Bisa ditambah log kalau mau
                 } catch (_: Exception) {
-                    // diem aja, ini cuma sync tambahan
+                    // kalau gagal ya di-skip, bukan feature utama
                 }
             }
         }
 
-        // Kalau sudah punya FCM token di prefs → langsung kirim ke server
+        // Kalau sudah punya FCM token di prefs → kirim ke server
         if (!localFcm.isNullOrEmpty()) {
             sendToServer(localFcm)
             return
         }
 
-        // Kalau belum ada → minta ke Firebase dulu
+        // Kalau belum ada → minta token baru ke Firebase
         FirebaseMessaging.getInstance().token
-            .addOnSuccessListener { token ->
-                prefs.edit().putString("fcm_token", token).apply()
-                sendToServer(token)
+            .addOnSuccessListener { fcm ->
+                prefs.edit().putString("fcm_token", fcm).apply()
+                sendToServer(fcm)
             }
             .addOnFailureListener {
-                // kalau gagal ya sudah, nanti akan nyusul di onNewToken
+                // kalau gagal, ya sudah, bukan kiamat
             }
     }
+
 
     private fun navigateToProducts(username: String, role: String) {
         (requireActivity() as MainActivity).onLoginSuccess(username, role)

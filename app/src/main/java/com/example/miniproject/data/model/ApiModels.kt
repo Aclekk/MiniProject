@@ -173,12 +173,23 @@ data class Order(
 
 // 🔹 HASIL KHUSUS DARI orders/create.php
 data class CreateOrderResult(
-    val orderId: Int,
-    val productId: Int,
-    val sellerId: Int,
-    val quantity: Int,
-    val totalPrice: Double,
-    val status: String
+    @Json(name = "orderId")
+    val orderId: Int? = null,
+
+    @Json(name = "productId")
+    val productId: Int? = null,
+
+    @Json(name = "sellerId")
+    val sellerId: Int? = null,
+
+    @Json(name = "quantity")
+    val quantity: Int? = null,
+
+    @Json(name = "totalPrice")
+    val totalPrice: Double? = null,
+
+    @Json(name = "status")
+    val status: String? = null
 )
 
 

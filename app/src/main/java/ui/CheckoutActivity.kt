@@ -12,7 +12,6 @@ import com.example.miniproject.data.CartManager
 import com.example.miniproject.data.Order
 import com.example.miniproject.data.api.ApiClient
 import com.example.miniproject.data.api.CheckoutRequest
-import com.example.miniproject.data.api.CreateOrderResult
 import com.example.miniproject.databinding.ActivityCheckoutBinding
 import com.example.miniproject.model.Product
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -138,7 +137,7 @@ class CheckoutActivity : AppCompatActivity() {
     private fun processPayment() {
         val paymentMethod = when {
             binding.rbTransfer.isChecked -> "Transfer Bank"
-            binding.rbEwallet.isChecked  -> "E-Wallet"
+            binding.rbEwallet.isChecked -> "E-Wallet"
             else -> {
                 Toast.makeText(this, "Pilih metode pembayaran terlebih dahulu", Toast.LENGTH_SHORT).show()
                 return
@@ -147,11 +146,12 @@ class CheckoutActivity : AppCompatActivity() {
 
         val prod = product ?: return
 
-        val sp  = getSharedPreferences("user_pref", MODE_PRIVATE)
-        val fcm = sp.getString("fcm_token", null)
+        // 🔥 ambil FCM token dari SharedPreferences
+        val sp = getSharedPreferences("user_pref", MODE_PRIVATE)
+        val fcmToken = sp.getString("fcm_token", null)
 
-        if (fcm.isNullOrEmpty()) {
-            Toast.makeText(this, "FCM token belum tersedia, coba login ulang", Toast.LENGTH_SHORT).show()
+        if (fcmToken.isNullOrEmpty()) {
+            Toast.makeText(this, "FCM token kosong. Coba login ulang dulu.", Toast.LENGTH_LONG).show()
             return
         }
 
@@ -160,28 +160,29 @@ class CheckoutActivity : AppCompatActivity() {
                 binding.btnPayNow.isEnabled = false
                 binding.btnPayNow.text = "Memproses..."
 
+                // 🔥 call barbar tanpa Authorization
                 val resp = ApiClient.apiService.checkout(
-                    request = CheckoutRequest(
+                    CheckoutRequest(
                         product_id = prod.id,
-                        quantity   = quantity,
-                        fcm_token  = fcm          // 🔥 kirim ke backend
+                        quantity = quantity,
+                        fcm_token = fcmToken
                     )
                 )
 
                 if (resp.success) {
-                    val apiData = resp.data
+                    val apiData = resp.data   // CreateOrderResult?
 
-                    val subtotal    = prod.price * quantity
-                    val total       = subtotal + shippingCost
+                    val subtotal = prod.price * quantity
+                    val total = subtotal + shippingCost
                     val userAddress = binding.tvUserAddress.text.toString()
 
                     val newOrder = Order(
-                        id            = apiData?.orderId ?: (CartManager.orders.size + 1),
-                        products      = listOf(prod),
-                        totalPrice    = total,
-                        status        = apiData?.status ?: "Dikemas",
+                        id = apiData?.orderId ?: (CartManager.orders.size + 1),
+                        products = listOf(prod),
+                        totalPrice = total,
+                        status = apiData?.status ?: "pending",
                         paymentMethod = paymentMethod,
-                        address       = userAddress
+                        address = userAddress
                     )
 
                     CartManager.orders.add(newOrder)
