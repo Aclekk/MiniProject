@@ -179,7 +179,6 @@ interface ApiService {
 
     @POST("orders/create.php")
     suspend fun checkout(
-        @Header("Authorization") token: String,
         @Body request: CheckoutRequest
     ): BaseResponse<CreateOrderResult>
 

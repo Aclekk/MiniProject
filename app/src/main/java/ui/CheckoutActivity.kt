@@ -138,25 +138,20 @@ class CheckoutActivity : AppCompatActivity() {
     private fun processPayment() {
         val paymentMethod = when {
             binding.rbTransfer.isChecked -> "Transfer Bank"
-            binding.rbEwallet.isChecked -> "E-Wallet"
+            binding.rbEwallet.isChecked  -> "E-Wallet"
             else -> {
-                Toast.makeText(
-                    this,
-                    "Pilih metode pembayaran terlebih dahulu",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Toast.makeText(this, "Pilih metode pembayaran terlebih dahulu", Toast.LENGTH_SHORT).show()
                 return
             }
         }
 
         val prod = product ?: return
 
-        // Ambil token login
-        val sp = getSharedPreferences("user_pref", MODE_PRIVATE)
-        val token = sp.getString("token", null)
+        val sp  = getSharedPreferences("user_pref", MODE_PRIVATE)
+        val fcm = sp.getString("fcm_token", null)
 
-        if (token.isNullOrEmpty()) {
-            Toast.makeText(this, "Silakan login dulu", Toast.LENGTH_SHORT).show()
+        if (fcm.isNullOrEmpty()) {
+            Toast.makeText(this, "FCM token belum tersedia, coba login ulang", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -165,36 +160,32 @@ class CheckoutActivity : AppCompatActivity() {
                 binding.btnPayNow.isEnabled = false
                 binding.btnPayNow.text = "Memproses..."
 
-                // Call ke API orders/create.php
                 val resp = ApiClient.apiService.checkout(
-                    token = "Bearer $token",
                     request = CheckoutRequest(
                         product_id = prod.id,
-                        quantity = quantity
+                        quantity   = quantity,
+                        fcm_token  = fcm          // 🔥 kirim ke backend
                     )
                 )
 
                 if (resp.success) {
-                    val apiData = resp.data   // biarin dia infer
+                    val apiData = resp.data
 
-
-                    val subtotal = prod.price * quantity
-                    val total = subtotal + shippingCost
+                    val subtotal    = prod.price * quantity
+                    val total       = subtotal + shippingCost
                     val userAddress = binding.tvUserAddress.text.toString()
 
                     val newOrder = Order(
-                        id = apiData?.orderId ?: (CartManager.orders.size + 1),
-                        products = listOf(prod),
-                        totalPrice = total,
-                        status = apiData?.status ?: "Dikemas",
+                        id            = apiData?.orderId ?: (CartManager.orders.size + 1),
+                        products      = listOf(prod),
+                        totalPrice    = total,
+                        status        = apiData?.status ?: "Dikemas",
                         paymentMethod = paymentMethod,
-                        address = userAddress
+                        address       = userAddress
                     )
 
-                    // Masuk ke Pesanan Aktif
                     CartManager.orders.add(newOrder)
 
-                    // Kalau dari cart, hapus item lokal
                     if (isFromCart) {
                         CartManager.cartItems.remove(prod)
                     }
@@ -225,6 +216,7 @@ class CheckoutActivity : AppCompatActivity() {
             }
         }
     }
+
 
     override fun onRequestPermissionsResult(
         requestCode: Int,
