@@ -8,6 +8,7 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.miniproject.adapter.OrderAdapter
 import com.example.miniproject.data.CartManager
+import com.example.miniproject.data.Order
 import com.example.miniproject.databinding.FragmentCompletedOrdersBinding
 
 class AdminOrderHistoryFragment : Fragment() {
@@ -16,6 +17,7 @@ class AdminOrderHistoryFragment : Fragment() {
     private val binding get() = _binding!!
 
     private lateinit var adapter: OrderAdapter
+    private val completedOrders: MutableList<Order> = mutableListOf()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -28,31 +30,34 @@ class AdminOrderHistoryFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         setupRecyclerView()
+        loadData()
     }
 
     private fun setupRecyclerView() {
-        val completedOrders = CartManager.orders.filter { it.status == "Selesai" }
-
-        adapter = OrderAdapter(
-            orders = completedOrders,
-            onNextStatus = null // Tidak ada aksi untuk pesanan selesai
-        )
-
         binding.rvCompletedOrders.layoutManager = LinearLayoutManager(requireContext())
+
+        // IMPORTANT: jangan pakai named argument onNextStatus kalau constructor adapter kamu beda
+        // Panggil positional saja biar aman.
+        adapter = OrderAdapter(completedOrders, null)
+
         binding.rvCompletedOrders.adapter = adapter
+    }
+
+    private fun loadData() {
+        completedOrders.clear()
+        completedOrders.addAll(
+            CartManager.orders.filter {
+                it.status.equals("Selesai", ignoreCase = true) ||
+                        it.status.equals("completed", ignoreCase = true)
+            }
+        )
+        adapter.notifyDataSetChanged()
     }
 
     override fun onResume() {
         super.onResume()
-        // Refresh data
-        val updatedOrders = CartManager.orders.filter { it.status == "Selesai" }
-        adapter = OrderAdapter(
-            orders = updatedOrders,
-            onNextStatus = null
-        )
-        binding.rvCompletedOrders.adapter = adapter
+        loadData()
     }
 
     override fun onDestroyView() {

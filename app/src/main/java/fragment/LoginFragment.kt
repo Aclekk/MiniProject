@@ -80,19 +80,22 @@ class LoginFragment : Fragment() {
                 val response = ApiClient.apiService.login(request)
 
                 if (response.isSuccessful) {
-                    val body = response.body()   // BaseResponse<LoginResponse>
+                    val body = response.body()
 
                     if (body?.success == true && body.data != null) {
-                        val loginData = body.data      // LoginResponse
-                        val user = loginData.user      // User
-                        val token = loginData.token    // <-- INI yang dipakai
+                        val loginData = body.data
+                        val user = loginData.user
+                        val token = loginData.token
 
+                        android.util.Log.d(
+                            "DEBUG_LOGIN",
+                            "LOGIN OK -> userId=${user.id}, role=${user.role}, token=$token"
+                        )
 
-                        // ✅ SIMPAN SEMUA DATA USER
                         saveCompleteUserData(user, token)
 
-                        // ✅ SYNC FCM TOKEN SETELAH LOGIN (BUYER & SELLER)
-                        syncFcmTokenWithServer(token)
+                        // ✅ LANGSUNG sync FCM ke backend dengan JWT user yang baru login
+                        syncFcmTokenToBackend(token)
 
                         Toast.makeText(
                             requireContext(),
@@ -151,43 +154,43 @@ class LoginFragment : Fragment() {
         }
     }
 
-    // ✅ Sinkronkan FCM token ke backend SETIAP kali login
-    // ✅ Sinkronkan FCM token ke backend SETIAP kali login
-    private fun syncFcmTokenWithServer(authToken: String) {
-        val prefs = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
-        val localFcm = prefs.getString("fcm_token", null)
-
-        fun sendToServer(fcm: String) {
-            viewLifecycleOwner.lifecycleScope.launch {
-                try {
-                    val body = mapOf("fcm_token" to fcm)
-                    ApiClient.apiService.updateFcmToken(
-                        "Bearer $authToken",
-                        body
-                    )
-                } catch (_: Exception) {
-                    // kalau gagal ya di-skip, bukan feature utama
-                }
-            }
-        }
-
-        // Kalau sudah punya FCM token di prefs → kirim ke server
-        if (!localFcm.isNullOrEmpty()) {
-            sendToServer(localFcm)
-            return
-        }
-
-        // Kalau belum ada → minta token baru ke Firebase
+    /**
+     * ✅ Ambil FCM token dari Firebase,
+     * simpan lokal, lalu kirim ke backend pakai JWT user yang baru login.
+     */
+    private fun syncFcmTokenToBackend(jwtToken: String) {
         FirebaseMessaging.getInstance().token
             .addOnSuccessListener { fcm ->
-                prefs.edit().putString("fcm_token", fcm).apply()
-                sendToServer(fcm)
+                // simpan lokal
+                val prefs = requireActivity()
+                    .getSharedPreferences("user_pref", Context.MODE_PRIVATE)
+                prefs.edit()
+                    .putString("device_fcm_token", fcm)
+                    .apply()
+
+                // kirim ke backend
+                viewLifecycleOwner.lifecycleScope.launch {
+                    try {
+                        val body = mapOf("fcm_token" to fcm)
+
+                        val resp = ApiClient.apiService.updateFcmToken(
+                            token = "Bearer $jwtToken",
+                            body = body
+                        )
+
+                        android.util.Log.d(
+                            "FCM_SYNC",
+                            "updateFcmToken -> code=${resp.code()} body=${resp.body()?.message}"
+                        )
+                    } catch (e: Exception) {
+                        android.util.Log.e("FCM_SYNC", "Failed to sync FCM token", e)
+                    }
+                }
             }
             .addOnFailureListener {
-                // kalau gagal, ya sudah, bukan kiamat
+                android.util.Log.e("FCM_SYNC", "Failed to get FCM token", it)
             }
     }
-
 
     private fun navigateToProducts(username: String, role: String) {
         (requireActivity() as MainActivity).onLoginSuccess(username, role)

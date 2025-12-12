@@ -2,11 +2,10 @@ package com.example.miniproject.data
 
 import com.example.miniproject.model.Product
 
-// 🛒 Object global yang menyimpan data sementara di memori (dummy)
 object CartManager {
     val cartItems = mutableListOf<Product>()
     val orders = mutableListOf<Order>()
-    val reviews = mutableListOf<Review>() // 🆕 Tambahan baru
+    val reviews = mutableListOf<Review>()
 
     fun addToCart(product: Product) {
         cartItems.add(product)
@@ -24,4 +23,3 @@ object CartManager {
         return reviews.filter { it.productId == productId }
     }
 }
-

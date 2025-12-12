@@ -10,14 +10,14 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.miniproject.MainActivity
 import com.example.miniproject.R
-import com.example.miniproject.data.api.ApiClient
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 class MyFirebaseMessagingService : FirebaseMessagingService() {
+
+    companion object {
+        const val ACTION_REFRESH_ORDERS = "com.example.miniproject.ACTION_REFRESH_ORDERS"
+    }
 
     private val tag = "FCM"
 
@@ -25,51 +25,43 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         super.onNewToken(token)
         Log.d(tag, "New FCM token: $token")
 
-        // Simpan ke SharedPreferences
         val prefs = getSharedPreferences("user_pref", Context.MODE_PRIVATE)
-        prefs.edit().putString("fcm_token", token).apply()
-
-        // Kalau user sudah login (punya bearer token), kirim ke backend
-        val authToken = prefs.getString("token", null)
-
-        if (!authToken.isNullOrEmpty()) {
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    val body = mapOf("fcm_token" to token)
-                    val response = ApiClient.apiService.updateFcmToken(
-                        "Bearer $authToken",
-                        body
-                    )
-
-                    Log.d(
-                        tag,
-                        "updateFcmToken -> code=${response.code()} msg=${response.body()?.message}"
-                    )
-                } catch (e: Exception) {
-                    Log.e(tag, "Failed to update FCM token", e)
-                }
-            }
-        }
+        prefs.edit()
+            .putString("device_fcm_token", token)
+            .apply()
     }
 
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
 
+        Log.d(tag, "From: ${message.from}")
+        Log.d(tag, "Data: ${message.data}")
+        Log.d(tag, "Notification: ${message.notification}")
+
+        val data = message.data
+        val type = data["type"] ?: ""
+
         val title = message.notification?.title
-            ?: message.data["title"]
+            ?: data["title"]
             ?: "Niaga Tani"
 
         val body = message.notification?.body
-            ?: message.data["body"]
-            ?: "Ada notifikasi baru nih."
+            ?: data["body"]
+            ?: "Ada notifikasi baru."
 
+        // Tampilkan notif
         showNotification(title, body)
+
+        // 🔥 Trigger refresh list order kalau relevan
+        if (type == "new_order" || type == "order_status") {
+            sendBroadcast(Intent(ACTION_REFRESH_ORDERS))
+            Log.d(tag, "Broadcast refresh orders sent")
+        }
     }
 
     private fun showNotification(title: String, body: String) {
         val channelId = "niagatani_default_channel"
-        val manager =
-            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
@@ -86,19 +78,12 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
         val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
-        } else {
-            PendingIntent.FLAG_ONE_SHOT
-        }
+        } else PendingIntent.FLAG_ONE_SHOT
 
-        val pendingIntent = PendingIntent.getActivity(
-            this,
-            0,
-            intent,
-            flags
-        )
+        val pendingIntent = PendingIntent.getActivity(this, 0, intent, flags)
 
         val notification = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(R.mipmap.ic_launcher)   // ganti pakai icon custom kalau mau
+            .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(title)
             .setContentText(body)
             .setAutoCancel(true)

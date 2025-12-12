@@ -65,7 +65,16 @@ data class User(
 // data/model/CheckoutRequest.kt
 data class CheckoutRequest(
     val product_id: Int,
-    val quantity: Int
+    val quantity: Int,
+    val shipping_address: String,
+    val note: String?,
+    val shipping_cost: Double
+)
+
+data class OrderStatusResponse(
+    @Json(name = "order_id") val orderId: Int?,
+    @Json(name = "order_number") val orderNumber: String?,
+    @Json(name = "status") val status: String?
 )
 
 
@@ -170,7 +179,12 @@ data class Order(
     @Json(name = "updated_at")
     val updatedAt: String
 )
-
+data class DebugFcm(
+    @Json(name = "buyer_id") val buyerId: Int?,
+    @Json(name = "seller_id") val sellerId: Int?,
+    @Json(name = "seller_fcm_exists") val sellerFcmExists: Boolean?,
+    @Json(name = "seller_fcm_preview") val sellerFcmPreview: String?
+)
 // 🔹 HASIL KHUSUS DARI orders/create.php
 data class CreateOrderResult(
     @Json(name = "orderId")
@@ -192,6 +206,31 @@ data class CreateOrderResult(
     val status: String? = null
 )
 
+data class SellerOrderResponse(
+    @Json(name = "id")
+    val id: Int,
+
+    @Json(name = "product_id")
+    val productId: Int? = null,
+
+    @Json(name = "product_name")
+    val productName: String? = null,
+
+    @Json(name = "product_price")
+    val productPrice: Double? = null,
+
+    @Json(name = "total_amount")
+    val totalAmount: Double? = null,
+
+    @Json(name = "status")
+    val status: String? = null,
+
+    @Json(name = "shipping_address")
+    val shippingAddress: String? = null,
+
+    @Json(name = "payment_method")
+    val paymentMethod: String? = null
+)
 
 // ========== Review Models ==========
 data class Review(

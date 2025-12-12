@@ -1,5 +1,6 @@
 package com.example.miniproject.adapter
 
+import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -8,20 +9,20 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.miniproject.R
 import com.example.miniproject.data.Order
+import com.example.miniproject.util.normalizeDbStatus
+import com.example.miniproject.util.statusLabel
 
 class OrderAdapter(
-    var orders: List<Order>,
-    private val onNextStatus: ((Order) -> Unit)? // boleh null kalau cuma mau tampilkan list
+    var orders: MutableList<Order>,
+    private val role: String? = null, // "seller"/"buyer"
+    private val onActionClick: ((Order) -> Unit)? = null
 ) : RecyclerView.Adapter<OrderAdapter.OrderViewHolder>() {
 
     inner class OrderViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val tvOrderId: TextView = itemView.findViewById(R.id.tvOrderId)
         val tvStatus: TextView = itemView.findViewById(R.id.tvOrderStatus)
         val tvTotalPayment: TextView = itemView.findViewById(R.id.tvOrderTotal)
-
-        val btnNextStatus: Button? =
-            itemView.findViewById<Button?>(R.id.btnNextStatus)
-                ?: itemView.findViewById<Button?>(R.id.btnDetail)
+        val btnAction: Button? = itemView.findViewById(R.id.btnNextStatus) // ✅ WAJIB ADA di layout
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): OrderViewHolder {
@@ -36,37 +37,51 @@ class OrderAdapter(
         val order = orders[position]
 
         holder.tvOrderId.text = "Order #${order.id}"
-        holder.tvStatus.text = order.status
-        holder.tvTotalPayment.text =
-            "Total: Rp ${String.format("%,d", order.totalPrice.toInt())}"
+        holder.tvTotalPayment.text = "Total: Rp ${String.format("%,d", order.totalPrice.toInt())}"
 
-        if (onNextStatus != null && holder.btnNextStatus != null) {
-            holder.btnNextStatus.visibility = View.VISIBLE
+        val dbStatus = normalizeDbStatus(order.status)
 
-            val statusLower = order.status.lowercase()
+        holder.tvStatus.visibility = View.VISIBLE
+        holder.tvStatus.text = statusLabel(dbStatus)
 
-            holder.btnNextStatus.text = when {
-                statusLower == "belum bayar" ->
-                    "Tandai Dibayar"
-
-                statusLower == "pending" || statusLower == "menunggu konfirmasi" ->
-                    "Konfirmasi Pesanan"     // 🔥 di sinilah tombol yang kamu mau
-
-                statusLower == "dikemas" ->
-                    "Kirim Pesanan"
-
-                statusLower == "dikirim" ->
-                    "Selesai"
-
-                else ->
-                    "Ubah Status"
-            }
-
-            holder.btnNextStatus.setOnClickListener {
-                onNextStatus.invoke(order)
-            }
-        } else {
-            holder.btnNextStatus?.visibility = View.GONE
+        when (dbStatus) {
+            "pending" -> { holder.tvStatus.setBackgroundResource(R.drawable.bg_status_pending); holder.tvStatus.setTextColor(Color.parseColor("#F57C00")) }
+            "packed" -> { holder.tvStatus.setBackgroundResource(R.drawable.bg_status_active); holder.tvStatus.setTextColor(Color.parseColor("#4CAF50")) }
+            "shipped" -> { holder.tvStatus.setBackgroundResource(R.drawable.bg_status_shipped); holder.tvStatus.setTextColor(Color.parseColor("#1976D2")) }
+            "completed" -> { holder.tvStatus.setBackgroundResource(R.drawable.bg_status_done); holder.tvStatus.setTextColor(Color.parseColor("#2E7D32")) }
+            "cancelled" -> { holder.tvStatus.setBackgroundResource(R.drawable.bg_status_cancelled); holder.tvStatus.setTextColor(Color.parseColor("#D32F2F")) }
+            else -> { holder.tvStatus.setBackgroundResource(R.drawable.bg_status_pending); holder.tvStatus.setTextColor(Color.GRAY) }
         }
+
+        val canShowButton = (onActionClick != null && holder.btnAction != null && !role.isNullOrBlank())
+        if (!canShowButton) {
+            holder.btnAction?.visibility = View.GONE
+            return
+        }
+
+        when (role!!.lowercase()) {
+            "seller", "admin" -> {
+                when (dbStatus) {
+                    "pending" -> { holder.btnAction.visibility = View.VISIBLE; holder.btnAction.text = "📦 Konfirmasi Pesanan" }
+                    "packed" -> { holder.btnAction.visibility = View.VISIBLE; holder.btnAction.text = "🚚 Tandai Dikirim" }
+                    else -> holder.btnAction.visibility = View.GONE
+                }
+            }
+            "buyer" -> {
+                if (dbStatus == "shipped") {
+                    holder.btnAction.visibility = View.VISIBLE
+                    holder.btnAction.text = "✅ Pesanan Telah Diterima"
+                } else holder.btnAction.visibility = View.GONE
+            }
+            else -> holder.btnAction.visibility = View.GONE
+        }
+
+        holder.btnAction?.setOnClickListener { onActionClick?.invoke(order) }
+    }
+
+    fun replaceAll(newOrders: List<Order>) {
+        orders.clear()
+        orders.addAll(newOrders)
+        notifyDataSetChanged()
     }
 }

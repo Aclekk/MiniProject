@@ -95,8 +95,10 @@ class UserManager(context: Context) {
     }
 
     // ========== Logout ==========
-    fun logout() {
+    fun logout(context: Context) {
+        val prefs = context.getSharedPreferences("user_pref", Context.MODE_PRIVATE)
         prefs.edit().clear().apply()
+        // balikin ke login
     }
 
     // ========== Clear Data ==========

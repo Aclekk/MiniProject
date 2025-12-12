@@ -1,19 +1,25 @@
 package com.example.miniproject.fragment
 
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.miniproject.adapter.OrderAdapter
-import com.example.miniproject.data.CartManager
 import com.example.miniproject.data.Order
 import com.example.miniproject.data.api.ApiClient
+import com.example.miniproject.data.mapper.toOrderModel
 import com.example.miniproject.databinding.FragmentAdminOrderListBinding
+import com.example.miniproject.firebase.MyFirebaseMessagingService
+import com.example.miniproject.util.nextStatusForSeller
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -26,121 +32,119 @@ class AdminOrderListFragment : Fragment() {
     private lateinit var orderAdapter: OrderAdapter
     private val orders: MutableList<Order> = mutableListOf()
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
+    private val refreshReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == MyFirebaseMessagingService.ACTION_REFRESH_ORDERS) {
+                fetchSellerOrders()
+            }
+        }
+    }
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentAdminOrderListBinding.inflate(inflater, container, false)
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        // Ambil dari CartManager (logic lama)
-        orders.clear()
-        orders.addAll(CartManager.orders)
-
         setupRecyclerView()
+        fetchSellerOrders()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        val filter = IntentFilter(MyFirebaseMessagingService.ACTION_REFRESH_ORDERS)
+        if (Build.VERSION.SDK_INT >= 33) {
+            requireContext().registerReceiver(refreshReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            @Suppress("UnspecifiedRegisterReceiverFlag")
+            requireContext().registerReceiver(refreshReceiver, filter)
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        try { requireContext().unregisterReceiver(refreshReceiver) } catch (_: Exception) {}
     }
 
     private fun setupRecyclerView() {
-        // ⚠️ Pastikan id RecyclerView di fragment_admin_order_list.xml sama.
-        // Kalau beda, ganti "rvAdminOrders" di sini dengan id milikmu.
         binding.rvAdminOrders.layoutManager = LinearLayoutManager(requireContext())
 
-        orderAdapter = OrderAdapter(orders) { order ->
-            val nextStatus = getNextStatusFor(order.status)
-
-            if (nextStatus == null) {
-                Toast.makeText(requireContext(), "Status ini tidak bisa diubah.", Toast.LENGTH_SHORT).show()
-            } else {
-                updateOrderStatusToServer(order, nextStatus)
+        orderAdapter = OrderAdapter(
+            orders = orders,
+            role = "seller",
+            onActionClick = { order ->
+                val next = nextStatusForSeller(order.status)
+                if (next == null) {
+                    Toast.makeText(requireContext(), "Order ini tidak bisa diubah lagi.", Toast.LENGTH_SHORT).show()
+                } else {
+                    updateOrderStatusToServer(order, next) // next = "packed"/"shipped"
+                }
             }
-        }
-
+        )
         binding.rvAdminOrders.adapter = orderAdapter
     }
 
-    /**
-     * Tentukan status berikutnya untuk tombol seller.
-     * Kamu bisa atur ulang kalau mau flow lain.
-     */
-    private fun getNextStatusFor(currentStatus: String): String? {
-        val s = currentStatus.lowercase()
-        return when (s) {
-            "pending", "menunggu konfirmasi" -> "Dikemas"   // 🔥 konfirmasi pesanan
-            "dikemas"                        -> "Dikirim"
-            "dikirim"                        -> "Selesai"
-            else                             -> null
-        }
-    }
-
-
-    /**
-     * Panggil API orders/update_status.php
-     */
-    private fun updateOrderStatusToServer(order: Order, nextStatus: String) {
+    private fun fetchSellerOrders() {
         val prefs = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
-        val token = prefs.getString("token", null)
-
-        if (token.isNullOrEmpty()) {
-            Toast.makeText(requireContext(), "Token tidak ditemukan, silakan login ulang.", Toast.LENGTH_SHORT).show()
-            return
-        }
+        val token = prefs.getString("token", null) ?: return
 
         viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val body: Map<String, String> = mapOf(
-                    "order_id" to order.id.toString(),
-                    "status"   to nextStatus
-                )
-
-                val response = ApiClient.apiService.updateOrderStatus(
-                    "Bearer $token",
-                    body
-                )
-
+                val resp = ApiClient.apiService.getSellerOrders(token = "Bearer $token")
                 withContext(Dispatchers.Main) {
-                    if (response.isSuccessful) {
-                        val resBody = response.body()
-                        if (resBody?.success == true) {
-                            // ✅ Berhasil
-                            order.status = nextStatus
-                            orderAdapter.notifyDataSetChanged()
-                            Toast.makeText(
-                                requireContext(),
-                                "Status diperbarui menjadi $nextStatus",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                    if (resp.isSuccessful) {
+                        val body = resp.body()
+                        if (body?.success == true && body.data != null) {
+                            val mapped = body.data.map { it.toOrderModel() }
+                            orderAdapter.replaceAll(mapped)
                         } else {
-                            val msg = resBody?.message ?: "Update status gagal (success=false)"
-                            Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+                            Toast.makeText(requireContext(), body?.message ?: "Gagal memuat pesanan", Toast.LENGTH_SHORT).show()
                         }
                     } else {
-                        // ✅ Tampilkan pesan error asli dari PHP
-                        val errorText = response.errorBody()?.string()
-                        Toast.makeText(
-                            requireContext(),
-                            "HTTP ${response.code()}: ${errorText ?: "Gagal update status"}",
-                            Toast.LENGTH_LONG
-                        ).show()
+                        Toast.makeText(requireContext(), "HTTP ${resp.code()}", Toast.LENGTH_LONG).show()
                     }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                        requireContext(),
-                        "Error: ${e.localizedMessage}",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    Toast.makeText(requireContext(), "Error: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
                 }
             }
         }
     }
 
+    private fun updateOrderStatusToServer(order: Order, nextStatusDb: String) {
+        val prefs = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
+        val token = prefs.getString("token", null) ?: return
 
+        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val payload = mapOf(
+                    "order_id" to order.id.toString(),
+                    "status" to nextStatusDb // ✅ "packed" / "shipped"
+                )
+
+                val resp = ApiClient.apiService.updateOrderStatus(
+                    token = "Bearer $token",
+                    body = payload
+                )
+
+                withContext(Dispatchers.Main) {
+                    if (resp.isSuccessful && resp.body()?.success == true) {
+                        order.status = nextStatusDb
+                        orderAdapter.notifyDataSetChanged()
+                        fetchSellerOrders() // sinkron biar ga halu UI
+                    } else {
+                        Toast.makeText(requireContext(), "Gagal update status", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(requireContext(), "Error: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
 
     override fun onDestroyView() {
         super.onDestroyView()

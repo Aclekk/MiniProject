@@ -1,5 +1,6 @@
 package com.example.miniproject.fragment
 
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -20,13 +21,21 @@ class OrdersFragment : Fragment() {
     ): View {
         _binding = FragmentOrdersBinding.inflate(inflater, container, false)
 
+        val prefs = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
+        val role = (prefs.getString("role", "buyer") ?: "buyer").lowercase()
+
         val pagerAdapter = object : FragmentStateAdapter(this) {
             override fun getItemCount() = 2
+
             override fun createFragment(position: Int): Fragment {
-                return if (position == 0) {
-                    AdminOrderListFragment()
+                val isSeller = (role == "seller" || role == "admin")
+
+                return if (isSeller) {
+                    // SELLER/ADMIN
+                    if (position == 0) AdminOrderListFragment() else AdminOrderHistoryFragment()
                 } else {
-                    AdminOrderHistoryFragment()
+                    // BUYER
+                    if (position == 0) ActiveOrdersFragment() else CompletedOrdersFragment()
                 }
             }
         }

@@ -179,10 +179,6 @@ interface ApiService {
     // ========== ORDERS ==========
 
     // ========== ORDERS ==========
-    @POST("orders/create.php")
-    suspend fun checkout(
-        @Body request: CheckoutRequest
-    ): BaseResponse<CreateOrderResult>
 
     @GET("orders/list.php")
     suspend fun getOrders(
@@ -195,12 +191,29 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Query("id") orderId: Int
     ): Response<BaseResponse<Order>>
+    @POST("orders/create.php")
+    suspend fun checkout(
+        @Header("Authorization") token: String,
+        @Body request: CheckoutRequest
+    ): BaseResponse<CreateOrderResult>
 
     @POST("orders/update_status.php")
     suspend fun updateOrderStatus(
         @Header("Authorization") token: String,
-        @Body body: Map<String, String>    // ⬅️ WAJIB Map<String, String>, BUKAN Any
-    ): Response<BaseResponse<OrderResponse>>
+        @Body body: Map<String, String>
+    ): Response<BaseResponse<OrderStatusResponse>>
+    @GET("orders/list_for_seller.php")
+    suspend fun getSellerOrders(
+        @Header("Authorization") token: String
+    ): Response<BaseResponse<List<SellerOrderResponse>>>
+
+    @GET("orders/list_for_buyer.php")
+    suspend fun getBuyerOrders(
+        @Header("Authorization") token: String,
+        @Query("status") status: String? = null
+    ): Response<BaseResponse<List<BuyerOrderResponse>>>
+
+
 
 
 
