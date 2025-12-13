@@ -6,6 +6,7 @@ import okhttp3.RequestBody
 import retrofit2.Response
 import retrofit2.http.*
 
+
 interface ApiService {
 
     // ========== AUTH ==========
@@ -169,6 +170,30 @@ interface ApiService {
         @Body request: Map<String, Int>
     ): Response<BaseResponse<Any>>
 
+    // ========== REVIEWS ==========
+    // ========== REVIEWS ==========
+    // ========== REVIEWS ==========
+    @GET("reviews/list_for_buyer.php")
+    suspend fun getBuyerReviews(
+        @Header("Authorization") token: String
+    ): Response<BaseResponse<List<ReviewApi>>>
+
+    @GET("reviews/list_for_seller.php")
+    suspend fun getSellerReviews(
+        @Header("Authorization") token: String
+    ): Response<BaseResponse<List<ReviewApi>>>
+
+    @POST("reviews/add.php")
+    suspend fun addReview(
+        @Header("Authorization") token: String,
+        @Body body: AddReviewRequest
+    ): Response<BaseResponse<ReviewApi>>
+
+    @GET("reviews/list_by_product.php")
+    suspend fun getProductReviews(
+        @Query("product_id") productId: Int
+    ): Response<BaseResponse<List<ReviewApi>>>
+
     // ========== ORDERS ==========
     // ✅ SINGLE SOURCE OF TRUTH (jangan dobel)
     @POST("orders/create.php")
@@ -187,7 +212,10 @@ interface ApiService {
     suspend fun getOrderDetail(
         @Header("Authorization") token: String,
         @Query("id") orderId: Int
-    ): Response<BaseResponse<OrdersData>> // biar aman kalau backend detail return OrdersData (kalau beda, kasih aku response json-nya)
+    ): Response<BaseResponse<OrderDetailData>>
+
+
+// biar aman kalau backend detail return OrdersData (kalau beda, kasih aku response json-nya)
 
     @POST("orders/update_status.php")
     suspend fun updateOrderStatus(

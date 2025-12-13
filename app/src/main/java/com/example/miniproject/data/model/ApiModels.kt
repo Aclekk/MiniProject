@@ -220,14 +220,31 @@ data class SellerProfile(
 // =====================
 // Review API model (biar ResponseModels.kt aman)
 // =====================
-data class Review(
-    val id: Int? = null,
-    @Json(name = "order_id") val orderId: Int? = null,
-    @Json(name = "product_id") val productId: Int? = null,
-    @Json(name = "user_id") val userId: Int? = null,
-    val rating: Int? = null,
-    val comment: String? = null,
-    @Json(name = "is_anonymous") val isAnonymous: Int? = null,
-    @Json(name = "created_at") val createdAt: String? = null,
-    @Json(name = "updated_at") val updatedAt: String? = null
+data class ReviewApi(
+    val id: Int,
+    @Json(name = "order_id") val orderId: Int,
+    @Json(name = "product_id") val productId: Int,
+    @Json(name = "user_id") val userId: Int,
+    val rating: Int,
+    val comment: String?,
+    @Json(name = "is_anonymous") val isAnonymous: Int,
+    @Json(name = "created_at") val createdAt: String?,
+
+    // extra dari query join backend
+    @Json(name = "product_name") val productName: String?,
+    @Json(name = "product_image") val productImage: String?,
+    @Json(name = "order_number") val orderNumber: String?,
+
+    // khusus seller list (join users)
+    @Json(name = "user_name") val userName: String?,
+    @Json(name = "user_image") val userImage: String?
 )
+
+data class AddReviewRequest(
+    @Json(name = "order_id") val orderId: Int,
+    @Json(name = "product_id") val productId: Int,
+    val rating: Int,
+    val comment: String,
+    @Json(name = "is_anonymous") val isAnonymous: Int = 0
+)
+

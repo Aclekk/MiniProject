@@ -12,7 +12,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import com.example.miniproject.R
-import com.example.miniproject.adapter.ReviewAdapter
+import com.example.miniproject.adapter.ReviewAdapterApi
 import com.example.miniproject.data.CartManager
 import com.example.miniproject.data.ProductDataSource
 import com.example.miniproject.data.api.ApiClient
@@ -82,30 +82,43 @@ class ProductDetailFragment : Fragment() {
     }
 
     private fun setupReviews(productId: Int) {
-        val allReviews = CartManager.reviews.filter { it.productId == productId }
-
-        if (allReviews.isEmpty()) {
-            binding.rvReviews.visibility = View.GONE
-            binding.tvReviewCount.text = "(Belum ada ulasan)"
-            return
-        }
-
-        binding.rvReviews.visibility = View.VISIBLE
-
-        val product = ProductDataSource.getAllProducts().find { it.id == productId }
-
-        val reviewTriples = allReviews.map {
-            Triple(it, product?.name ?: "Produk Tidak Dikenal", product?.imageResId)
-        }
-
-        val adapter = ReviewAdapter(reviewTriples)
         binding.rvReviews.layoutManager = LinearLayoutManager(requireContext())
-        binding.rvReviews.adapter = adapter
 
-        val avgRating = allReviews.map { it.rating }.average().toFloat()
-        binding.rbRating.rating = avgRating
-        binding.tvReviewCount.text = "(${allReviews.size} ulasan)"
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val resp = ApiClient.apiService.getProductReviews(productId)
+
+                if (resp.isSuccessful && resp.body()?.success == true) {
+                    val list = resp.body()?.data.orEmpty()
+
+                    if (list.isEmpty()) {
+                        binding.rvReviews.visibility = View.GONE
+                        binding.tvReviewCount.text = "(Belum ada ulasan)"
+                        binding.rbRating.rating = 0f
+                        return@launch
+                    }
+
+                    binding.rvReviews.visibility = View.VISIBLE
+                    binding.rvReviews.adapter = ReviewAdapterApi(list)
+
+                    val avg = list.map { it.rating ?: 0 }.average().toFloat()
+                    binding.rbRating.rating = avg
+                    binding.tvReviewCount.text = "(${list.size} ulasan)"
+
+                } else {
+                    binding.rvReviews.visibility = View.GONE
+                    binding.tvReviewCount.text = "(Belum ada ulasan)"
+                    binding.rbRating.rating = 0f
+                }
+
+            } catch (e: Exception) {
+                binding.rvReviews.visibility = View.GONE
+                binding.tvReviewCount.text = "(Belum ada ulasan)"
+                binding.rbRating.rating = 0f
+            }
+        }
     }
+
 
     private fun setupQuantityButtons() {
         binding.tvQuantity.text = quantity.toString()

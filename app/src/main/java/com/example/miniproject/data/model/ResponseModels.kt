@@ -34,12 +34,11 @@ data class Order(
     @SerializedName("created_at") val createdAt: String? = null,
     @SerializedName("updated_at") val updatedAt: String? = null
 )
-
 // ============================================
 // 📦 REVIEWS DATA
 // ============================================
 data class ReviewsData(
-    @SerializedName("reviews") val reviews: List<Review>,
+    @SerializedName("reviews") val reviews: List<ReviewApi>,
     @SerializedName("rating_summary") val ratingSummary: RatingSummary?,
     @SerializedName("pagination") val pagination: Pagination?
 )
