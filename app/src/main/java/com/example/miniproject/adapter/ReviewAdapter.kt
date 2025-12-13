@@ -8,7 +8,7 @@ import com.example.miniproject.data.Review
 import com.example.miniproject.databinding.ItemReviewBinding
 
 class ReviewAdapter(
-    private val reviews: List<Triple<Review, String, Int?>> // (Review, ProductName, ImageResId)
+    private val reviews: List<Triple<Review, String, Int?>>
 ) : RecyclerView.Adapter<ReviewAdapter.ReviewViewHolder>() {
 
     inner class ReviewViewHolder(private val binding: ItemReviewBinding) :

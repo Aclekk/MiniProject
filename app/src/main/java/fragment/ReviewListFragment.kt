@@ -28,11 +28,16 @@ class ReviewListFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Ambil semua review dari CartManager
-        val allReviews = CartManager.reviews.map { review ->
-            val product = ProductDataSource.getAllProducts().find { it.id == review.productId }
-            Triple(review, product?.name ?: "Produk Tidak Ditemukan", product?.imageResId)
-        }
+        // ✅ Ambil dari CartManager (lokal)
+        val allReviews: List<Triple<com.example.miniproject.data.Review, String, Int?>> =
+            CartManager.reviews.map { review ->
+                val product = ProductDataSource.getAllProducts().find { it.id == review.productId }
+                Triple(
+                    review,
+                    product?.name ?: "Produk Tidak Ditemukan",
+                    product?.imageResId
+                )
+            }
 
         if (allReviews.isEmpty()) {
             binding.tvEmptyReviews.visibility = View.VISIBLE
@@ -41,9 +46,8 @@ class ReviewListFragment : Fragment() {
             binding.tvEmptyReviews.visibility = View.GONE
             binding.rvReviews.visibility = View.VISIBLE
 
-            val adapter = ReviewAdapter(allReviews)
             binding.rvReviews.layoutManager = LinearLayoutManager(requireContext())
-            binding.rvReviews.adapter = adapter
+            binding.rvReviews.adapter = ReviewAdapter(allReviews)
         }
 
         binding.btnBack.setOnClickListener {

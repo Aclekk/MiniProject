@@ -32,10 +32,15 @@ class AdminOrderListFragment : Fragment() {
     private lateinit var orderAdapter: OrderAdapter
     private val orders: MutableList<Order> = mutableListOf()
 
+    // ✅ BroadcastReceiver untuk auto-refresh
     private val refreshReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            if (intent?.action == MyFirebaseMessagingService.ACTION_REFRESH_ORDERS) {
-                fetchSellerOrders()
+            when (intent?.action) {
+                MyFirebaseMessagingService.ACTION_REFRESH_ORDERS,
+                MyFirebaseMessagingService.ACTION_ORDER_STATUS_CHANGED -> {
+                    // ✅ Auto-refresh list saat dapat notifikasi
+                    fetchSellerOrders()
+                }
             }
         }
     }
@@ -53,7 +58,12 @@ class AdminOrderListFragment : Fragment() {
 
     override fun onStart() {
         super.onStart()
-        val filter = IntentFilter(MyFirebaseMessagingService.ACTION_REFRESH_ORDERS)
+        // ✅ Register receiver untuk refresh realtime
+        val filter = IntentFilter().apply {
+            addAction(MyFirebaseMessagingService.ACTION_REFRESH_ORDERS)
+            addAction(MyFirebaseMessagingService.ACTION_ORDER_STATUS_CHANGED)
+        }
+
         if (Build.VERSION.SDK_INT >= 33) {
             requireContext().registerReceiver(refreshReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
         } else {
@@ -64,7 +74,15 @@ class AdminOrderListFragment : Fragment() {
 
     override fun onStop() {
         super.onStop()
-        try { requireContext().unregisterReceiver(refreshReceiver) } catch (_: Exception) {}
+        try {
+            requireContext().unregisterReceiver(refreshReceiver)
+        } catch (_: Exception) {}
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // ✅ Refresh setiap kali fragment visible
+        fetchSellerOrders()
     }
 
     private fun setupRecyclerView() {
@@ -78,7 +96,7 @@ class AdminOrderListFragment : Fragment() {
                 if (next == null) {
                     Toast.makeText(requireContext(), "Order ini tidak bisa diubah lagi.", Toast.LENGTH_SHORT).show()
                 } else {
-                    updateOrderStatusToServer(order, next) // next = "packed"/"shipped"
+                    updateOrderStatusToServer(order, next)
                 }
             }
         )
@@ -121,7 +139,7 @@ class AdminOrderListFragment : Fragment() {
             try {
                 val payload = mapOf(
                     "order_id" to order.id.toString(),
-                    "status" to nextStatusDb // ✅ "packed" / "shipped"
+                    "status" to nextStatusDb
                 )
 
                 val resp = ApiClient.apiService.updateOrderStatus(
@@ -131,9 +149,14 @@ class AdminOrderListFragment : Fragment() {
 
                 withContext(Dispatchers.Main) {
                     if (resp.isSuccessful && resp.body()?.success == true) {
+                        // ✅ Update lokal dulu biar smooth
                         order.status = nextStatusDb
                         orderAdapter.notifyDataSetChanged()
-                        fetchSellerOrders() // sinkron biar ga halu UI
+
+                        // ✅ Fetch ulang untuk sinkronisasi full
+                        fetchSellerOrders()
+
+                        Toast.makeText(requireContext(), "Status berhasil diupdate!", Toast.LENGTH_SHORT).show()
                     } else {
                         Toast.makeText(requireContext(), "Gagal update status", Toast.LENGTH_SHORT).show()
                     }

@@ -30,7 +30,7 @@ class ProfileFragment : Fragment() {
     private val binding get() = _binding!!
 
     private var selectedImagePart: MultipartBody.Part? = null
-    private var userRole: String = "buyer" // Default buyer
+    private var userRole: String = "buyer"
 
     companion object {
         private const val REQ_PICK_IMAGE = 101
@@ -52,31 +52,37 @@ class ProfileFragment : Fragment() {
         checkUserRole()
         setupClicks()
         loadProfile()
+        val prefs = requireActivity().getSharedPreferences("user_pref", android.content.Context.MODE_PRIVATE)
+        val role = prefs.getString("role", "user") ?: "user"
+
+        binding.btnViewReviews.visibility =
+            if (role == "seller" || role == "admin") View.VISIBLE else View.GONE
+
+        binding.btnViewReviews.setOnClickListener {
+            val frag = ReviewListFragment()
+            requireActivity().supportFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, frag)
+                .addToBackStack(null)
+                .commit()
+        }
+
     }
 
-    // ================== CEK ROLE USER ==================
-
     private fun checkUserRole() {
-        val prefs = requireActivity()
-            .getSharedPreferences("user_pref", Context.MODE_PRIVATE)
-
+        val prefs = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
         userRole = prefs.getString("role", "buyer") ?: "buyer"
-
-        // Setup UI berdasarkan role
         setupUIForRole()
     }
 
     private fun setupUIForRole() {
         if (userRole == "seller") {
-            // Mode Seller - Ubah label dan enable edit
             binding.tvSectionTitle.text = "🏪 Informasi Toko"
             binding.btnSaveProfile.text = "💾 Simpan Profil Toko"
             binding.tvPhotoLabel.text = "📷 Ketuk untuk mengganti logo toko"
 
-            // Tampilkan field alamat toko
             binding.tilStoreAddress.visibility = View.VISIBLE
+            binding.btnViewReviews.visibility = View.VISIBLE   // ✅ tombol seller muncul
 
-            // Enable edit untuk seller
             binding.etUsername.isEnabled = true
             binding.etFullName.isEnabled = true
             binding.etEmail.isEnabled = true
@@ -84,7 +90,6 @@ class ProfileFragment : Fragment() {
             binding.etAddress.isEnabled = true
             binding.etStoreAddress.isEnabled = true
 
-            // Ubah hint sesuai data toko
             binding.tilUsername.hint = "No WhatsApp"
             binding.tilFullName.hint = "Nama Toko"
             binding.tilEmail.hint = "Email Toko"
@@ -93,13 +98,12 @@ class ProfileFragment : Fragment() {
             binding.tilStoreAddress.hint = "Alamat Toko"
 
         } else {
-            // Mode Buyer - Semua read-only kecuali foto
             binding.tvSectionTitle.text = "📋 Informasi Profil"
             binding.btnSaveProfile.text = "💾 Simpan Foto Profil"
             binding.tvPhotoLabel.text = "📷 Ketuk untuk mengganti foto"
 
-            // SEMBUNYIKAN field alamat toko untuk buyer
             binding.tilStoreAddress.visibility = View.GONE
+            binding.btnViewReviews.visibility = View.GONE     // ✅ buyer sembunyi
 
             binding.etUsername.isEnabled = false
             binding.etFullName.isEnabled = false
@@ -108,66 +112,46 @@ class ProfileFragment : Fragment() {
             binding.etAddress.isEnabled = false
             binding.etStoreAddress.isEnabled = false
 
-            // Hint default
             binding.tilUsername.hint = "Username"
             binding.tilFullName.hint = "Nama Lengkap"
             binding.tilEmail.hint = "Email"
             binding.tilPhone.hint = "No Telepon"
             binding.tilAddress.hint = "Alamat"
-            // tilStoreAddress nggak kelihatan, jadi hint-nya nggak penting
         }
     }
-
-
-    // ================== CLICK HANDLERS ==================
 
     private fun setupClicks() {
-        // Klik foto profil / logo
         binding.cardProfile.setOnClickListener {
-            if (userRole == "seller") {
-                openGallery(REQ_PICK_LOGO) // Upload logo toko
-            } else {
-                openGallery(REQ_PICK_IMAGE) // Upload foto profil user
-            }
+            if (userRole == "seller") openGallery(REQ_PICK_LOGO) else openGallery(REQ_PICK_IMAGE)
         }
+
         binding.btnTakePhoto.setOnClickListener {
-            if (userRole == "seller") {
-                openGallery(REQ_PICK_LOGO)
-            } else {
-                openGallery(REQ_PICK_IMAGE)
-            }
+            if (userRole == "seller") openGallery(REQ_PICK_LOGO) else openGallery(REQ_PICK_IMAGE)
         }
 
-        // Tombol simpan
         binding.btnSaveProfile.setOnClickListener {
-            if (userRole == "seller") {
-                updateStoreSettings()
-            } else {
-                updateProfilePhotoOnly()
-            }
+            if (userRole == "seller") updateStoreSettings() else updateProfilePhotoOnly()
         }
 
-        binding.btnLogout.setOnClickListener {
-            logout()
+        // ✅ tombol seller ke halaman ulasan
+        binding.btnViewReviews.setOnClickListener {
+            if (userRole != "seller") return@setOnClickListener
+
+            requireActivity().supportFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, ReviewListFragment())
+                .addToBackStack(null)
+                .commit()
         }
+
+        binding.btnLogout.setOnClickListener { logout() }
     }
 
-    // ================== LOAD PROFILE ==================
-
     private fun loadProfile() {
-        if (userRole == "seller") {
-            // Seller: Load settings toko dari database
-            loadStoreSettings()
-        } else {
-            // Buyer: Load profile user dari API
-            loadUserProfile()
-        }
+        if (userRole == "seller") loadStoreSettings() else loadUserProfile()
     }
 
     private fun loadUserProfile() {
-        val prefs = requireActivity()
-            .getSharedPreferences("user_pref", Context.MODE_PRIVATE)
-
+        val prefs = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
         val token = prefs.getString("token", null)
 
         if (token.isNullOrEmpty()) {
@@ -186,25 +170,13 @@ class ProfileFragment : Fragment() {
                     if (body?.success == true && body.data != null) {
                         bindProfileToUi(body.data)
                     } else {
-                        Toast.makeText(
-                            requireContext(),
-                            body?.message ?: "Gagal memuat profil",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        Toast.makeText(requireContext(), body?.message ?: "Gagal memuat profil", Toast.LENGTH_SHORT).show()
                     }
                 } else {
-                    Toast.makeText(
-                        requireContext(),
-                        "Error ${response.code()}",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    Toast.makeText(requireContext(), "Error ${response.code()}", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                Toast.makeText(
-                    requireContext(),
-                    "Gagal konek: ${e.localizedMessage}",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Toast.makeText(requireContext(), "Gagal konek: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
             } finally {
                 showLoading(false)
             }
@@ -236,9 +208,8 @@ class ProfileFragment : Fragment() {
                     append(address.postalCode)
                 }
             }
-        } else {
-            ""
-        }
+        } else ""
+
         binding.etAddress.setText(addressText)
 
         val imageUrl = ApiClient.getImageUrl(user.profileImage)
@@ -249,7 +220,7 @@ class ProfileFragment : Fragment() {
             .into(binding.imgProfile)
     }
 
-    // ================== LOAD SETTINGS TOKO (SELLER) ==================
+    // ================== STORE SETTINGS ==================
 
     private fun loadStoreSettings() {
         showLoading(true)
@@ -264,25 +235,13 @@ class ProfileFragment : Fragment() {
                         @Suppress("UNCHECKED_CAST")
                         bindStoreSettingsToUi(body.data as Map<String, Any>)
                     } else {
-                        Toast.makeText(
-                            requireContext(),
-                            "Gagal memuat settings toko",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        Toast.makeText(requireContext(), "Gagal memuat settings toko", Toast.LENGTH_SHORT).show()
                     }
                 } else {
-                    Toast.makeText(
-                        requireContext(),
-                        "Error ${response.code()}",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    Toast.makeText(requireContext(), "Error ${response.code()}", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                Toast.makeText(
-                    requireContext(),
-                    "Gagal konek: ${e.localizedMessage}",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Toast.makeText(requireContext(), "Gagal konek: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
             } finally {
                 showLoading(false)
             }
@@ -290,7 +249,6 @@ class ProfileFragment : Fragment() {
     }
 
     private fun bindStoreSettingsToUi(settings: Map<String, Any>) {
-        // Isi field dengan data toko dari database settings
         binding.etFullName.setText(settings["app_name"]?.toString() ?: "")
         binding.etEmail.setText(settings["contact_email"]?.toString() ?: "")
         binding.etPhone.setText(settings["contact_phone"]?.toString() ?: "")
@@ -298,7 +256,6 @@ class ProfileFragment : Fragment() {
         binding.etAddress.setText(settings["app_tagline"]?.toString() ?: "")
         binding.etStoreAddress.setText(settings["app_address"]?.toString() ?: "")
 
-        // Load logo toko
         val logoPath = settings["app_logo"]?.toString()
         if (!logoPath.isNullOrEmpty()) {
             val logoUrl = ApiClient.getImageUrl(logoPath)
@@ -310,11 +267,8 @@ class ProfileFragment : Fragment() {
         }
     }
 
-    // ================== UPDATE SETTINGS TOKO (SELLER) ==================
-
     private fun updateStoreSettings() {
-        val prefs = requireActivity()
-            .getSharedPreferences("user_pref", Context.MODE_PRIVATE)
+        val prefs = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
         val token = prefs.getString("token", null)
 
         if (token.isNullOrEmpty()) {
@@ -322,7 +276,6 @@ class ProfileFragment : Fragment() {
             return
         }
 
-        // Ambil data dari form
         val appName = binding.etFullName.text.toString().trim()
         val contactEmail = binding.etEmail.text.toString().trim()
         val contactPhone = binding.etPhone.text.toString().trim()
@@ -331,44 +284,20 @@ class ProfileFragment : Fragment() {
         val appAddress = binding.etStoreAddress.text.toString().trim()
 
         if (appName.isEmpty() || contactEmail.isEmpty() || contactPhone.isEmpty()) {
-            Toast.makeText(
-                requireContext(),
-                "Nama toko, email, dan telepon wajib diisi",
-                Toast.LENGTH_SHORT
-            ).show()
+            Toast.makeText(requireContext(), "Nama toko, email, dan telepon wajib diisi", Toast.LENGTH_SHORT).show()
             return
         }
 
         showLoading(true)
 
-        // Jika ada logo yang dipilih, upload dulu
         if (selectedImagePart != null) {
-            uploadLogoFirst(token) { logoUploaded ->
-                if (logoUploaded) {
-                    updateStoreSettingsText(
-                        token,
-                        appName,
-                        contactEmail,
-                        contactPhone,
-                        appTagline,
-                        contactWhatsapp,
-                        appAddress
-                    )
-                } else {
-                    showLoading(false)
-                }
+            uploadLogoFirst(token) { ok ->
+                if (ok) {
+                    updateStoreSettingsText(token, appName, contactEmail, contactPhone, appTagline, contactWhatsapp, appAddress)
+                } else showLoading(false)
             }
         } else {
-            // Langsung update settings text
-            updateStoreSettingsText(
-                token,
-                appName,
-                contactEmail,
-                contactPhone,
-                appTagline,
-                contactWhatsapp,
-                appAddress
-            )
+            updateStoreSettingsText(token, appName, contactEmail, contactPhone, appTagline, contactWhatsapp, appAddress)
         }
     }
 
@@ -385,20 +314,15 @@ class ProfileFragment : Fragment() {
                     selectedImagePart = null
                     callback(true)
                 } else {
-                    val code = response.code()
-                    val errorBody = response.errorBody()?.string()
-                    android.util.Log.e("UploadLogo", "code=$code body=$errorBody")
-                    Toast.makeText(requireContext(), "Gagal upload logo ($code)", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Gagal upload logo (${response.code()})", Toast.LENGTH_SHORT).show()
                     callback(false)
                 }
             } catch (e: Exception) {
-                android.util.Log.e("UploadLogo", "Exception: ${e.localizedMessage}", e)
                 Toast.makeText(requireContext(), "Error upload: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
                 callback(false)
             }
         }
     }
-
 
     private fun updateStoreSettingsText(
         token: String,
@@ -425,48 +349,24 @@ class ProfileFragment : Fragment() {
                     request = requestBody
                 )
 
-                if (response.isSuccessful) {
-                    val body = response.body()
-                    if (body?.success == true) {
-                        Toast.makeText(
-                            requireContext(),
-                            "✅ Profil toko berhasil diperbarui!",
-                            Toast.LENGTH_LONG
-                        ).show()
-
-                        // Reload settings
-                        loadStoreSettings()
-                    } else {
-                        Toast.makeText(
-                            requireContext(),
-                            body?.message ?: "Gagal update settings",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
+                if (response.isSuccessful && response.body()?.success == true) {
+                    Toast.makeText(requireContext(), "✅ Profil toko berhasil diperbarui!", Toast.LENGTH_LONG).show()
+                    loadStoreSettings()
                 } else {
-                    Toast.makeText(
-                        requireContext(),
-                        "Error ${response.code()}",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    Toast.makeText(requireContext(), response.body()?.message ?: "Gagal update settings", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                Toast.makeText(
-                    requireContext(),
-                    "Gagal konek: ${e.localizedMessage}",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Toast.makeText(requireContext(), "Gagal konek: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
             } finally {
                 showLoading(false)
             }
         }
     }
 
-    // ================== UPDATE FOTO PROFIL (BUYER) ==================
+    // ================== UPDATE FOTO BUYER ==================
 
     private fun updateProfilePhotoOnly() {
-        val prefs = requireActivity()
-            .getSharedPreferences("user_pref", Context.MODE_PRIVATE)
+        val prefs = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
         val token = prefs.getString("token", null)
 
         if (token.isNullOrEmpty()) {
@@ -502,33 +402,17 @@ class ProfileFragment : Fragment() {
                 if (response.isSuccessful) {
                     val body = response.body()
                     if (body?.success == true && body.data != null) {
-                        Toast.makeText(
-                            requireContext(),
-                            "✅ Foto profil berhasil diperbarui!",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        Toast.makeText(requireContext(), "✅ Foto profil berhasil diperbarui!", Toast.LENGTH_SHORT).show()
                         bindProfileToUi(body.data)
                         selectedImagePart = null
                     } else {
-                        Toast.makeText(
-                            requireContext(),
-                            body?.message ?: "Gagal update",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        Toast.makeText(requireContext(), body?.message ?: "Gagal update", Toast.LENGTH_SHORT).show()
                     }
                 } else {
-                    Toast.makeText(
-                        requireContext(),
-                        "Error ${response.code()}",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    Toast.makeText(requireContext(), "Error ${response.code()}", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                Toast.makeText(
-                    requireContext(),
-                    "Gagal konek: ${e.localizedMessage}",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Toast.makeText(requireContext(), "Gagal konek: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
             } finally {
                 showLoading(false)
             }
@@ -550,27 +434,13 @@ class ProfileFragment : Fragment() {
 
             when (requestCode) {
                 REQ_PICK_IMAGE -> {
-                    // Buyer: upload foto profil user
                     prepareImagePart(uri, "profile_image")
-                    Glide.with(this)
-                        .load(uri)
-                        .placeholder(R.drawable.ic_person)
-                        .into(binding.imgProfile)
+                    Glide.with(this).load(uri).placeholder(R.drawable.ic_person).into(binding.imgProfile)
                 }
-
                 REQ_PICK_LOGO -> {
-                    // Seller: upload logo toko
-                    prepareImagePart(uri, "logo") // field name "logo" untuk API upload_logo.php
-                    Glide.with(this)
-                        .load(uri)
-                        .placeholder(R.drawable.ic_person)
-                        .into(binding.imgProfile)
-
-                    Toast.makeText(
-                        requireContext(),
-                        "Logo siap diupload. Klik Simpan Profil Toko",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    prepareImagePart(uri, "logo")
+                    Glide.with(this).load(uri).placeholder(R.drawable.ic_person).into(binding.imgProfile)
+                    Toast.makeText(requireContext(), "Logo siap diupload. Klik Simpan Profil Toko", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -584,6 +454,7 @@ class ProfileFragment : Fragment() {
 
         val mediaType = "image/*".toMediaTypeOrNull()
         val requestBody = bytes.toRequestBody(mediaType, 0, bytes.size)
+
         selectedImagePart = MultipartBody.Part.createFormData(
             fieldName,
             "${fieldName}_${System.currentTimeMillis()}.jpg",
@@ -591,15 +462,9 @@ class ProfileFragment : Fragment() {
         )
     }
 
-    // ================== LOGOUT ==================
-
     private fun logout() {
-        val prefs = requireActivity()
-            .getSharedPreferences("user_pref", Context.MODE_PRIVATE)
-
-        prefs.edit()
-            .clear()
-            .apply()
+        val prefs = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
+        prefs.edit().clear().apply()
 
         Toast.makeText(requireContext(), "Berhasil logout", Toast.LENGTH_SHORT).show()
 
@@ -608,11 +473,11 @@ class ProfileFragment : Fragment() {
         startActivity(intent)
     }
 
-    // ================== UTIL ==================
-
     private fun showLoading(show: Boolean) {
         binding.progressBar.visibility = if (show) View.VISIBLE else View.GONE
         binding.btnSaveProfile.isEnabled = !show
+        binding.btnLogout.isEnabled = !show
+        binding.btnViewReviews.isEnabled = !show
     }
 
     override fun onDestroyView() {

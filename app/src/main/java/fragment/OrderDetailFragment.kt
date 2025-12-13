@@ -1,7 +1,6 @@
 package com.example.miniproject.fragment
 
 import android.app.AlertDialog
-import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -10,28 +9,17 @@ import android.widget.EditText
 import android.widget.RatingBar
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.lifecycleScope
 import com.example.miniproject.R
 import com.example.miniproject.data.CartManager
-import com.example.miniproject.data.Order
 import com.example.miniproject.data.Review
-import com.example.miniproject.data.api.ApiClient
 import com.example.miniproject.databinding.FragmentOrderDetailBinding
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class OrderDetailFragment : Fragment() {
 
     private var _binding: FragmentOrderDetailBinding? = null
     private val binding get() = _binding!!
 
-    private var currentOrder: Order? = null
-
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentOrderDetailBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -39,11 +27,21 @@ class OrderDetailFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val orderId = arguments?.getInt("orderId") ?: return
-        val order = CartManager.orders.find { it.id == orderId } ?: return
-        currentOrder = order
+        val orderId = arguments?.getInt("orderId") ?: 0
+        if (orderId == 0) {
+            Toast.makeText(requireContext(), "Order ID tidak valid", Toast.LENGTH_SHORT).show()
+            parentFragmentManager.popBackStack()
+            return
+        }
 
-        // TAMPILKAN DETAIL PESANAN (LOGIC LAMA)
+        val order = CartManager.orders.find { it.id == orderId }
+        if (order == null) {
+            Toast.makeText(requireContext(), "Order tidak ditemukan di lokal", Toast.LENGTH_SHORT).show()
+            parentFragmentManager.popBackStack()
+            return
+        }
+
+        // Tampilkan detail pesanan
         binding.tvOrderId.text = "Order #${order.id}"
         binding.tvOrderStatus.text = "Status: ${order.status}"
         binding.tvOrderPayment.text = "Metode Pembayaran: ${order.paymentMethod}"
@@ -55,93 +53,44 @@ class OrderDetailFragment : Fragment() {
         binding.tvOrderProducts.text = "Produk:\n$productList"
         binding.tvOrderTotal.text = "Total: Rp ${String.format("%,d", order.totalPrice.toInt())}"
 
-        // 🔥 Atur tombol sesuai status
         updateButtonVisibility(order)
 
-        // 🔹 Button buyer: "Pesanan Telah Sampai" / "Selesai"
+        // tombol utama buyer: selesai / kirim ulasan
         binding.btnNextStatus.setOnClickListener {
-            if (order.status == "Dikirim") {
-                binding.btnNextStatus.isEnabled = false
-
-                // ✅ kirim slug backend: completed (bukan "Selesai")
-                updateStatusToServer(order.id, "completed") {
-                    // ✅ kalau server sukses, baru update lokal/UI
+            when (order.status.lowercase()) {
+                "dikirim", "shipped" -> {
                     order.status = "Selesai"
                     binding.tvOrderStatus.text = "Status: ${order.status}"
                     updateButtonVisibility(order)
-
-                    Toast.makeText(requireContext(), "Pesanan selesai ✅", Toast.LENGTH_SHORT).show()
-                    parentFragmentManager.popBackStack()
+                    Toast.makeText(requireContext(), "Pesanan selesai! Berikan ulasan ⭐", Toast.LENGTH_SHORT).show()
                 }
-            } else {
-                Toast.makeText(requireContext(), "Tidak ada aksi untuk status ini", Toast.LENGTH_SHORT).show()
+
+                "selesai", "completed" -> {
+                    if (!order.hasReview) showRatingDialog(order.id, order.products)
+                }
+
+                else -> {
+                    Toast.makeText(requireContext(), "Aksi tidak tersedia untuk status ini", Toast.LENGTH_SHORT).show()
+                }
             }
         }
 
-        // 🔹 Button "Beri Penilaian"
         binding.btnRateNow.setOnClickListener {
-            showRatingDialog(order)
+            if (!order.hasReview) showRatingDialog(order.id, order.products)
         }
     }
 
-    /**
-     * ✅ Versi merge: update status ke server (IO thread), callback sukses di Main
-     * newStatus = slug backend: processing/packed/shipped/completed/...
-     */
-    private fun updateStatusToServer(orderId: Int, newStatus: String, onSuccess: () -> Unit) {
-        val prefs = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
-        val token = prefs.getString("token", null)
+    private fun updateButtonVisibility(order: com.example.miniproject.data.Order) {
+        val st = order.status.lowercase()
 
-        if (token.isNullOrEmpty()) {
-            Toast.makeText(requireContext(), "Token login tidak ditemukan. Coba login ulang.", Toast.LENGTH_LONG).show()
-            binding.btnNextStatus.isEnabled = true
-            return
-        }
-
-        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val body = mapOf(
-                    "order_id" to orderId.toString(),
-                    "status" to newStatus
-                )
-
-                val resp = ApiClient.apiService.updateOrderStatus(
-                    token = "Bearer $token",
-                    body = body
-                )
-
-                withContext(Dispatchers.Main) {
-                    if (resp.isSuccessful && resp.body()?.success == true) {
-                        onSuccess()
-                    } else {
-                        val err = resp.errorBody()?.string()
-                        Toast.makeText(
-                            requireContext(),
-                            "Gagal update status (HTTP ${resp.code()})\n${err ?: (resp.body()?.message ?: "")}",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
-                    binding.btnNextStatus.isEnabled = true
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(requireContext(), "Error: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
-                    binding.btnNextStatus.isEnabled = true
-                }
-            }
-        }
-    }
-
-    // 🔥 LOGIC TAMPILKAN BUTTON SESUAI STATUS (PUNYA KAMU, TETAP)
-    private fun updateButtonVisibility(order: Order) {
         when {
-            order.status == "Dikirim" -> {
+            (st == "dikirim" || st == "shipped") -> {
                 binding.btnNextStatus.visibility = View.VISIBLE
-                binding.btnNextStatus.text = "Pesanan Telah Selesai"
+                binding.btnNextStatus.text = "✅ Pesanan Telah Sampai"
                 binding.btnRateNow.visibility = View.GONE
             }
 
-            order.status == "Selesai" && !order.hasReview -> {
+            (st == "selesai" || st == "completed") && !order.hasReview -> {
                 binding.btnNextStatus.visibility = View.GONE
                 binding.btnRateNow.visibility = View.VISIBLE
                 binding.btnRateNow.text = "⭐ Beri Penilaian"
@@ -159,40 +108,42 @@ class OrderDetailFragment : Fragment() {
         }
     }
 
-    // 🌟 Dialog Rating & Review (LOGIC ASLI, TIDAK DIUTAK-ATIK)
-    private fun showRatingDialog(order: Order) {
-        val dialogView = LayoutInflater.from(requireContext())
-            .inflate(R.layout.dialog_review, null)
+    private fun showRatingDialog(orderId: Int, products: List<com.example.miniproject.model.Product>) {
+        val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_review, null)
         val ratingBar = dialogView.findViewById<RatingBar>(R.id.ratingBar)
         val etComment = dialogView.findViewById<EditText>(R.id.etComment)
 
         AlertDialog.Builder(requireContext())
-            .setTitle("Beri Penilaian untuk Order #${order.id}")
+            .setTitle("Beri Penilaian untuk Order #$orderId")
             .setView(dialogView)
             .setPositiveButton("Kirim") { _, _ ->
                 val rating = ratingBar.rating
                 val comment = etComment.text.toString()
 
-                if (rating == 0f) {
-                    Toast.makeText(requireContext(), "Berikan rating minimal 1 bintang ⭐", Toast.LENGTH_SHORT).show()
+                if (rating <= 0f) {
+                    Toast.makeText(requireContext(), "Rating minimal 1 bintang ⭐", Toast.LENGTH_SHORT).show()
                     return@setPositiveButton
                 }
 
-                order.products.forEach { product ->
-                    val review = Review(
-                        orderId = order.id,
-                        productId = product.id,
-                        userName = "Rachen 🌾",
-                        rating = rating,
-                        comment = comment.ifEmpty { "Tidak ada komentar" }
+                // simpan review lokal (buyer device)
+                products.forEach { product ->
+                    CartManager.addReview(
+                        Review(
+                            orderId = orderId,
+                            productId = product.id,
+                            productName = product.name,
+                            productImageUrl = product.imageUrl,
+                            rating = rating,
+                            comment = comment.ifEmpty { "Tidak ada komentar" },
+                            userName = "Buyer"
+                        )
                     )
-                    CartManager.addReview(review)
                 }
 
-                order.hasReview = true
-                updateButtonVisibility(order)
+                // tandai order sudah direview (lokal)
+                CartManager.orders.find { it.id == orderId }?.hasReview = true
 
-                Toast.makeText(requireContext(), "Terima kasih atas penilaian Anda! ⭐", Toast.LENGTH_LONG).show()
+                Toast.makeText(requireContext(), "Ulasan tersimpan (lokal) ⭐", Toast.LENGTH_LONG).show()
                 parentFragmentManager.popBackStack()
             }
             .setNegativeButton("Batal", null)

@@ -1,8 +1,10 @@
 package com.example.miniproject.data
 
 data class Review(
-    val orderId: Int = 0, // 🆕 Tambahkan default value
+    val orderId: Int = 0,
     val productId: Int,
+    val productName: String,
+    val productImageUrl: String? = null,
     val rating: Float,
     val comment: String,
     val userName: String = "User",

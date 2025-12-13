@@ -5,8 +5,7 @@ import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.Response
 import retrofit2.http.*
-import com.example.miniproject.data.model.CreateOrderResult
-import com.example.miniproject.data.model.BaseResponse
+
 interface ApiService {
 
     // ========== AUTH ==========
@@ -78,7 +77,6 @@ interface ApiService {
         @Body body: Map<String, String>
     ): Response<BaseResponse<Any>>
 
-
     @Multipart
     @POST("products/create.php")
     suspend fun createProduct(
@@ -91,7 +89,6 @@ interface ApiService {
         @Part image: MultipartBody.Part?
     ): Response<BaseResponse<Product>>
 
-    // ✅ UPDATE PRODUCT
     @Multipart
     @POST("products/update.php")
     suspend fun updateProduct(
@@ -105,7 +102,6 @@ interface ApiService {
         @Part image: MultipartBody.Part?
     ): Response<BaseResponse<Product>>
 
-    // ✅ DELETE PRODUCT
     @FormUrlEncoded
     @POST("products/delete.php")
     suspend fun deleteProduct(
@@ -113,10 +109,8 @@ interface ApiService {
         @Field("id") productId: Int
     ): Response<BaseResponse<Any>>
 
-    // Produk terlaris (Home / Products)
     @GET("products/best_sellers.php")
-    suspend fun getBestSellerProducts(
-    ): Response<BaseResponse<ProductListResponse>>
+    suspend fun getBestSellerProducts(): Response<BaseResponse<ProductListResponse>>
 
     @FormUrlEncoded
     @POST("products/toggle_best_seller.php")
@@ -163,7 +157,6 @@ interface ApiService {
         @Body request: AddToCartRequest
     ): Response<BaseResponse<Any>>
 
-
     @DELETE("cart/remove.php")
     suspend fun removeFromCart(
         @Header("Authorization") token: String,
@@ -177,8 +170,12 @@ interface ApiService {
     ): Response<BaseResponse<Any>>
 
     // ========== ORDERS ==========
-
-    // ========== ORDERS ==========
+    // ✅ SINGLE SOURCE OF TRUTH (jangan dobel)
+    @POST("orders/create.php")
+    suspend fun checkout(
+        @Header("Authorization") token: String,
+        @Body request: CheckoutRequest
+    ): BaseResponse<CreateOrderResult>
 
     @GET("orders/list.php")
     suspend fun getOrders(
@@ -190,18 +187,14 @@ interface ApiService {
     suspend fun getOrderDetail(
         @Header("Authorization") token: String,
         @Query("id") orderId: Int
-    ): Response<BaseResponse<Order>>
-    @POST("orders/create.php")
-    suspend fun checkout(
-        @Header("Authorization") token: String,
-        @Body request: CheckoutRequest
-    ): BaseResponse<CreateOrderResult>
+    ): Response<BaseResponse<OrdersData>> // biar aman kalau backend detail return OrdersData (kalau beda, kasih aku response json-nya)
 
     @POST("orders/update_status.php")
     suspend fun updateOrderStatus(
         @Header("Authorization") token: String,
         @Body body: Map<String, String>
     ): Response<BaseResponse<OrderStatusResponse>>
+
     @GET("orders/list_for_seller.php")
     suspend fun getSellerOrders(
         @Header("Authorization") token: String
@@ -212,11 +205,6 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Query("status") status: String? = null
     ): Response<BaseResponse<List<BuyerOrderResponse>>>
-
-
-
-
-
 
     // ========== PAYMENTS ==========
     @Multipart
@@ -247,7 +235,7 @@ interface ApiService {
         @Query("id") wishlistId: Int
     ): Response<BaseResponse<Any>>
 
-    // ========== SETTINGS (TAMBAHKAN DI AKHIR ApiService.kt) ==========
+    // ========== SETTINGS ==========
     @GET("settings/get.php")
     suspend fun getSettings(): Response<BaseResponse<Map<String, Any>>>
 

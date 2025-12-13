@@ -6,6 +6,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.example.miniproject.data.Order
 import com.example.miniproject.databinding.ItemOrderBinding
+import com.example.miniproject.util.statusLabel
 
 class OrderHistoryAdapter(
     val orders: MutableList<Order>,
@@ -25,15 +26,16 @@ class OrderHistoryAdapter(
         val order = orders[position]
 
         holder.binding.tvOrderId.text = "Order #${order.id}"
-        holder.binding.tvOrderStatus.text = order.status
+
+        // ✅ FIX: tampilkan label (Pending/Dikemas/Dikirim/Selesai)
+        holder.binding.tvOrderStatus.text = statusLabel(order.status)
+
         holder.binding.tvOrderItems.text = "Barang: ${order.products.joinToString { it.name }}"
         holder.binding.tvOrderTotal.text = "Rp ${String.format("%,d", order.totalPrice.toInt())}"
 
-        // 🔥 LOGIC UNTUK USER: Tampilkan button hanya di detail fragment
-        // Di list, button disembunyikan, user klik card untuk lihat detail
+        // list buyer: button disembunyikan, user klik card buat detail (logic kamu tetap)
         holder.binding.btnNextStatus.visibility = View.GONE
 
-        // Klik card untuk buka detail
         holder.binding.root.setOnClickListener {
             onOrderClick(order)
         }

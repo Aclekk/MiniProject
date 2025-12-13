@@ -1,28 +1,42 @@
 package com.example.miniproject.util
 
 /**
- * STATUS INTERNAL (DB) yang kita pakai:
- * pending -> packed -> shipped -> completed
- * cancelled
+ * ✅ NORMALIZE: Semua status masuk jadi format internal yang konsisten
+ * Database ENUM: pending, processing, shipped, completed, cancelled
  */
-
 fun normalizeDbStatus(s: String?): String {
     val raw = (s ?: "").trim().lowercase()
     return when (raw) {
-        "dikemas" -> "packed"
+        // UI Indonesia
+        "menunggu konfirmasi", "menunggu konfirmasi seller" -> "pending"
+        "dikonfirmasi", "dikemas", "diproses" -> "processing"
         "dikirim" -> "shipped"
         "selesai" -> "completed"
-        "dibatalkan" -> "cancelled"
-        "processing" -> "packed" // kalau masih ada legacy
-        "" -> "pending"
+        "dibatalkan", "batal" -> "cancelled"
+
+        // Internal/legacy (biar backward compatible)
+        "pending" -> "pending"
+        "processing" -> "processing"
+        "packed" -> "processing"  // ✅ LEGACY: packed -> processing
+        "shipped" -> "shipped"
+        "completed" -> "completed"
+        "cancelled" -> "cancelled"
+
+        // Kalau kosong atau null
+        "", "null" -> "pending"
+
+        // Fallback: return as-is (tapi ini seharusnya ga pernah kejadian)
         else -> raw
     }
 }
 
+/**
+ * ✅ LABEL: Status yang ditampilkan ke user (Indonesia)
+ */
 fun statusLabel(dbStatus: String?): String {
     return when (normalizeDbStatus(dbStatus)) {
-        "pending" -> "Pending"
-        "packed" -> "Dikemas"
+        "pending" -> "Menunggu Konfirmasi"
+        "processing" -> "Dikonfirmasi"  // ✅ untuk seller & buyer
         "shipped" -> "Dikirim"
         "completed" -> "Selesai"
         "cancelled" -> "Dibatalkan"
@@ -30,15 +44,25 @@ fun statusLabel(dbStatus: String?): String {
     }
 }
 
+/**
+ * ✅ NEXT STATUS untuk SELLER
+ * pending -> processing (Konfirmasi)
+ * processing -> shipped (Kirim)
+ * shipped/completed/cancelled -> null (tidak bisa diubah)
+ */
 fun nextStatusForSeller(current: String?): String? {
     return when (normalizeDbStatus(current)) {
-        "pending" -> "packed"
-        "packed" -> "shipped"
-        // seller STOP di shipped
-        else -> null
+        "pending" -> "processing"      // ✅ Konfirmasi Pesanan
+        "processing" -> "shipped"      // ✅ Kirim Pesanan
+        else -> null                    // shipped/completed/cancelled = no action
     }
 }
 
+/**
+ * ✅ NEXT STATUS untuk BUYER
+ * shipped -> completed (Terima)
+ * completed -> sudah selesai, bisa review
+ */
 fun nextStatusForBuyer(current: String?): String? {
     return when (normalizeDbStatus(current)) {
         "shipped" -> "completed"
@@ -46,10 +70,24 @@ fun nextStatusForBuyer(current: String?): String? {
     }
 }
 
-fun isActiveStatusForSeller(status: String?): Boolean {
-    return normalizeDbStatus(status) !in setOf("completed", "cancelled")
+/**
+ * ✅ BUTTON LABEL untuk SELLER
+ */
+fun sellerButtonLabel(dbStatus: String?): String? {
+    return when (normalizeDbStatus(dbStatus)) {
+        "pending" -> "📦 Konfirmasi Pesanan"
+        "processing" -> "🚚 Kirim Pesanan"
+        else -> null
+    }
 }
 
-fun isActiveStatusForBuyer(status: String?): Boolean {
-    return normalizeDbStatus(status) !in setOf("completed", "cancelled")
+/**
+ * ✅ BUTTON LABEL untuk BUYER
+ */
+fun buyerButtonLabel(dbStatus: String?): String? {
+    return when (normalizeDbStatus(dbStatus)) {
+        "shipped" -> "✅ Pesanan sudah diterima"
+        "completed" -> "⭐ Kirim Ulasan"
+        else -> null
+    }
 }

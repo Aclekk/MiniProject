@@ -17,6 +17,24 @@ data class OrdersData(
     @SerializedName("pagination") val pagination: Pagination?
 )
 
+// ✅ TAMBAHAN: Order model untuk kebutuhan ResponseModels & beberapa endpoint
+// Ini TIDAK mengubah Order lokal kamu (com.example.miniproject.data.Order)
+data class Order(
+    @SerializedName("id") val id: Int,
+    @SerializedName("order_number") val orderNumber: String? = null,
+    @SerializedName("buyer_id") val buyerId: Int? = null,
+    @SerializedName("seller_id") val sellerId: Int? = null,
+    @SerializedName("subtotal") val subtotal: Double? = null,
+    @SerializedName("shipping_cost") val shippingCost: Double? = null,
+    @SerializedName("discount_amount") val discountAmount: Double? = null,
+    @SerializedName("total_amount") val totalAmount: Double? = null,
+    @SerializedName("status") val status: String? = null,
+    @SerializedName("payment_method") val paymentMethod: String? = null,
+    @SerializedName("shipping_address") val shippingAddress: String? = null,
+    @SerializedName("created_at") val createdAt: String? = null,
+    @SerializedName("updated_at") val updatedAt: String? = null
+)
+
 // ============================================
 // 📦 REVIEWS DATA
 // ============================================
@@ -176,7 +194,3 @@ data class Pagination(
     @SerializedName("total") val total: Int,
     @SerializedName("total_pages") val totalPages: Int
 )
-
-// ============================================
-// 📦 USER ADDRESS (jika belum ada)
-// ============================================

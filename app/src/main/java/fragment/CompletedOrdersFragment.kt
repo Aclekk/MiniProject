@@ -10,6 +10,7 @@ import com.example.miniproject.R
 import com.example.miniproject.adapter.OrderHistoryAdapter
 import com.example.miniproject.data.CartManager
 import com.example.miniproject.databinding.FragmentCompletedOrdersBinding
+import com.example.miniproject.util.normalizeDbStatus
 
 class CompletedOrdersFragment : Fragment() {
 
@@ -31,7 +32,7 @@ class CompletedOrdersFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         val completedOrders = CartManager.orders
-            .filter { it.status == "Selesai" }
+            .filter { normalizeDbStatus(it.status) == "completed" }
             .toMutableList()
 
         adapter = OrderHistoryAdapter(
@@ -56,7 +57,9 @@ class CompletedOrdersFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        val updatedOrders = CartManager.orders.filter { it.status == "Selesai" }
+        val updatedOrders = CartManager.orders
+            .filter { normalizeDbStatus(it.status) == "completed" }
+
         adapter.orders.clear()
         adapter.orders.addAll(updatedOrders)
         adapter.notifyDataSetChanged()

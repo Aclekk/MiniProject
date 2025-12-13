@@ -15,39 +15,37 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.miniproject.R
 import com.example.miniproject.adapter.OrderHistoryAdapter
-import com.example.miniproject.data.CartManager
 import com.example.miniproject.data.Order
 import com.example.miniproject.data.api.ApiClient
 import com.example.miniproject.data.mapper.toOrderModel
-import com.example.miniproject.databinding.FragmentActiveOrdersBinding
+import com.example.miniproject.databinding.FragmentHistoryOrdersBinding
 import com.example.miniproject.firebase.MyFirebaseMessagingService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class ActiveOrdersFragment : Fragment() {
 
-    private var _binding: FragmentActiveOrdersBinding? = null
+class HistoryOrdersFragment : Fragment() {
+
+    private var _binding: FragmentHistoryOrdersBinding? = null
     private val binding get() = _binding!!
 
     private lateinit var adapter: OrderHistoryAdapter
     private val orders: MutableList<Order> = mutableListOf()
 
-    // ✅ BroadcastReceiver untuk auto-refresh
     private val refreshReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             when (intent?.action) {
                 MyFirebaseMessagingService.ACTION_REFRESH_BUYER_ORDERS,
                 MyFirebaseMessagingService.ACTION_ORDER_STATUS_CHANGED -> {
-                    // ✅ Auto-refresh list saat dapat notifikasi
-                    fetchBuyerOrders()
+                    fetchCompletedOrders()
                 }
             }
         }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        _binding = FragmentActiveOrdersBinding.inflate(inflater, container, false)
+        _binding = FragmentHistoryOrdersBinding.inflate(inflater, container, false)
         return binding.root
     }
 
@@ -65,18 +63,17 @@ class ActiveOrdersFragment : Fragment() {
                     .addToBackStack(null)
                     .commit()
             },
-            isActiveTab = true
+            isActiveTab = false
         )
 
-        binding.rvActiveOrders.layoutManager = LinearLayoutManager(requireContext())
-        binding.rvActiveOrders.adapter = adapter
+        binding.rvHistoryOrders.layoutManager = LinearLayoutManager(requireContext())
+        binding.rvHistoryOrders.adapter = adapter
 
-        fetchBuyerOrders()
+        fetchCompletedOrders()
     }
 
     override fun onStart() {
         super.onStart()
-        // ✅ Register receiver untuk refresh realtime
         val filter = IntentFilter().apply {
             addAction(MyFirebaseMessagingService.ACTION_REFRESH_BUYER_ORDERS)
             addAction(MyFirebaseMessagingService.ACTION_ORDER_STATUS_CHANGED)
@@ -92,18 +89,15 @@ class ActiveOrdersFragment : Fragment() {
 
     override fun onStop() {
         super.onStop()
-        try {
-            requireContext().unregisterReceiver(refreshReceiver)
-        } catch (_: Exception) {}
+        try { requireContext().unregisterReceiver(refreshReceiver) } catch (_: Exception) {}
     }
 
     override fun onResume() {
         super.onResume()
-        // ✅ Refresh setiap kali fragment visible
-        fetchBuyerOrders()
+        fetchCompletedOrders()
     }
 
-    private fun fetchBuyerOrders() {
+    private fun fetchCompletedOrders() {
         val prefs = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
         val token = prefs.getString("token", null)
 
@@ -116,7 +110,7 @@ class ActiveOrdersFragment : Fragment() {
             try {
                 val resp = ApiClient.apiService.getBuyerOrders(
                     token = "Bearer $token",
-                    status = null
+                    status = "completed"
                 )
 
                 withContext(Dispatchers.Main) {
@@ -124,16 +118,15 @@ class ActiveOrdersFragment : Fragment() {
                         val body = resp.body()
                         if (body?.success == true && body.data != null) {
                             val mapped = body.data.map { it.toOrderModel() }
-
                             orders.clear()
                             orders.addAll(mapped)
                             adapter.notifyDataSetChanged()
 
-                            // ✅ PENTING: sync ke CartManager untuk OrderDetailFragment
-                            CartManager.orders.clear()
-                            CartManager.orders.addAll(mapped)
+                            // optional empty state
+                            binding.tvEmptyHistory.visibility = if (orders.isEmpty()) View.VISIBLE else View.GONE
+                            binding.rvHistoryOrders.visibility = if (orders.isEmpty()) View.GONE else View.VISIBLE
                         } else {
-                            Toast.makeText(requireContext(), body?.message ?: "Gagal memuat pesanan buyer", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(requireContext(), body?.message ?: "Gagal memuat riwayat", Toast.LENGTH_SHORT).show()
                         }
                     } else {
                         val err = resp.errorBody()?.string()
