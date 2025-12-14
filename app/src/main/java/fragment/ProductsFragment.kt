@@ -1,6 +1,7 @@
 package com.example.miniproject.fragment
 
 import android.content.Context
+import android.net.Uri
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -8,17 +9,24 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import com.bumptech.glide.Glide
 import com.example.miniproject.R
 import com.example.miniproject.adapter.ProductAdapter
+import com.example.miniproject.adapter.PromoUrlAdapter
 import com.example.miniproject.data.CategoryRepository
 import com.example.miniproject.data.api.ApiClient
 import com.example.miniproject.databinding.FragmentProductsBinding
 import com.example.miniproject.model.Product
+import com.example.miniproject.data.model.PromoApi
 import kotlinx.coroutines.launch
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import java.io.File
 
 class ProductsFragment : Fragment() {
 
@@ -29,6 +37,23 @@ class ProductsFragment : Fragment() {
     private val products = mutableListOf<Product>()
     private val allProducts = mutableListOf<Product>()
     private var userRole: String = "buyer"
+
+    // === PROMO (ADD/DELETE) ===
+    private val promoList = mutableListOf<PromoApi>()
+    private lateinit var promoAdapter: PromoUrlAdapter
+    private var selectedPromoUri: Uri? = null
+
+    // promo yang sedang tampil di ViewPager (buat delete paling gampang)
+    private var currentPromoIndex: Int = 0
+
+    private val promoImagePicker =
+        registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+            uri?.let {
+                selectedPromoUri = it
+                uploadPromo(it)
+            }
+        }
+    // === END PROMO ===
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -48,16 +73,22 @@ class ProductsFragment : Fragment() {
         setupSearch()
         loadBestSellerProducts()
         setupCategories()
-
-        // 🔥 Load info toko (nama, tagline, footer, logo)
         loadStoreInfo()
+
+        // === PROMO (ADD/DELETE) ===
+        setupPromoCarousel()
+        loadPromos()
+        // === END PROMO ===
     }
 
     override fun onResume() {
         super.onResume()
-        // Refresh produk & info toko ketika balik ke fragment
         loadBestSellerProducts()
         loadStoreInfo()
+
+        // === PROMO (ADD/DELETE) ===
+        loadPromos()
+        // === END PROMO ===
     }
 
     // ================== USER DATA / ROLE ==================
@@ -66,8 +97,14 @@ class ProductsFragment : Fragment() {
         val sharedPref = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
         userRole = sharedPref.getString("role", "buyer") ?: "buyer"
 
-        // FAB dimatikan untuk semua role di halaman ini
         binding.fabAddProduct.visibility = View.GONE
+
+        val isSellerOrAdmin =
+            userRole.equals("seller", true) || userRole.equals("admin", true)
+
+        // tombol promo hanya buat seller/admin
+        binding.btnAddPromo.visibility = if (isSellerOrAdmin) View.VISIBLE else View.GONE
+        binding.btnDeletePromo.visibility = if (isSellerOrAdmin) View.VISIBLE else View.GONE
     }
 
     // ================== RECYCLER VIEW ==================
@@ -97,9 +134,7 @@ class ProductsFragment : Fragment() {
     }
 
     private fun setupCategories() {
-        val categories = CategoryRepository.getCategories()
-        // TODO: pasang adapter kategori kalau mau
-        // binding.rvCategories.adapter = ...
+        CategoryRepository.getCategories()
     }
 
     // ================== CLICK LISTENERS ==================
@@ -169,20 +204,6 @@ class ProductsFragment : Fragment() {
                     products.addAll(list)
 
                     productAdapter.notifyDataSetChanged()
-
-                    if (list.isEmpty()) {
-                        Toast.makeText(
-                            requireContext(),
-                            "Belum ada produk terlaris",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                } else {
-                    Toast.makeText(
-                        requireContext(),
-                        "Gagal load produk: ${response.code()}",
-                        Toast.LENGTH_SHORT
-                    ).show()
                 }
             } catch (e: Exception) {
                 Toast.makeText(
@@ -196,60 +217,133 @@ class ProductsFragment : Fragment() {
         }
     }
 
-    // ================== LOAD STORE INFO (HEADER + FOOTER) ==================
+    // ================== LOAD STORE INFO ==================
 
     private fun loadStoreInfo() {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val response = ApiClient.apiService.getSettings()
-
                 if (response.isSuccessful && response.body()?.success == true) {
-                    // Sama seperti di ProfileFragment: data = Map<String, Any>
                     val settings = response.body()?.data as? Map<String, Any> ?: emptyMap()
-
-                    val appName = settings["app_name"]?.toString().orEmpty()
-                    val appTagline = settings["app_tagline"]?.toString().orEmpty()
-                    val contactEmail = settings["contact_email"]?.toString().orEmpty()
-                    val contactPhone = settings["contact_phone"]?.toString().orEmpty()
-                    val appAddress = settings["app_address"]?.toString().orEmpty()
                     val logoPath = settings["app_logo"]?.toString()
 
-                    // 🔹 HEADER (atas)
-                    binding.tvStoreName.text =
-                        if (appName.isNotBlank()) appName else "🌾 Niaga Tani"
-
-                    binding.tvStoreTagline.text =
-                        if (appTagline.isNotBlank()) appTagline else "Solusi Pertanian Modern Indonesia"
-
-                    // 🔹 FOOTER (Tentang kami)
-                    if (appTagline.isNotBlank()) {
-                        binding.tvAboutTagline.text = appTagline
-                    }
-
-                    if (appAddress.isNotBlank()) {
-                        binding.tvAboutAddress.text = "📍 $appAddress"
-                    }
-
-                    if (contactPhone.isNotBlank()) {
-                        binding.tvAboutPhone.text = "📞 $contactPhone"
-                    }
-
-                    if (contactEmail.isNotBlank()) {
-                        binding.tvAboutEmail.text = "📧 $contactEmail"
-                    }
-
-                    // 🔹 Logo toko
                     if (!logoPath.isNullOrEmpty()) {
                         val logoUrl = ApiClient.getImageUrl(logoPath)
                         Glide.with(this@ProductsFragment)
                             .load(logoUrl)
-                            .placeholder(R.drawable.ic_person)
-                            .error(R.drawable.ic_person)
                             .into(binding.imgStoreLogo)
                     }
                 }
+            } catch (_: Exception) {}
+        }
+    }
+
+    // ================== PROMO (ADD/DELETE) ==================
+
+    private fun setupPromoCarousel() {
+        promoAdapter = PromoUrlAdapter(promoList)
+        binding.viewPagerPromo.adapter = promoAdapter
+        binding.dotsIndicator.attachTo(binding.viewPagerPromo)
+
+        // simpan index yang sedang tampil
+        binding.viewPagerPromo.registerOnPageChangeCallback(
+            object : androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback() {
+                override fun onPageSelected(position: Int) {
+                    currentPromoIndex = position
+                }
+            }
+        )
+
+        // Add promo
+        binding.btnAddPromo.setOnClickListener {
+            promoImagePicker.launch("image/*")
+        }
+
+        // Delete promo (hapus promo yang sedang tampil)
+        binding.btnDeletePromo.setOnClickListener {
+            if (promoList.isEmpty()) {
+                Toast.makeText(requireContext(), "Belum ada promo", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            val idx = currentPromoIndex.coerceIn(0, promoList.lastIndex)
+            val promoId = promoList[idx].id
+
+            deletePromo(promoId)
+        }
+    }
+
+    private fun loadPromos() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val res = ApiClient.apiService.getActivePromos()
+                if (res.isSuccessful && res.body()?.success == true) {
+                    promoList.clear()
+                    promoList.addAll(res.body()?.data?.promos ?: emptyList())
+                    promoAdapter.notifyDataSetChanged()
+
+                    // reset index biar aman
+                    currentPromoIndex = 0
+                }
+            } catch (_: Exception) {}
+        }
+    }
+
+    private fun uploadPromo(uri: Uri) {
+        val pref = requireContext().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
+        val token = pref.getString("token", null) ?: run {
+            Toast.makeText(requireContext(), "Token kosong. Login ulang.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val input = requireContext().contentResolver.openInputStream(uri)
+                    ?: throw Exception("Gagal baca file")
+
+                val file = File.createTempFile("promo_", ".jpg", requireContext().cacheDir)
+                file.outputStream().use { out -> input.copyTo(out) }
+
+                val body = file.asRequestBody("image/*".toMediaTypeOrNull())
+                val part = MultipartBody.Part.createFormData("image", file.name, body)
+
+                val res = ApiClient.apiService.uploadPromo("Bearer $token", part)
+                if (res.isSuccessful && res.body()?.success == true) {
+                    Toast.makeText(requireContext(), "Promo berhasil ditambahkan", Toast.LENGTH_SHORT).show()
+                    loadPromos()
+                } else {
+                    val err = res.errorBody()?.string()
+                    Toast.makeText(requireContext(), "Gagal tambah promo: ${res.code()} $err", Toast.LENGTH_LONG).show()
+                }
             } catch (e: Exception) {
-                // Jangan spam toast di home, cukup diam kalau gagal
+                Toast.makeText(requireContext(), e.message ?: "Error upload", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun deletePromo(promoId: Int) {
+        val pref = requireContext().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
+        val token = pref.getString("token", null) ?: run {
+            Toast.makeText(requireContext(), "Token kosong. Login ulang.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val res = ApiClient.apiService.deletePromo(
+                    authHeader = "Bearer $token",
+                    body = mapOf("id" to promoId)
+                )
+
+                if (res.isSuccessful && res.body()?.success == true) {
+                    Toast.makeText(requireContext(), "Promo berhasil dihapus", Toast.LENGTH_SHORT).show()
+                    loadPromos()
+                } else {
+                    val err = res.errorBody()?.string()
+                    Toast.makeText(requireContext(), "Gagal hapus promo: ${res.code()} $err", Toast.LENGTH_LONG).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), e.message ?: "Error delete", Toast.LENGTH_LONG).show()
             }
         }
     }

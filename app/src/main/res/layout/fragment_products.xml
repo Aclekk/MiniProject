@@ -162,16 +162,7 @@
                     android:paddingBottom="20dp"
                     android:paddingTop="8dp">
 
-                    <TextView
-                        android:id="@+id/tvPromoTitle"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Promo Spesial"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:textColor="#2D5016"
-                        android:layout_marginBottom="10dp"
-                        android:layout_marginTop="6dp" />
+
 
                     <androidx.cardview.widget.CardView
                         android:layout_width="match_parent"
@@ -196,6 +187,32 @@
                         app:dotsSize="10dp"
                         app:dotsSpacing="8dp"
                         app:selectedDotColor="#5C8A3C" />
+                    <!-- tombol add promo, nanti cuma tampil untuk seller -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnAddPromo"
+                        android:layout_width="wrap_content"
+                        android:layout_height="36dp"
+                        android:text="+ Promo"
+                        android:textAllCaps="false"
+                        android:textSize="12sp"
+                        android:paddingHorizontal="14dp"
+                        app:cornerRadius="12dp"
+                        android:backgroundTint="#5C8A3C"
+                        android:textColor="#FFFFFF"
+                        android:visibility="gone"/>
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnDeletePromo"
+                        android:layout_width="wrap_content"
+                        android:layout_height="36dp"
+                        android:text="Hapus Promo"
+                        android:textAllCaps="false"
+                        android:textSize="12sp"
+                        android:paddingHorizontal="14dp"
+                        app:cornerRadius="12dp"
+                        android:backgroundTint="#C62828"
+                        android:textColor="#FFFFFF"
+                        android:layout_marginTop="8dp"
+                        android:visibility="gone"/>
                 </LinearLayout>
 
                 <!-- 📂 KATEGORI SECTION -->

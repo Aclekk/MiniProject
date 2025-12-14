@@ -293,6 +293,21 @@ interface ApiService {
         @Query("start_date") startDate: String?,
         @Query("end_date") endDate: String?
     ): Response<BaseResponse<SalesReportData>>
+    // ===== PROMO (BARU) =====
+    @GET("promos/active.php")
+    suspend fun getActivePromos(): Response<BaseResponse<PromoActiveData>>
+
+    @Multipart
+    @POST("promos/create.php")
+    suspend fun uploadPromo(
+        @Header("Authorization") authHeader: String,
+        @Part image: MultipartBody.Part
+    ): Response<BaseResponse<PromoCreateData>>
+    @POST("promos/delete.php")
+    suspend fun deletePromo(
+        @Header("Authorization") authHeader: String,
+        @Body body: Map<String, Int>
+    ): Response<BaseResponse<Any>>
 
     // ========== NOTIFICATIONS ==========
     @GET("api/notifications/list.php")
