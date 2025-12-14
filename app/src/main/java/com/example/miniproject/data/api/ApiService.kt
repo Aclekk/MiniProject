@@ -308,4 +308,11 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Body request: Map<String, Any>
     ): Response<BaseResponse<Any>>
+
+    // ✅ TAMBAHAN (opsional - untuk recalculate manual)
+    @POST("api/seller/recalculate_report.php")
+    suspend fun recalculateSalesReport(
+        @Header("Authorization") token: String,
+        @Body request: Map<String, String>
+    ): Response<BaseResponse<Any>>
 }

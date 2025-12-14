@@ -7,6 +7,7 @@ import retrofit2.converter.moshi.MoshiConverterFactory
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import java.util.concurrent.TimeUnit
+import com.example.miniproject.data.api.ApiClient
 
 object ApiClient {
 

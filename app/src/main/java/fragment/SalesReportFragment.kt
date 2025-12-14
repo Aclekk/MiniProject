@@ -1,7 +1,7 @@
 package com.example.miniproject.fragment
 
-import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,14 +11,19 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.miniproject.adapter.SalesReportAdapter
 import com.example.miniproject.data.api.ApiClient
-import com.example.miniproject.data.model.SalesReportData
 import com.example.miniproject.databinding.FragmentSalesReportBinding
+import com.example.miniproject.utils.SessionManager
 import kotlinx.coroutines.launch
+import java.text.NumberFormat
+import java.util.*
 
 class SalesReportFragment : Fragment() {
 
     private var _binding: FragmentSalesReportBinding? = null
     private val binding get() = _binding!!
+
+    private lateinit var adapter: SalesReportAdapter
+    private lateinit var sessionManager: SessionManager
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -32,46 +37,63 @@ class SalesReportFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        binding.rvSalesReport.layoutManager = LinearLayoutManager(requireContext())
-        fetchSalesReport()
+        sessionManager = SessionManager(requireContext())
+        setupRecyclerView()
+        loadSalesReport("all")
     }
 
-    private fun fetchSalesReport() {
-        val prefs = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
-        val token = prefs.getString("token", null)
+    private fun setupRecyclerView() {
+        adapter = SalesReportAdapter()
+        binding.rvSalesReport.apply {
+            layoutManager = LinearLayoutManager(requireContext())
+            adapter = this@SalesReportFragment.adapter
+        }
+    }
+
+    private fun loadSalesReport(period: String) {
+        val token = sessionManager.getToken()
 
         if (token.isNullOrEmpty()) {
-            Toast.makeText(requireContext(), "Token hilang, login ulang", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Token tidak ditemukan, login ulang", Toast.LENGTH_SHORT).show()
             return
         }
+
+        Log.d("SalesReport", "Loading report with period: $period")
+        Log.d("SalesReport", "Token: ${token.take(20)}...")
 
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val response = ApiClient.apiService.getSalesReport(
                     token = "Bearer $token",
-                    period = null,
+                    period = period,
                     startDate = null,
                     endDate = null
                 )
 
-                if (response.isSuccessful) {
-                    val body = response.body()
+                Log.d("SalesReport", "Response code: ${response.code()}")
 
-                    if (body?.success == true && body.data != null) {
-                        bindReport(body.data)
+                if (response.isSuccessful) {
+                    val responseBody = response.body()
+                    Log.d("SalesReport", "Response body: $responseBody")
+
+                    if (responseBody?.success == true) {
+                        val salesData = responseBody.data
+                        if (salesData != null) {
+                            updateUI(salesData)
+                            Log.d("SalesReport", "Data loaded: ${salesData.reports.size} reports")
+                        } else {
+                            Toast.makeText(requireContext(), "Data tidak tersedia", Toast.LENGTH_SHORT).show()
+                            Log.e("SalesReport", "Data is null")
+                        }
                     } else {
-                        Toast.makeText(
-                            requireContext(),
-                            body?.message ?: "Gagal memuat laporan",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        val message = responseBody?.message ?: "Gagal memuat laporan"
+                        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+                        Log.e("SalesReport", "API error: $message")
                     }
                 } else {
-                    Toast.makeText(
-                        requireContext(),
-                        "Error ${response.code()}",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    val errorBody = response.errorBody()?.string()
+                    Toast.makeText(requireContext(), "Error: ${response.code()}", Toast.LENGTH_SHORT).show()
+                    Log.e("SalesReport", "HTTP error ${response.code()}: $errorBody")
                 }
 
             } catch (e: Exception) {
@@ -80,40 +102,40 @@ class SalesReportFragment : Fragment() {
                     "Gagal konek: ${e.localizedMessage}",
                     Toast.LENGTH_SHORT
                 ).show()
+                Log.e("SalesReport", "Exception: ${e.message}", e)
             }
         }
     }
 
-    private fun bindReport(data: SalesReportData) {
-        val summary = data.summary
+    private fun updateUI(salesData: com.example.miniproject.data.model.SalesReportData) {
+        val summary = salesData.summary
+        val currencyFormat = NumberFormat.getCurrencyInstance(Locale("id", "ID"))
 
-        // =====================
-        // SUMMARY HEADER
-        // =====================
-        binding.tvTotalSales.text =
-            "Rp ${String.format("%,d", summary.totalRevenue.toInt())}"
-        binding.tvTotalOrders.text =
-            "${summary.totalOrders} Pesanan"
+        // Update summary cards - hanya yang ADA di layout
+        binding.tvTotalSales.text = currencyFormat.format(summary.totalRevenue)
+        binding.tvTotalOrders.text = "${summary.totalOrders} Pesanan"
 
-        binding.tvTodaySales.text =
-            "Rp ${String.format("%,d", summary.todayRevenue.toInt())}"
-        binding.tvTodayOrders.text =
-            "${summary.todayOrders} Pesanan hari ini"
+        binding.tvTodaySales.text = currencyFormat.format(summary.todayRevenue)
+        binding.tvTodayOrders.text = "${summary.todayOrders} Pesanan"
 
-        binding.tvMonthSales.text =
-            "Rp ${String.format("%,d", summary.monthRevenue.toInt())}"
-        binding.tvMonthOrders.text =
-            "${summary.monthOrders} Pesanan bulan ini"
+        binding.tvMonthSales.text = currencyFormat.format(summary.monthRevenue)
+        binding.tvMonthOrders.text = "${summary.monthOrders} Pesanan"
 
-        // =====================
-        // LIST LAPORAN HARIAN
-        // =====================
-        binding.rvSalesReport.adapter = SalesReportAdapter(data.reports)
+        // Update list
+        adapter.submitList(salesData.reports)
+
+        // Show/hide RecyclerView based on data
+        if (salesData.reports.isEmpty()) {
+            binding.rvSalesReport.visibility = View.GONE
+            Toast.makeText(requireContext(), "Belum ada data penjualan", Toast.LENGTH_SHORT).show()
+        } else {
+            binding.rvSalesReport.visibility = View.VISIBLE
+        }
     }
 
     override fun onResume() {
         super.onResume()
-        fetchSalesReport()
+        loadSalesReport("all")
     }
 
     override fun onDestroyView() {
