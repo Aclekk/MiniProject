@@ -3,11 +3,13 @@ package com.example.miniproject.adapter
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.example.miniproject.data.Order
+import com.example.miniproject.data.model.SalesReportRow
 import com.example.miniproject.databinding.ItemSalesReportBinding
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 class SalesReportAdapter(
-    private val orders: List<Order>
+    private val reports: List<SalesReportRow>
 ) : RecyclerView.Adapter<SalesReportAdapter.SalesViewHolder>() {
 
     inner class SalesViewHolder(val binding: ItemSalesReportBinding) :
@@ -23,14 +25,27 @@ class SalesReportAdapter(
     }
 
     override fun onBindViewHolder(holder: SalesViewHolder, position: Int) {
-        val order = orders[position]
+        val row = reports[position]
 
-        holder.binding.tvOrderId.text = "Order #${order.id}"
-        holder.binding.tvOrderDate.text = "12 Okt 2025" // Dummy date
-        holder.binding.tvOrderItems.text = order.products.joinToString { it.name }
-        holder.binding.tvOrderTotal.text = "Rp ${String.format("%,d", order.totalPrice.toInt())}"
-        holder.binding.tvPaymentMethod.text = order.paymentMethod
+        holder.binding.tvOrderId.text = "Report #${row.id}"
+        holder.binding.tvOrderDate.text = formatDate(row.reportDate)
+
+        holder.binding.tvOrderItems.text = "Items terjual: ${row.totalItemsSold}"
+        holder.binding.tvOrderTotal.text = "Rp ${String.format("%,d", row.totalRevenue.toInt())}"
+        holder.binding.tvPaymentMethod.text = "Total pesanan: ${row.totalOrders}"
     }
 
-    override fun getItemCount() = orders.size
+    override fun getItemCount() = reports.size
+
+    private fun formatDate(date: String): String {
+        return try {
+            // backend: YYYY-MM-DD
+            val input = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            val output = SimpleDateFormat("dd MMM yyyy", Locale("id", "ID"))
+            val d = input.parse(date)
+            if (d != null) output.format(d) else date
+        } catch (_: Exception) {
+            date
+        }
+    }
 }

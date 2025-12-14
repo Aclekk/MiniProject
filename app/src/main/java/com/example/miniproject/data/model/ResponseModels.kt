@@ -121,14 +121,6 @@ data class TopProduct(
 // ============================================
 // 📦 SALES REPORT DATA
 // ============================================
-data class SalesReportData(
-    @SerializedName("period") val period: String?,
-    @SerializedName("date_range") val dateRange: DateRange?,
-    @SerializedName("summary") val summary: SalesSummary?,
-    @SerializedName("daily_sales") val dailySales: List<DailySale>?,
-    @SerializedName("product_sales") val productSales: List<ProductSale>?,
-    @SerializedName("sales_by_status") val salesByStatus: List<SalesByStatus>?
-)
 
 data class DateRange(
     @SerializedName("start") val start: String?,
