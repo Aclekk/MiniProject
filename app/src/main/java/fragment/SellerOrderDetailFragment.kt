@@ -18,6 +18,8 @@ class SellerOrderDetailFragment : Fragment() {
     private var _binding: FragmentOrderDetailBinding? = null
     private val binding get() = _binding!!
 
+    private val TAG = "SELLER_ORDER_DETAIL"
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -37,7 +39,7 @@ class SellerOrderDetailFragment : Fragment() {
             return
         }
 
-        // 🔒 SELLER = READ ONLY (semua button hilang)
+        // ❌ SELLER TIDAK BOLEH ADA BUTTON
         binding.btnNextStatus.visibility = View.GONE
         binding.btnRateNow.visibility = View.GONE
 
@@ -49,7 +51,7 @@ class SellerOrderDetailFragment : Fragment() {
         val token = prefs.getString("token", null)
 
         if (token.isNullOrEmpty()) {
-            Toast.makeText(requireContext(), "Token kosong", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Token kosong. Login ulang.", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -60,49 +62,77 @@ class SellerOrderDetailFragment : Fragment() {
                     orderId = orderId
                 )
 
+                Log.d(TAG, "HTTP ${resp.code()}")
+                Log.d(TAG, "RAW BODY = ${resp.body()}")
+
                 if (!resp.isSuccessful || resp.body()?.success != true) {
                     Toast.makeText(requireContext(), "Gagal memuat detail order", Toast.LENGTH_SHORT).show()
                     return@launch
                 }
 
-                val data = resp.body()?.data ?: return@launch
-
-                // ✅ Akses data sebagai Map (aman untuk JSON dynamic)
-                val orderMap = data.order as? Map<*, *> ?: emptyMap<String, Any>()
-                val items = data.items ?: emptyList()
-
-                // ✅ Render data dengan fallback aman
-                binding.tvOrderId.text = "🧾 Order #$orderId"
-                binding.tvOrderStatus.text = "📦 Status: ${orderMap["status"] ?: "-"}"
-                binding.tvOrderPayment.text = "💳 Metode Pembayaran: ${orderMap["payment_method"] ?: "-"}"
-                binding.tvOrderAddress.text = "📍 Alamat: ${orderMap["address"] ?: "-"}"
-
-                val totalPrice = orderMap["total_price"]?.toString() ?: "0"
-                binding.tvOrderTotal.text = "💰 Total: Rp $totalPrice"
-
-                // ✅ Build list produk dari items
-                val productText = items.joinToString("\n") { item ->
-                    val itemMap = item as? Map<*, *> ?: emptyMap<String, Any>()
-                    val name = itemMap["product_name"] ?: "Produk"
-                    val qty = itemMap["quantity"] ?: "1"
-                    "- $name x$qty"
+                val data = resp.body()?.data
+                if (data == null) {
+                    Toast.makeText(requireContext(), "Data order kosong", Toast.LENGTH_SHORT).show()
+                    return@launch
                 }
 
-                binding.tvOrderProducts.text = if (productText.isBlank()) {
-                    "🛒 Produk:\n-"
-                } else {
-                    "🛒 Produk:\n$productText"
-                }
+                renderOrderDetail(data)
 
             } catch (e: Exception) {
-                Log.e("SELLER_DETAIL", "Error: ${e.message}", e)
-                Toast.makeText(
-                    requireContext(),
-                    "Error: ${e.localizedMessage}",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Log.e(TAG, "ERROR loadOrderDetail", e)
+                Toast.makeText(requireContext(), e.localizedMessage ?: "Error", Toast.LENGTH_SHORT).show()
             }
         }
+    }
+
+    private fun renderOrderDetail(data: Any) {
+        /**
+         * Struktur backend diasumsikan:
+         *
+         * data.order.id
+         * data.order.status
+         * data.order.payment_method
+         * data.order.shipping_address
+         * data.order.total_price
+         *
+         * data.items[].product_name
+         * data.items[].qty
+         */
+
+        val order = data.javaClass.getField("order").get(data)
+        val items = data.javaClass.getField("items").get(data) as List<*>
+
+        val orderClass = order.javaClass
+
+        val id = orderClass.getField("id").get(order)
+        val status = orderClass.getField("status").get(order)
+        val paymentMethod = orderClass.getField("payment_method").get(order)
+        val address = orderClass.getField("shipping_address").get(order)
+        val totalPrice = orderClass.getField("total_price").get(order)
+
+        binding.tvOrderId.text = "Order #$id"
+        binding.tvOrderStatus.text = "Status: ${status ?: "-"}"
+        binding.tvOrderPayment.text = "Metode Pembayaran: ${paymentMethod ?: "-"}"
+        binding.tvOrderAddress.text = "Alamat: ${address ?: "-"}"
+
+        val productText = items.joinToString("\n") { item ->
+            val cls = item!!.javaClass
+            val name = cls.getField("product_name").get(item)
+            val qty = cls.getField("qty").get(item)
+            "- $name x$qty"
+        }
+
+        binding.tvOrderProducts.text =
+            if (productText.isNotBlank()) "Produk:\n$productText"
+            else "Produk: -"
+
+        val totalFormatted = try {
+            String.format("%,d", (totalPrice as Number).toInt())
+        } catch (_: Exception) {
+            "0"
+        }
+
+        binding.tvOrderTotal.text = "Total: Rp $totalFormatted"
     }
 
     override fun onDestroyView() {
