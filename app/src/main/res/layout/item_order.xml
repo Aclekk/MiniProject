@@ -5,6 +5,9 @@
     android:layout_height="wrap_content"
     android:layout_marginHorizontal="12dp"
     android:layout_marginVertical="6dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground"
     app:cardCornerRadius="16dp"
     app:cardElevation="3dp"
     app:strokeColor="#4CAF50"
@@ -39,6 +42,7 @@
                     android:textColor="#000000"
                     android:textSize="16sp" />
 
+                <!-- NOTE: belum ada id di xml kamu; biarin sesuai punyamu -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -130,7 +134,7 @@
                 android:textSize="16sp" />
         </LinearLayout>
 
-        <!-- 🔥🔥🔥 ACTION BUTTON - INI YANG PENTING! 🔥🔥🔥 -->
+        <!-- ACTION BUTTON -->
         <Button
             android:id="@+id/btnNextStatus"
             android:layout_width="match_parent"

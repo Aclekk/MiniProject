@@ -13,6 +13,7 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.miniproject.R
 import com.example.miniproject.adapter.OrderAdapter
 import com.example.miniproject.data.Order
 import com.example.miniproject.data.api.ApiClient
@@ -32,20 +33,22 @@ class AdminOrderListFragment : Fragment() {
     private lateinit var orderAdapter: OrderAdapter
     private val orders: MutableList<Order> = mutableListOf()
 
-    // ✅ BroadcastReceiver untuk auto-refresh
     private val refreshReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             when (intent?.action) {
                 MyFirebaseMessagingService.ACTION_REFRESH_ORDERS,
                 MyFirebaseMessagingService.ACTION_ORDER_STATUS_CHANGED -> {
-                    // ✅ Auto-refresh list saat dapat notifikasi
                     fetchSellerOrders()
                 }
             }
         }
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
         _binding = FragmentAdminOrderListBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -58,7 +61,6 @@ class AdminOrderListFragment : Fragment() {
 
     override fun onStart() {
         super.onStart()
-        // ✅ Register receiver untuk refresh realtime
         val filter = IntentFilter().apply {
             addAction(MyFirebaseMessagingService.ACTION_REFRESH_ORDERS)
             addAction(MyFirebaseMessagingService.ACTION_ORDER_STATUS_CHANGED)
@@ -81,7 +83,6 @@ class AdminOrderListFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        // ✅ Refresh setiap kali fragment visible
         fetchSellerOrders()
     }
 
@@ -94,12 +95,33 @@ class AdminOrderListFragment : Fragment() {
             onActionClick = { order ->
                 val next = nextStatusForSeller(order.status)
                 if (next == null) {
-                    Toast.makeText(requireContext(), "Order ini tidak bisa diubah lagi.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        requireContext(),
+                        "Order ini tidak bisa diubah lagi.",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 } else {
                     updateOrderStatusToServer(order, next)
                 }
+            },
+            onItemClick = { order ->
+                // ✅ FIX: Pakai SellerOrderDetailFragment (read-only)
+                val fragment = SellerOrderDetailFragment().apply {
+                    arguments = Bundle().apply {
+                        putInt("orderId", order.id)
+                    }
+                }
+
+                // ✅ FIX: Pakai requireActivity() karena fragment_container ada di MainActivity
+                requireActivity()
+                    .supportFragmentManager
+                    .beginTransaction()
+                    .replace(R.id.fragment_container, fragment)
+                    .addToBackStack(null)
+                    .commit()
             }
         )
+
         binding.rvAdminOrders.adapter = orderAdapter
     }
 
@@ -117,15 +139,27 @@ class AdminOrderListFragment : Fragment() {
                             val mapped = body.data.map { it.toOrderModel() }
                             orderAdapter.replaceAll(mapped)
                         } else {
-                            Toast.makeText(requireContext(), body?.message ?: "Gagal memuat pesanan", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                requireContext(),
+                                body?.message ?: "Gagal memuat pesanan",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
                     } else {
-                        Toast.makeText(requireContext(), "HTTP ${resp.code()}", Toast.LENGTH_LONG).show()
+                        Toast.makeText(
+                            requireContext(),
+                            "HTTP ${resp.code()}",
+                            Toast.LENGTH_LONG
+                        ).show()
                     }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(requireContext(), "Error: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        requireContext(),
+                        "Error: ${e.localizedMessage}",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             }
         }
@@ -149,21 +183,29 @@ class AdminOrderListFragment : Fragment() {
 
                 withContext(Dispatchers.Main) {
                     if (resp.isSuccessful && resp.body()?.success == true) {
-                        // ✅ Update lokal dulu biar smooth
                         order.status = nextStatusDb
                         orderAdapter.notifyDataSetChanged()
-
-                        // ✅ Fetch ulang untuk sinkronisasi full
                         fetchSellerOrders()
-
-                        Toast.makeText(requireContext(), "Status berhasil diupdate!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            requireContext(),
+                            "Status berhasil diupdate!",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     } else {
-                        Toast.makeText(requireContext(), "Gagal update status", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            requireContext(),
+                            "Gagal update status",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(requireContext(), "Error: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        requireContext(),
+                        "Error: ${e.localizedMessage}",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             }
         }

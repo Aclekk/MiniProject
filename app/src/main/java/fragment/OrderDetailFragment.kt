@@ -122,16 +122,16 @@ class OrderDetailFragment : Fragment() {
     private fun renderOrder(order: com.example.miniproject.data.Order) {
         Log.d(TAG, "renderOrder() status=${order.status} hasReview=${order.hasReview}")
 
-        binding.tvOrderId.text = "Order #${order.id}"
-        binding.tvOrderStatus.text = "Status: ${order.status}"
-        binding.tvOrderPayment.text = "Metode Pembayaran: ${order.paymentMethod}"
-        binding.tvOrderAddress.text = "Alamat: ${order.address}"
+        binding.tvOrderId.text = "🧾 Order #${order.id}"
+        binding.tvOrderStatus.text = "📦 Status: ${order.status}"
+        binding.tvOrderPayment.text = "💳 Metode Pembayaran: ${order.paymentMethod}"
+        binding.tvOrderAddress.text = "📍 Alamat: ${order.address}"
 
         val productList = order.products.joinToString("\n") {
             "- ${it.name} (Rp ${String.format("%,d", it.price.toInt())})"
         }
-        binding.tvOrderProducts.text = "Produk:\n$productList"
-        binding.tvOrderTotal.text = "Total: Rp ${String.format("%,d", order.totalPrice.toInt())}"
+        binding.tvOrderProducts.text = "🛒 Produk:\n$productList"
+        binding.tvOrderTotal.text = "💰 Total: Rp ${String.format("%,d", order.totalPrice.toInt())}"
 
         updateButtonVisibility(order)
     }
@@ -165,10 +165,6 @@ class OrderDetailFragment : Fragment() {
         }
     }
 
-    /**
-     * ✅ Ambil product_id dari order_items via GET order detail
-     * Ini buat ngehindarin mismatch ID lokal vs ID item order di server
-     */
     private fun fetchOrderItemProductIds(orderId: Int, onDone: (List<Int>) -> Unit) {
         val prefs = requireContext().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
         val token = prefs.getString("token", null)
@@ -201,7 +197,7 @@ class OrderDetailFragment : Fragment() {
                     return@launch
                 }
 
-                val items = data.items // items default emptyList() harusnya aman
+                val items = data.items
                 val productIds = items.mapNotNull { it.productId }
 
                 Log.d("ORDER_PID", "items=${items.size} productIds=$productIds rawItems=$items")
@@ -209,7 +205,7 @@ class OrderDetailFragment : Fragment() {
                 if (productIds.isEmpty()) {
                     Toast.makeText(
                         requireContext(),
-                        "product_id kosong dari server. Ini berarti mapping JSON kamu mismatch atau backend kirim null.",
+                        "product_id kosong dari server",
                         Toast.LENGTH_LONG
                     ).show()
                     return@launch
@@ -224,10 +220,6 @@ class OrderDetailFragment : Fragment() {
         }
     }
 
-
-    /**
-     * GET order terbaru dari server
-     */
     private fun reloadOrderDetailFromServer(orderId: Int, onDone: (String) -> Unit) {
         val prefs = requireContext().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
         val token = prefs.getString("token", null)
@@ -241,17 +233,14 @@ class OrderDetailFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                Log.d("ORDER_RELOAD", "GET orders/detail.php?id=$orderId tokenPrefix=${token.take(12)}...")
+                Log.d("ORDER_RELOAD", "GET orders/detail.php?id=$orderId")
 
                 val resp = ApiClient.apiService.getOrderDetail(
                     token = "Bearer $token",
                     orderId = orderId
                 )
 
-                val bodyStr = resp.body()?.toString()
-                val errStr = resp.errorBody()?.string()
-
-                Log.d("ORDER_RELOAD", "RESP code=${resp.code()} body=$bodyStr err=$errStr")
+                Log.d("ORDER_RELOAD", "RESP code=${resp.code()}")
 
                 if (resp.isSuccessful && resp.body()?.success == true) {
                     val latestStatus = resp.body()
@@ -279,9 +268,6 @@ class OrderDetailFragment : Fragment() {
         }
     }
 
-    /**
-     * Update status completed ke backend
-     */
     private fun markOrderCompletedToServer(orderId: Int, onDone: (String) -> Unit) {
         val prefs = requireContext().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
         val token = prefs.getString("token", null)
@@ -297,17 +283,14 @@ class OrderDetailFragment : Fragment() {
                     "status" to "completed"
                 )
 
-                Log.d("ORDER_COMPLETE", "REQ body=$body tokenPrefix=${token.take(12)}...")
+                Log.d("ORDER_COMPLETE", "REQ body=$body")
 
                 val resp = ApiClient.apiService.updateOrderStatus(
                     token = "Bearer $token",
                     body = body
                 )
 
-                val bodyStr = resp.body()?.toString()
-                val errStr = resp.errorBody()?.string()
-
-                Log.d("ORDER_COMPLETE", "RESP code=${resp.code()} body=$bodyStr err=$errStr")
+                Log.d("ORDER_COMPLETE", "RESP code=${resp.code()}")
 
                 if (resp.isSuccessful && resp.body()?.success == true) {
                     onDone("completed")
@@ -333,7 +316,7 @@ class OrderDetailFragment : Fragment() {
                 val rating = ratingFloat.toInt()
                 val comment = etComment.text.toString().trim().ifEmpty { "Tidak ada komentar" }
 
-                Log.d(TAG, "DIALOG_SUBMIT clicked | ratingFloat=$ratingFloat rating=$rating comment=$comment")
+                Log.d(TAG, "DIALOG_SUBMIT clicked | rating=$rating")
 
                 if (ratingFloat <= 0f) {
                     Toast.makeText(requireContext(), "Rating minimal 1 bintang ⭐", Toast.LENGTH_SHORT).show()
@@ -348,17 +331,9 @@ class OrderDetailFragment : Fragment() {
             .show()
     }
 
-    /**
-     * Submit review -> kalau sukses -> update status completed -> update UI lokal
-     */
     private fun submitReviewsToApi(orderId: Int, productIds: List<Int>, rating: Int, comment: String) {
         val prefs = requireContext().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
         val token = prefs.getString("token", null)
-
-        Log.d(
-            TAG,
-            "submitReviewsToApi() HIT ✅ tokenNullOrEmpty=${token.isNullOrEmpty()} orderId=$orderId pids=${productIds.joinToString(",")}"
-        )
 
         if (token.isNullOrEmpty()) {
             Toast.makeText(requireContext(), "Token kosong. Login ulang dulu.", Toast.LENGTH_SHORT).show()
@@ -382,19 +357,15 @@ class OrderDetailFragment : Fragment() {
 
                     val res = ApiClient.apiService.addReview(authHeader, req)
 
-                    val bodyStr = res.body()?.toString()
-                    val errStr = res.errorBody()?.string()
-
-                    Log.d("REVIEW_ADD", "RESP code=${res.code()} body=$bodyStr err=$errStr")
+                    Log.d("REVIEW_ADD", "RESP code=${res.code()}")
 
                     if (!res.isSuccessful || res.body()?.success != true) {
-                        val serverMsg = res.body()?.message ?: errStr ?: "Gagal kirim review (no error body)"
+                        val serverMsg = res.body()?.message ?: "Gagal kirim review"
                         Toast.makeText(requireContext(), serverMsg, Toast.LENGTH_LONG).show()
                         return@launch
                     }
                 }
 
-                // Setelah review sukses -> update status completed
                 markOrderCompletedToServer(orderId) {
                     CartManager.orders.find { it.id == orderId }?.apply {
                         status = "completed"
@@ -417,4 +388,3 @@ class OrderDetailFragment : Fragment() {
         _binding = null
     }
 }
-

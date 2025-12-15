@@ -15,7 +15,8 @@ import com.example.miniproject.util.statusLabel
 class OrderAdapter(
     var orders: MutableList<Order>,
     private val role: String? = null,
-    private val onActionClick: ((Order) -> Unit)? = null
+    private val onActionClick: ((Order) -> Unit)? = null,
+    private val onItemClick: ((Order) -> Unit)? = null // ✅ BARU: klik card untuk buka detail
 ) : RecyclerView.Adapter<OrderAdapter.OrderViewHolder>() {
 
     inner class OrderViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -26,7 +27,6 @@ class OrderAdapter(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): OrderViewHolder {
-        // ✅ FIX UTAMA: pakai layout SELLER yang benar
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_order, parent, false)
         return OrderViewHolder(view)
@@ -38,8 +38,7 @@ class OrderAdapter(
         val order = orders[position]
 
         holder.tvOrderId.text = "Order #${order.id}"
-        holder.tvTotalPayment.text =
-            "Rp ${String.format("%,d", order.totalPrice.toInt())}"
+        holder.tvTotalPayment.text = "Rp ${String.format("%,d", order.totalPrice.toInt())}"
 
         // ✅ Normalize status dari DB
         val dbStatus = normalizeDbStatus(order.status)
@@ -70,6 +69,15 @@ class OrderAdapter(
                 holder.tvStatus.setBackgroundResource(R.drawable.bg_status_cancelled)
                 holder.tvStatus.setTextColor(Color.parseColor("#D32F2F"))
             }
+            else -> {
+                holder.tvStatus.setBackgroundResource(R.drawable.bg_status_pending)
+                holder.tvStatus.setTextColor(Color.GRAY)
+            }
+        }
+
+        // ✅ Klik card untuk buka detail (fitur baru)
+        holder.itemView.setOnClickListener {
+            onItemClick?.invoke(order)
         }
 
         // ✅ Button logic (TIDAK DIUBAH)
