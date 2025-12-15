@@ -51,6 +51,7 @@ class CategoriesFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         (activity as? AppCompatActivity)?.setSupportActionBar(binding.toolbar)
+        (activity as? AppCompatActivity)?.supportActionBar?.title = ""
 
         getUserData()
         setupRecyclerViews()
@@ -58,6 +59,7 @@ class CategoriesFragment : Fragment() {
         loadCategories()
         loadProducts()
     }
+
 
     override fun onResume() {
         super.onResume()

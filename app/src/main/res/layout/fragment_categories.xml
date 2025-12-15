@@ -7,32 +7,29 @@
     android:background="@drawable/gradient_background_main"
     tools:context=".fragment.CategoriesFragment">
 
-    <!-- Premium App Bar with Green Background -->
+    <!-- 🌿 APP BAR -->
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="#2E7D32"
-        android:elevation="8dp"
+        android:elevation="6dp"
         android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
 
         <com.google.android.material.appbar.CollapsingToolbarLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:layout_scrollFlags="scroll|exitUntilCollapsed|snap"
-            app:contentScrim="#2E7D32"
-            app:expandedTitleMarginStart="24dp"
-            app:expandedTitleMarginBottom="28dp"
-            app:expandedTitleTextAppearance="@style/TextAppearance.App.CollapsingToolbar.Expanded">
+            android:layout_height="200dp"
+            app:layout_scrollFlags="scroll|exitUntilCollapsed"
+            app:contentScrim="#2E7D32">
 
-            <!-- ✅ HEADER SIMPLE - CUMA "CATEGORIES" -->
+            <!-- HEADER TITLE -->
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:orientation="vertical"
-                android:padding="24dp"
-                android:paddingTop="32dp"
-                android:paddingBottom="24dp"
+                android:gravity="center_vertical"
+                android:paddingStart="24dp"
+                android:paddingEnd="24dp"
                 app:layout_collapseMode="parallax">
 
                 <TextView
@@ -40,9 +37,8 @@
                     android:layout_height="wrap_content"
                     android:text="Categories"
                     android:textColor="@android:color/white"
-                    android:textSize="32sp"
-                    android:textStyle="bold"
-                    android:letterSpacing="-0.02" />
+                    android:textSize="30sp"
+                    android:textStyle="bold" />
 
             </LinearLayout>
 
@@ -51,12 +47,12 @@
                 android:layout_width="match_parent"
                 android:layout_height="?attr/actionBarSize"
                 app:layout_collapseMode="pin"
-                app:titleTextColor="@android:color/white" />
+                app:title="" />
 
         </com.google.android.material.appbar.CollapsingToolbarLayout>
-
     </com.google.android.material.appbar.AppBarLayout>
 
+    <!-- 🌾 CONTENT -->
     <androidx.core.widget.NestedScrollView
         android:id="@+id/nestedScrollView"
         android:layout_width="match_parent"
@@ -68,33 +64,29 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingTop="16dp"
-            android:paddingBottom="100dp">
+            android:paddingBottom="120dp">
 
-            <!-- Search Bar Premium -->
+            <!-- 🔍 SEARCH -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:layout_marginEnd="16dp"
-                android:layout_marginBottom="20dp"
-                app:cardCornerRadius="28dp"
-                app:cardElevation="8dp"
+                android:layout_margin="16dp"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="6dp"
                 app:cardBackgroundColor="@android:color/white">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:padding="16dp"
+                    android:padding="14dp"
                     android:gravity="center_vertical">
 
                     <ImageView
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:src="@android:drawable/ic_menu_search"
-                        app:tint="#2E7D32"
-                        android:contentDescription="Search" />
+                        app:tint="#2E7D32" />
 
                     <EditText
                         android:id="@+id/etSearch"
@@ -104,44 +96,36 @@
                         android:layout_marginStart="12dp"
                         android:background="@null"
                         android:hint="Search categories..."
-                        android:textColorHint="#80000000"
-                        android:textColor="#000000"
-                        android:textSize="15sp"
-                        android:inputType="text"
-                        android:imeOptions="actionSearch" />
+                        android:textSize="14sp"
+                        android:textColor="#1A1A1A"
+                        android:textColorHint="#999999"
+                        android:inputType="text" />
 
                     <ImageView
                         android:id="@+id/ivFilter"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
                         android:src="@android:drawable/ic_menu_sort_by_size"
                         app:tint="#2E7D32"
-                        android:padding="2dp"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:background="?attr/selectableItemBackgroundBorderless"
-                        android:contentDescription="Filter" />
-
+                        android:background="?attr/selectableItemBackgroundBorderless" />
                 </LinearLayout>
-
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Section Header -->
+            <!-- 🗂 SECTION TITLE -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:paddingStart="20dp"
-                android:paddingEnd="20dp"
+                android:paddingHorizontal="20dp"
                 android:paddingBottom="12dp"
-                android:gravity="center_vertical">
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="All Categories"
-                    android:textSize="20sp"
+                    android:textSize="18sp"
                     android:textStyle="bold"
                     android:textColor="#1A1A1A" />
 
@@ -150,147 +134,63 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="View All"
-                    android:textColor="#2E7D32"
                     android:textSize="13sp"
                     android:textStyle="bold"
-                    android:clickable="true"
-                    android:focusable="true"
+                    android:textColor="#2E7D32"
                     android:padding="8dp"
                     android:background="?attr/selectableItemBackgroundBorderless" />
-
             </LinearLayout>
 
-            <!-- Categories Grid with Premium Spacing -->
+            <!-- 🧱 GRID -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvCategories"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:nestedScrollingEnabled="false"
+                android:paddingHorizontal="12dp"
                 android:clipToPadding="false"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                tools:listitem="@layout/item_category"
-                tools:itemCount="6"
+                android:nestedScrollingEnabled="false"
                 app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
-                app:spanCount="2"/>
+                app:spanCount="2"
+                tools:listitem="@layout/item_category" />
 
-            <!-- Selected Category Products Section -->
+            <!-- 📦 PRODUCTS SECTION (TETAP SAMA) -->
             <LinearLayout
                 android:id="@+id/llProductsSection"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:visibility="gone"
-                tools:visibility="visible"
                 android:layout_marginTop="24dp">
 
-                <!-- Premium Section Divider -->
                 <View
                     android:layout_width="60dp"
                     android:layout_height="4dp"
+                    android:layout_gravity="center"
                     android:background="@drawable/divider_premium"
-                    android:layout_gravity="center_horizontal"
                     android:layout_marginBottom="20dp" />
 
-                <!-- Category Title with Icon -->
-                <LinearLayout
+                <TextView
+                    android:id="@+id/tvCategoryTitle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:paddingStart="20dp"
-                    android:paddingEnd="20dp"
-                    android:paddingBottom="16dp"
-                    android:gravity="center_vertical">
+                    android:paddingHorizontal="20dp"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    android:textColor="#1A1A1A"
+                    tools:text="Products in Category" />
 
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Products in"
-                            android:textColor="#666666"
-                            android:textSize="12sp" />
-
-                        <TextView
-                            android:id="@+id/tvCategoryTitle"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textSize="22sp"
-                            android:textStyle="bold"
-                            android:textColor="#1A1A1A"
-                            android:layout_marginTop="2dp"
-                            tools:text="Electronics" />
-
-                    </LinearLayout>
-
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@android:drawable/ic_menu_view"
-                        app:tint="#2E7D32"
-                        android:contentDescription="View Mode" />
-
-                </LinearLayout>
-
-                <!-- Products List -->
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rvCategoryProducts"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:nestedScrollingEnabled="false"
-                    android:clipToPadding="false"
-                    android:paddingStart="8dp"
-                    android:paddingEnd="8dp"
-                    tools:listitem="@layout/item_product"
                     app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
-
             </LinearLayout>
 
         </LinearLayout>
-
     </androidx.core.widget.NestedScrollView>
 
-    <!-- Premium Loading Indicator -->
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/cardLoading"
-        android:layout_width="120dp"
-        android:layout_height="120dp"
-        android:layout_gravity="center"
-        android:visibility="gone"
-        app:cardCornerRadius="24dp"
-        app:cardElevation="12dp"
-        app:cardBackgroundColor="@android:color/white">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:padding="20dp">
-
-            <ProgressBar
-                android:id="@+id/progressBar"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:indeterminateTint="#2E7D32" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Loading..."
-                android:textColor="#666666"
-                android:textSize="12sp"
-                android:layout_marginTop="12dp" />
-
-        </LinearLayout>
-
-    </com.google.android.material.card.MaterialCardView>
-
-    <!-- Premium FAB with Extended Design -->
+    <!-- ➕ FAB -->
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/fabAddCategory"
         android:layout_width="wrap_content"
@@ -298,13 +198,11 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="20dp"
         android:text="Add Category"
-        android:textColor="@android:color/white"
         android:textStyle="bold"
+        android:textColor="@android:color/white"
         app:icon="@android:drawable/ic_input_add"
         app:iconTint="@android:color/white"
         app:backgroundTint="#2E7D32"
-        app:elevation="12dp"
-        app:shapeAppearanceOverlay="@style/ShapeAppearance.App.SmallComponent"
         android:visibility="gone"
         tools:visibility="visible" />
 
