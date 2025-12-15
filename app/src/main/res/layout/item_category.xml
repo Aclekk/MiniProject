@@ -2,15 +2,16 @@
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
+    android:layout_width="140dp"
     android:layout_height="wrap_content"
-    android:layout_margin="6dp"
+    android:layout_margin="8dp"
     app:cardCornerRadius="20dp"
     app:cardElevation="4dp"
-    app:strokeColor="@color/primary_green"
+    app:strokeColor="#E0E0E0"
     app:strokeWidth="1dp"
     android:clickable="true"
-    android:focusable="true">
+    android:focusable="true"
+    android:backgroundTint="#FFFFFF">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -20,82 +21,111 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Ikon kategori -->
+        <!-- 🎨 Premium Icon Container -->
         <androidx.cardview.widget.CardView
-            android:layout_width="56dp"
-            android:layout_height="56dp"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
             android:layout_marginBottom="12dp"
             app:cardBackgroundColor="@color/primary_green"
-            app:cardCornerRadius="28dp"
-            app:cardElevation="0dp">
+            app:cardCornerRadius="32dp"
+            app:cardElevation="4dp">
 
-            <ImageView
-                android:id="@+id/ivCategoryIcon"
+            <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:scaleType="centerCrop"
-                android:adjustViewBounds="true"
-            android:padding="8dp"
-            android:clipToOutline="true"
-            android:contentDescription="Category Icon"/>
+                android:layout_height="match_parent">
+
+                <ImageView
+                    android:id="@+id/ivCategoryIcon"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop"
+                    android:adjustViewBounds="true"
+                    android:padding="12dp"
+                    android:clipToOutline="true"
+                    android:contentDescription="Category Icon"
+                    app:tint="#FFFFFF" />
+            </FrameLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- Nama kategori -->
+        <!-- 📝 Category Name -->
         <TextView
             android:id="@+id/tvCategoryName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:fontFamily="sans-serif-medium"
             android:gravity="center"
-            android:textColor="@color/primary_green"
+            android:textColor="#1A1A1A"
             android:textSize="14sp"
             android:textStyle="bold"
             android:maxLines="2"
             android:ellipsize="end"
-            tools:text="Category Name" />
+            android:lineSpacingExtra="2dp"
+            tools:text="Alat Pertanian" />
 
-        <!-- Jumlah produk -->
-        <TextView
-            android:id="@+id/tvProductCount"
+        <!-- 📊 Product Count Badge -->
+        <androidx.cardview.widget.CardView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:background="@drawable/badge_background"
-            android:paddingStart="10dp"
-            android:paddingEnd="10dp"
-            android:paddingTop="3dp"
-            android:paddingBottom="3dp"
-            android:textColor="#666666"
-            android:textSize="11sp"
-            android:visibility="visible"
-            tools:text="24 items" />
+            android:layout_marginTop="8dp"
+            app:cardCornerRadius="10dp"
+            app:cardElevation="0dp"
+            android:backgroundTint="#F0F0F0">
 
-        <!-- Tombol Admin -->
+            <TextView
+                android:id="@+id/tvProductCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:textColor="#666666"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:visibility="visible"
+                tools:text="24 items" />
+        </androidx.cardview.widget.CardView>
+
+        <!-- 🔧 Admin Buttons -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center"
-            android:layout_marginTop="10dp">
+            android:layout_marginTop="12dp"
+            android:visibility="gone">
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnEditCategory"
-                android:layout_width="62dp"
-                android:layout_height="match_parent"
-                android:layout_marginEnd="6dp"
-                android:backgroundTint="@color/primary_green"
-                android:text="Edit"
-                android:textColor="@android:color/white"
-                android:textSize="12sp" />
-
-            <Button
-                android:id="@+id/btnDeleteCategory"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="36dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="6dp"
+                android:backgroundTint="#5C8A3C"
+                android:text="Edit"
+                android:textAllCaps="false"
+                android:textColor="@android:color/white"
+                android:textSize="11sp"
+                app:cornerRadius="10dp"
+                app:icon="@android:drawable/ic_menu_edit"
+                app:iconSize="14dp"
+                app:iconTint="#FFFFFF" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnDeleteCategory"
+                android:layout_width="0dp"
+                android:layout_height="36dp"
+                android:layout_weight="1"
+                android:layout_marginStart="6dp"
                 android:text="Hapus"
-                android:textSize="12sp"
-                android:backgroundTint="@color/red"
-                android:textColor="@android:color/white" />
+                android:textAllCaps="false"
+                android:textSize="11sp"
+                android:backgroundTint="#E53935"
+                android:textColor="@android:color/white"
+                app:cornerRadius="10dp"
+                app:icon="@android:drawable/ic_delete"
+                app:iconSize="14dp"
+                app:iconTint="#FFFFFF" />
         </LinearLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

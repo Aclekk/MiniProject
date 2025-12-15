@@ -9,6 +9,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.miniproject.R
 import com.example.miniproject.model.Category
+import com.example.miniproject.adapter.CategoryAdapter
 
 class CategoryAdapter(
     private val categories: List<Category>,

@@ -14,7 +14,6 @@ import com.bumptech.glide.Glide
 import com.example.miniproject.R
 import com.example.miniproject.adapter.ReviewAdapterApi
 import com.example.miniproject.data.CartManager
-import com.example.miniproject.data.ProductDataSource
 import com.example.miniproject.data.api.ApiClient
 import com.example.miniproject.data.model.AddToCartRequest
 import com.example.miniproject.databinding.FragmentProductDetailBinding
@@ -60,19 +59,28 @@ class ProductDetailFragment : Fragment() {
         binding.tvProductDescription.text =
             product.description ?: "Tidak ada deskripsi untuk produk ini"
 
+        // ✅ FIX: Load image dengan ApiClient.getImageUrl()
         when {
+            // Prioritas 1: imageResId (untuk backward compatibility)
             product.imageResId != null -> {
                 binding.ivProductImage.setImageResource(product.imageResId ?: R.drawable.bg_card)
+                android.util.Log.d("ProductDetail", "Loading from imageResId: ${product.imageResId}")
             }
+            // Prioritas 2: imageUrl dari API (FIXED)
             !product.imageUrl.isNullOrEmpty() -> {
+                val fullImageUrl = ApiClient.getImageUrl(product.imageUrl)
+                android.util.Log.d("ProductDetail", "Loading image from URL: $fullImageUrl")
+
                 Glide.with(requireContext())
-                    .load(product.imageUrl)
+                    .load(fullImageUrl) // ✅ FIXED: Pakai getImageUrl()
                     .placeholder(R.drawable.bg_card)
                     .error(R.drawable.bg_card)
                     .into(binding.ivProductImage)
             }
+            // Fallback: default image
             else -> {
                 binding.ivProductImage.setImageResource(R.drawable.bg_card)
+                android.util.Log.d("ProductDetail", "No image available, using placeholder")
             }
         }
 
@@ -112,6 +120,7 @@ class ProductDetailFragment : Fragment() {
                 }
 
             } catch (e: Exception) {
+                android.util.Log.e("ProductDetail", "Error loading reviews: ${e.message}")
                 binding.rvReviews.visibility = View.GONE
                 binding.tvReviewCount.text = "(Belum ada ulasan)"
                 binding.rbRating.rating = 0f

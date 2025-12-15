@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ==================== SPACING SYSTEM (8dp grid) ==================== -->
+    <dimen name="spacing_xxxs">2dp</dimen>
+    <dimen name="spacing_xxs">4dp</dimen>
+    <dimen name="spacing_xs">8dp</dimen>
+    <dimen name="spacing_s">12dp</dimen>
+    <dimen name="spacing_m">16dp</dimen>
+    <dimen name="spacing_l">20dp</dimen>
+    <dimen name="spacing_xl">24dp</dimen>
+    <dimen name="spacing_xxl">32dp</dimen>
+    <dimen name="spacing_xxxl">40dp</dimen>
+
+    <!-- ==================== CATEGORY SPECIFIC ==================== -->
+    <dimen name="category_spacing">16dp</dimen>
+    <dimen name="category_icon_size">64dp</dimen>
+    <dimen name="category_card_width">140dp</dimen>
+
+    <!-- ==================== PRODUCT CARD ==================== -->
+    <dimen name="product_card_margin">8dp</dimen>
+    <dimen name="product_card_radius">20dp</dimen>
+    <dimen name="product_image_height">200dp</dimen>
+
+    <!-- ==================== CORNER RADIUS ==================== -->
+    <dimen name="radius_small">8dp</dimen>
+    <dimen name="radius_medium">12dp</dimen>
+    <dimen name="radius_large">16dp</dimen>
+    <dimen name="radius_xlarge">20dp</dimen>
+    <dimen name="radius_xxlarge">24dp</dimen>
+    <dimen name="radius_xxxlarge">28dp</dimen>
+
+    <!-- ==================== ELEVATION ==================== -->
+    <dimen name="elevation_none">0dp</dimen>
+    <dimen name="elevation_small">2dp</dimen>
+    <dimen name="elevation_medium">4dp</dimen>
+    <dimen name="elevation_large">6dp</dimen>
+    <dimen name="elevation_xlarge">8dp</dimen>
+    <dimen name="elevation_xxlarge">12dp</dimen>
+    <dimen name="elevation_fab">16dp</dimen>
+</resources>

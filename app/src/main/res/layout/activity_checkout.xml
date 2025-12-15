@@ -5,119 +5,206 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background_light_gray">
+    android:background="@drawable/bg_main_gradient">
 
-    <!-- App Bar -->
+    <!-- Premium App Bar with Gradient -->
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/white"
-        app:elevation="4dp">
+        android:background="@android:color/transparent"
+        app:elevation="0dp">
 
-        <androidx.appcompat.widget.Toolbar
-            android:id="@+id/toolbar"
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:background="@color/white"
-            app:title="Checkout"
-            app:titleTextColor="@color/text_primary"
-            app:navigationIcon="@drawable/ic_arrow_back"
-            app:navigationIconTint="@color/text_primary" />
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_header_premium"
+            android:padding="16dp">
+
+            <!-- Back Button Premium -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardBack"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="8dp"
+                app:cardBackgroundColor="#CCFFFFFF"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent">
+
+                <androidx.appcompat.widget.Toolbar
+                    android:id="@+id/toolbar"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    app:navigationIcon="@drawable/ic_arrow_back"
+                    app:navigationIconTint="#1A1A1A" />
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Title Premium -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginStart="16dp"
+                app:layout_constraintStart_toEndOf="@id/cardBack"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Checkout"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    android:textColor="#1A1A1A"
+                    android:fontFamily="sans-serif-black" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Selesaikan pesanan Anda"
+                    android:textSize="12sp"
+                    android:textColor="#666666"
+                    android:layout_marginTop="2dp" />
+            </LinearLayout>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
     </com.google.android.material.appbar.AppBarLayout>
 
-    <!-- Main Content -->
+    <!-- Main Content with Premium Cards -->
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fillViewport="true"
+        android:clipToPadding="false"
+        android:scrollbars="none"
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
-        android:paddingBottom="100dp">
+        android:paddingBottom="180dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="12dp">
+            android:padding="16dp">
 
-            <!-- 📍 Shipping Address Card -->
-            <androidx.cardview.widget.CardView
+            <!-- 📍 Premium Shipping Address Card -->
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                android:layout_marginBottom="12dp"
-                app:cardBackgroundColor="@color/white">
+                app:cardCornerRadius="20dp"
+                app:cardElevation="8dp"
+                android:layout_marginBottom="16dp"
+                app:cardBackgroundColor="@android:color/white">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:padding="20dp">
 
-                    <!-- Header -->
+                    <!-- Header with Icon -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
-                        android:gravity="center_vertical">
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="16dp">
 
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:src="@drawable/ic_location"
-                            app:tint="@color/primary_green" />
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            app:cardCornerRadius="24dp"
+                            app:cardElevation="0dp"
+                            app:cardBackgroundColor="#F0F7F0">
 
-                        <TextView
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_location"
+                                app:tint="#5C8A3C" />
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:layout_marginStart="12dp"
-                            android:text="Alamat Pengiriman"
-                            android:textSize="16sp"
-                            android:textStyle="bold"
-                            android:textColor="@color/text_primary" />
+                            android:orientation="vertical"
+                            android:layout_marginStart="12dp">
 
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Alamat Pengiriman"
+                                android:textSize="16sp"
+                                android:textStyle="bold"
+                                android:textColor="#1A1A1A"
+                                android:fontFamily="sans-serif-black" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Lokasi otomatis terdeteksi"
+                                android:textSize="11sp"
+                                android:textColor="#888888"
+                                android:layout_marginTop="2dp" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@drawable/ic_edit"
+                            app:tint="#5C8A3C"
+                            android:contentDescription="Edit" />
                     </LinearLayout>
 
-                    <!-- Address Info -->
-                    <TextView
-                        android:id="@+id/tvUserAddress"
+                    <!-- Address Display Premium -->
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:text="Memuat lokasi..."
-                        android:textSize="14sp"
-                        android:textColor="@color/text_secondary"
-                        android:lineSpacingExtra="2dp" />
+                        android:orientation="vertical"
+                        android:background="@drawable/bg_address_container"
+                        android:padding="16dp">
 
-                    <TextView
-                        android:id="@+id/tvAddress"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="📍 Mengambil lokasi..."
-                        android:textSize="13sp"
-                        android:textColor="@color/text_hint" />
+                        <TextView
+                            android:id="@+id/tvUserAddress"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Memuat lokasi..."
+                            android:textSize="14sp"
+                            android:textColor="#1A1A1A"
+                            android:lineSpacingExtra="4dp"
+                            android:fontFamily="sans-serif-medium" />
+
+                        <TextView
+                            android:id="@+id/tvAddress"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="📍 Mengambil lokasi GPS..."
+                            android:textSize="12sp"
+                            android:textColor="#666666" />
+                    </LinearLayout>
 
                 </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
-            </androidx.cardview.widget.CardView>
-
-            <!-- 🛍️ Order Details Card -->
-            <androidx.cardview.widget.CardView
+            <!-- 🛍️ Premium Order Details Card -->
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                android:layout_marginBottom="12dp"
-                app:cardBackgroundColor="@color/white">
+                app:cardCornerRadius="20dp"
+                app:cardElevation="8dp"
+                android:layout_marginBottom="16dp"
+                app:cardBackgroundColor="@android:color/white">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:padding="20dp">
 
                     <!-- Header -->
                     <LinearLayout
@@ -127,11 +214,20 @@
                         android:gravity="center_vertical"
                         android:layout_marginBottom="16dp">
 
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:src="@drawable/ic_shopping_bag"
-                            app:tint="@color/primary_green" />
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            app:cardCornerRadius="24dp"
+                            app:cardElevation="0dp"
+                            app:cardBackgroundColor="#F0F7F0">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_shopping_bag"
+                                app:tint="#5C8A3C" />
+                        </com.google.android.material.card.MaterialCardView>
 
                         <TextView
                             android:layout_width="wrap_content"
@@ -140,15 +236,17 @@
                             android:text="Detail Pesanan"
                             android:textSize="16sp"
                             android:textStyle="bold"
-                            android:textColor="@color/text_primary" />
-
+                            android:textColor="#1A1A1A"
+                            android:fontFamily="sans-serif-black" />
                     </LinearLayout>
 
-                    <!-- Product Info -->
+                    <!-- Product Item Premium -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
+                        android:background="@drawable/bg_product_item"
+                        android:padding="16dp"
                         android:gravity="center_vertical">
 
                         <LinearLayout
@@ -161,19 +259,32 @@
                                 android:id="@+id/tvProductName"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:text="Nama Produk"
+                                android:text="Nama Produk Premium"
                                 android:textSize="15sp"
                                 android:textStyle="bold"
-                                android:textColor="@color/text_primary" />
+                                android:textColor="#1A1A1A"
+                                android:maxLines="2"
+                                android:ellipsize="end" />
 
-                            <TextView
-                                android:id="@+id/tvQuantity"
+                            <com.google.android.material.card.MaterialCardView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="4dp"
-                                android:text="x1"
-                                android:textSize="13sp"
-                                android:textColor="@color/text_secondary" />
+                                android:layout_marginTop="8dp"
+                                app:cardCornerRadius="8dp"
+                                app:cardElevation="0dp"
+                                app:cardBackgroundColor="#F0F7F0">
+
+                                <TextView
+                                    android:id="@+id/tvQuantity"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="x1"
+                                    android:textSize="12sp"
+                                    android:textColor="#5C8A3C"
+                                    android:textStyle="bold"
+                                    android:paddingHorizontal="10dp"
+                                    android:paddingVertical="4dp" />
+                            </com.google.android.material.card.MaterialCardView>
 
                         </LinearLayout>
 
@@ -182,94 +293,31 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Rp 0"
-                            android:textSize="15sp"
-                            android:textStyle="bold"
-                            android:textColor="@color/primary_dark" />
-
-                    </LinearLayout>
-
-                </LinearLayout>
-
-            </androidx.cardview.widget.CardView>
-
-            <!-- 🚚 Shipping Card -->
-            <androidx.cardview.widget.CardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                android:layout_marginBottom="12dp"
-                app:cardBackgroundColor="@color/white">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <!-- Header -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="12dp">
-
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:src="@drawable/ic_delivery"
-                            app:tint="@color/primary_green" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:layout_marginStart="12dp"
-                            android:text="Pengiriman"
                             android:textSize="16sp"
                             android:textStyle="bold"
-                            android:textColor="@color/text_primary" />
-
-                        <TextView
-                            android:id="@+id/tvShipping"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Rp 20.000"
-                            android:textSize="15sp"
-                            android:textStyle="bold"
-                            android:textColor="@color/primary_dark" />
+                            android:textColor="#5C8A3C"
+                            android:fontFamily="sans-serif-black"
+                            android:layout_marginStart="16dp" />
 
                     </LinearLayout>
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Estimasi: 2-3 hari"
-                        android:textSize="13sp"
-                        android:textColor="@color/text_secondary"
-                        android:drawablePadding="6dp"
-                        app:drawableStartCompat="@drawable/ic_time"
-                        app:drawableTint="@color/text_hint" />
-
                 </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
-            </androidx.cardview.widget.CardView>
-
-            <!-- 💳 Payment Method Card -->
-            <androidx.cardview.widget.CardView
+            <!-- 💳 Premium Payment Method Card -->
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                android:layout_marginBottom="12dp"
-                app:cardBackgroundColor="@color/white">
+                app:cardCornerRadius="20dp"
+                app:cardElevation="8dp"
+                android:layout_marginBottom="16dp"
+                app:cardBackgroundColor="@android:color/white">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:padding="20dp">
 
                     <!-- Header -->
                     <LinearLayout
@@ -279,11 +327,20 @@
                         android:gravity="center_vertical"
                         android:layout_marginBottom="16dp">
 
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:src="@drawable/ic_payment"
-                            app:tint="@color/primary_green" />
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            app:cardCornerRadius="24dp"
+                            app:cardElevation="0dp"
+                            app:cardBackgroundColor="#F0F7F0">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_payment"
+                                app:tint="#5C8A3C" />
+                        </com.google.android.material.card.MaterialCardView>
 
                         <TextView
                             android:layout_width="wrap_content"
@@ -292,83 +349,164 @@
                             android:text="Metode Pembayaran"
                             android:textSize="16sp"
                             android:textStyle="bold"
-                            android:textColor="@color/text_primary" />
-
+                            android:textColor="#1A1A1A"
+                            android:fontFamily="sans-serif-black" />
                     </LinearLayout>
 
-                    <!-- Payment Options -->
+                    <!-- Payment Options Premium -->
                     <RadioGroup
                         android:id="@+id/radioGroupPayment"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content">
 
-                        <!-- Transfer Bank -->
+                        <!-- Transfer Bank Premium -->
                         <com.google.android.material.card.MaterialCardView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            app:cardCornerRadius="8dp"
-                            app:strokeWidth="1dp"
-                            app:strokeColor="@color/border_light"
-                            android:layout_marginBottom="8dp"
-                            app:cardElevation="0dp">
+                            app:cardCornerRadius="16dp"
+                            app:strokeWidth="2dp"
+                            app:strokeColor="#E0E0E0"
+                            android:layout_marginBottom="12dp"
+                            app:cardElevation="0dp"
+                            app:cardBackgroundColor="#FAFAFA">
 
-                            <RadioButton
-                                android:id="@+id/rbTransfer"
+                            <LinearLayout
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:text="Transfer Bank"
-                                android:textSize="14sp"
-                                android:textColor="@color/text_primary"
-                                android:padding="12dp"
-                                android:drawablePadding="8dp"
-                                app:drawableStartCompat="@drawable/ic_bank"
-                                android:buttonTint="@color/primary_green" />
+                                android:orientation="horizontal"
+                                android:padding="16dp"
+                                android:gravity="center_vertical">
 
+                                <com.google.android.material.card.MaterialCardView
+                                    android:layout_width="44dp"
+                                    android:layout_height="44dp"
+                                    app:cardCornerRadius="22dp"
+                                    app:cardElevation="0dp"
+                                    app:cardBackgroundColor="#FFFFFF">
+
+                                    <ImageView
+                                        android:layout_width="24dp"
+                                        android:layout_height="24dp"
+                                        android:layout_gravity="center"
+                                        android:src="@drawable/ic_bank"
+                                        app:tint="#5C8A3C" />
+                                </com.google.android.material.card.MaterialCardView>
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical"
+                                    android:layout_marginStart="12dp">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="Transfer Bank"
+                                        android:textSize="14sp"
+                                        android:textStyle="bold"
+                                        android:textColor="#1A1A1A" />
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="BCA, Mandiri, BNI, BRI"
+                                        android:textSize="11sp"
+                                        android:textColor="#888888"
+                                        android:layout_marginTop="2dp" />
+                                </LinearLayout>
+
+                                <RadioButton
+                                    android:id="@+id/rbTransfer"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:buttonTint="#5C8A3C" />
+                            </LinearLayout>
                         </com.google.android.material.card.MaterialCardView>
 
-                        <!-- E-Wallet -->
+                        <!-- E-Wallet Premium -->
                         <com.google.android.material.card.MaterialCardView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            app:cardCornerRadius="8dp"
-                            app:strokeWidth="1dp"
-                            app:strokeColor="@color/border_light"
-                            app:cardElevation="0dp">
+                            app:cardCornerRadius="16dp"
+                            app:strokeWidth="2dp"
+                            app:strokeColor="#E0E0E0"
+                            app:cardElevation="0dp"
+                            app:cardBackgroundColor="#FAFAFA">
 
-                            <RadioButton
-                                android:id="@+id/rbEwallet"
+                            <LinearLayout
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:text="E-Wallet (OVO, GoPay, DANA)"
-                                android:textSize="14sp"
-                                android:textColor="@color/text_primary"
-                                android:padding="12dp"
-                                android:drawablePadding="8dp"
-                                app:drawableStartCompat="@drawable/ic_wallet"
-                                android:buttonTint="@color/primary_green" />
+                                android:orientation="horizontal"
+                                android:padding="16dp"
+                                android:gravity="center_vertical">
 
+                                <com.google.android.material.card.MaterialCardView
+                                    android:layout_width="44dp"
+                                    android:layout_height="44dp"
+                                    app:cardCornerRadius="22dp"
+                                    app:cardElevation="0dp"
+                                    app:cardBackgroundColor="#FFFFFF">
+
+                                    <ImageView
+                                        android:layout_width="24dp"
+                                        android:layout_height="24dp"
+                                        android:layout_gravity="center"
+                                        android:src="@drawable/ic_wallet"
+                                        app:tint="#5C8A3C" />
+                                </com.google.android.material.card.MaterialCardView>
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical"
+                                    android:layout_marginStart="12dp">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="E-Wallet"
+                                        android:textSize="14sp"
+                                        android:textStyle="bold"
+                                        android:textColor="#1A1A1A" />
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="OVO, GoPay, DANA, ShopeePay"
+                                        android:textSize="11sp"
+                                        android:textColor="#888888"
+                                        android:layout_marginTop="2dp" />
+                                </LinearLayout>
+
+                                <RadioButton
+                                    android:id="@+id/rbEwallet"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:buttonTint="#5C8A3C" />
+                            </LinearLayout>
                         </com.google.android.material.card.MaterialCardView>
 
                     </RadioGroup>
 
                 </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
-            </androidx.cardview.widget.CardView>
-
-            <!-- 💰 Payment Summary Card -->
-            <androidx.cardview.widget.CardView
+            <!-- 💰 Premium Payment Summary Card -->
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                android:layout_marginBottom="12dp"
-                app:cardBackgroundColor="@color/white">
+                app:cardCornerRadius="20dp"
+                app:cardElevation="8dp"
+                android:layout_marginBottom="24dp"
+                app:cardBackgroundColor="@android:color/white">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:padding="20dp">
 
                     <!-- Header -->
                     <LinearLayout
@@ -376,13 +514,22 @@
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
-                        android:layout_marginBottom="16dp">
+                        android:layout_marginBottom="20dp">
 
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:src="@drawable/ic_receipt"
-                            app:tint="@color/primary_green" />
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            app:cardCornerRadius="24dp"
+                            app:cardElevation="0dp"
+                            app:cardBackgroundColor="#F0F7F0">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_receipt"
+                                app:tint="#5C8A3C" />
+                        </com.google.android.material.card.MaterialCardView>
 
                         <TextView
                             android:layout_width="wrap_content"
@@ -391,126 +538,154 @@
                             android:text="Ringkasan Pembayaran"
                             android:textSize="16sp"
                             android:textStyle="bold"
-                            android:textColor="@color/text_primary" />
-
+                            android:textColor="#1A1A1A"
+                            android:fontFamily="sans-serif-black" />
                     </LinearLayout>
 
-                    <!-- Subtotal -->
+                    <!-- Summary Items -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:layout_marginBottom="8dp">
+                        android:orientation="vertical"
+                        android:background="@drawable/bg_summary_container"
+                        android:padding="16dp">
 
-                        <TextView
-                            android:layout_width="0dp"
+                        <!-- Subtotal -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Subtotal Produk"
-                            android:textSize="14sp"
-                            android:textColor="@color/text_secondary" />
+                            android:orientation="horizontal"
+                            android:layout_marginBottom="12dp">
 
-                        <TextView
-                            android:id="@+id/tvSubtotal"
-                            android:layout_width="wrap_content"
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Subtotal Produk"
+                                android:textSize="14sp"
+                                android:textColor="#666666" />
+
+                            <TextView
+                                android:id="@+id/tvSubtotal"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Rp 0"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                android:textColor="#1A1A1A" />
+                        </LinearLayout>
+
+                        <!-- Shipping Cost -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="Rp 0"
-                            android:textSize="14sp"
-                            android:textColor="@color/text_primary" />
+                            android:orientation="horizontal"
+                            android:layout_marginBottom="12dp">
+
+                            <ImageView
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:src="@drawable/ic_delivery"
+                                app:tint="#666666"
+                                android:layout_marginEnd="8dp" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Ongkos Kirim"
+                                android:textSize="14sp"
+                                android:textColor="#666666" />
+
+                            <TextView
+                                android:id="@+id/tvShipping"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Rp 20.000"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                android:textColor="#1A1A1A" />
+
+                            <!-- Hidden for compatibility -->
+                            <TextView
+                                android:id="@+id/tvShippingCost"
+                                android:layout_width="0dp"
+                                android:layout_height="0dp"
+                                android:visibility="gone"
+                                android:text="Rp 20.000" />
+                        </LinearLayout>
+
+                        <!-- Divider Premium -->
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="@drawable/gradient_divider"
+                            android:layout_marginVertical="16dp" />
+
+                        <!-- Total Payment Premium -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:background="@drawable/bg_total_highlight"
+                            android:padding="12dp">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Total Pembayaran"
+                                android:textSize="15sp"
+                                android:textStyle="bold"
+                                android:textColor="#1A1A1A"
+                                android:fontFamily="sans-serif-black" />
+
+                            <TextView
+                                android:id="@+id/tvTotal"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Rp 0"
+                                android:textSize="20sp"
+                                android:textStyle="bold"
+                                android:textColor="#5C8A3C"
+                                android:fontFamily="sans-serif-black" />
+
+                            <!-- Hidden for compatibility -->
+                            <TextView
+                                android:id="@+id/tvTotalCheckout"
+                                android:layout_width="0dp"
+                                android:layout_height="0dp"
+                                android:visibility="gone"
+                                android:text="Rp 0" />
+                        </LinearLayout>
 
                     </LinearLayout>
-
-                    <!-- Shipping Cost -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:layout_marginBottom="8dp">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Ongkos Kirim"
-                            android:textSize="14sp"
-                            android:textColor="@color/text_secondary" />
-
-                        <TextView
-                            android:id="@+id/tvShippingCost"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Rp 20.000"
-                            android:textSize="14sp"
-                            android:textColor="@color/text_primary" />
-
-                    </LinearLayout>
-
-                    <!-- Divider -->
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="@color/divider_light"
-                        android:layout_marginVertical="12dp" />
-
-                    <!-- Total Payment -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Total Pembayaran"
-                            android:textSize="16sp"
-                            android:textStyle="bold"
-                            android:textColor="@color/text_primary" />
-
-                        <TextView
-                            android:id="@+id/tvTotal"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Rp 0"
-                            android:textSize="18sp"
-                            android:textStyle="bold"
-                            android:textColor="@color/primary_dark" />
-
-                    </LinearLayout>
-
-                    <!-- Hidden for compatibility -->
-                    <TextView
-                        android:id="@+id/tvTotalCheckout"
-                        android:layout_width="0dp"
-                        android:layout_height="0dp"
-                        android:visibility="gone"
-                        android:text="Rp 0" />
 
                 </LinearLayout>
-
-            </androidx.cardview.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
 
         </LinearLayout>
 
     </androidx.core.widget.NestedScrollView>
 
-    <!-- Bottom Payment Button (Sticky) -->
-    <androidx.cardview.widget.CardView
+    <!-- Premium Bottom Payment Button (Floating) -->
+    <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        app:cardElevation="8dp"
-        app:cardCornerRadius="0dp"
-        app:cardBackgroundColor="@color/white">
+        app:cardElevation="16dp"
+        app:cardCornerRadius="28dp"
+        android:layout_margin="12dp"
+        app:cardBackgroundColor="@android:color/white">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:padding="16dp"
+            android:padding="20dp"
             android:gravity="center_vertical">
 
-            <!-- Total Price -->
+            <!-- Total Price Premium -->
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -521,36 +696,41 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Total Pembayaran"
-                    android:textSize="12sp"
-                    android:textColor="@color/text_secondary" />
+                    android:textSize="11sp"
+                    android:textColor="#888888"
+                    android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/tvTotalBottom"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Rp 0"
-                    android:textSize="18sp"
+                    android:textSize="22sp"
                     android:textStyle="bold"
-                    android:textColor="@color/primary_dark"
-                    android:layout_marginTop="2dp" />
+                    android:textColor="#5C8A3C"
+                    android:fontFamily="sans-serif-black"
+                    android:layout_marginTop="4dp" />
 
             </LinearLayout>
 
-            <!-- Pay Button -->
+            <!-- Pay Button Premium -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnPayNow"
                 android:layout_width="wrap_content"
-                android:layout_height="56dp"
+                android:layout_height="60dp"
                 android:text="Bayar Sekarang"
                 android:textSize="15sp"
                 android:textStyle="bold"
+                android:textAllCaps="false"
                 android:paddingHorizontal="32dp"
-                app:backgroundTint="@color/primary_green"
-                android:textColor="@color/white"
-                app:cornerRadius="12dp"
+                app:backgroundTint="#5C8A3C"
+                android:textColor="@android:color/white"
+                app:cornerRadius="18dp"
                 app:icon="@drawable/ic_check"
                 app:iconGravity="textStart"
-                app:iconTint="@color/white" />
+                app:iconTint="@android:color/white"
+                app:iconSize="22dp"
+                android:elevation="8dp" />
 
             <!-- Hidden for compatibility -->
             <Button
@@ -562,6 +742,6 @@
 
         </LinearLayout>
 
-    </androidx.cardview.widget.CardView>
+    </com.google.android.material.card.MaterialCardView>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

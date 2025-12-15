@@ -1,64 +1,91 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="12dp"
-    app:cardCornerRadius="16dp"
-    app:cardElevation="2dp"
+    android:layout_marginBottom="16dp"
+    app:cardCornerRadius="20dp"
+    app:cardElevation="4dp"
     app:strokeColor="@color/divider_light"
-    app:strokeWidth="1dp">
+    app:strokeWidth="0.5dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="12dp">
+        android:padding="16dp"
+        android:background="@android:color/white">
 
-        <!-- Product Image with Overlay Badge -->
+        <!-- Product Image Container with Fixed Loading -->
         <androidx.cardview.widget.CardView
-            android:layout_width="90dp"
-            android:layout_height="90dp"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="0dp">
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp">
 
-            <!-- Gunakan FrameLayout agar badge bisa ditumpuk di atas gambar -->
             <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">
 
+                <!-- Background placeholder jika gambar gagal load -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="#F5F5F5"/>
+
+                <!-- Product Image - PERBAIKAN DI SINI -->
                 <ImageView
                     android:id="@+id/ivCartImage"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:scaleType="centerCrop"
-                    android:src="@drawable/bg_card" />
+                    android:adjustViewBounds="true"
+                    android:contentDescription="Product Image"
+                    tools:src="@drawable/bg_card" />
 
-                <!-- Stock Badge -->
-                <TextView
+                <!-- Premium Stock Badge -->
+                <androidx.cardview.widget.CardView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="top|end"
-                    android:layout_margin="6dp"
-                    android:background="@drawable/circle_shadow"
-                    android:backgroundTint="@color/status_success"
-                    android:fontFamily="sans-serif-medium"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="3dp"
-                    android:text="✓"
-                    android:textColor="@color/white"
-                    android:textSize="10sp" />
+                    android:layout_margin="8dp"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="4dp"
+                    app:cardBackgroundColor="@color/status_success">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:paddingHorizontal="10dp"
+                        android:paddingVertical="4dp"
+                        android:text="✓"
+                        android:textColor="@color/white"
+                        android:textSize="12sp"
+                        android:textStyle="bold"/>
+                </androidx.cardview.widget.CardView>
+
+                <!-- Image Loading Overlay (optional) -->
+                <ProgressBar
+                    android:id="@+id/progressBarImage"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_gravity="center"
+                    android:visibility="gone"
+                    android:indeterminateTint="@color/primary_green_premium"/>
             </FrameLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- Product Details -->
+        <!-- Product Details Section -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
+            android:layout_marginStart="16dp"
             android:layout_weight="1"
             android:orientation="vertical">
 
+            <!-- Product Name -->
             <TextView
                 android:id="@+id/tvCartName"
                 android:layout_width="match_parent"
@@ -68,77 +95,133 @@
                 android:maxLines="2"
                 android:text="Nama Produk"
                 android:textColor="@color/text_primary"
-                android:textSize="15sp"
-                android:textStyle="bold" />
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:lineSpacingExtra="2dp"/>
 
+            <!-- Product Meta Info -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="6dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@android:drawable/ic_menu_compass"
+                    android:tint="@color/text_tertiary"
+                    android:contentDescription="Weight"/>
+
                 <TextView
+                    android:id="@+id/tvCartWeight"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:alpha="0.7"
-                    android:fontFamily="sans-serif-light"
+                    android:layout_marginStart="4dp"
+                    android:alpha="0.8"
+                    android:fontFamily="sans-serif"
                     android:text="1 kg"
                     android:textColor="@color/text_secondary"
-                    android:textSize="12sp" />
+                    android:textSize="13sp" />
 
                 <View
-                    android:layout_width="4dp"
-                    android:layout_height="4dp"
-                    android:layout_marginHorizontal="8dp"
+                    android:layout_width="5dp"
+                    android:layout_height="5dp"
+                    android:layout_marginHorizontal="10dp"
                     android:background="@drawable/circle_shadow"
-                    android:backgroundTint="@color/text_tertiary" />
+                    android:backgroundTint="@color/text_tertiary"
+                    android:alpha="0.5"/>
+
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@android:drawable/ic_menu_myplaces"
+                    android:tint="@color/primary_green_premium"
+                    android:contentDescription="Category"/>
 
                 <TextView
+                    android:id="@+id/tvCartCategory"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:alpha="0.7"
-                    android:fontFamily="sans-serif-light"
+                    android:layout_marginStart="4dp"
+                    android:alpha="0.9"
+                    android:fontFamily="sans-serif-medium"
                     android:text="Organik"
                     android:textColor="@color/primary_green_premium"
-                    android:textSize="12sp" />
+                    android:textSize="13sp" />
             </LinearLayout>
 
+            <!-- Divider Line -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginVertical="10dp"
+                android:background="@color/divider_light"
+                android:alpha="0.3"/>
+
+            <!-- Price and Action Section -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
-                <TextView
-                    android:id="@+id/tvCartPrice"
+                <!-- Price -->
+                <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:fontFamily="sans-serif-black"
-                    android:text="Rp 0"
-                    android:textColor="@color/primary_green_premium"
-                    android:textSize="16sp" />
+                    android:orientation="vertical">
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnRemove"
-                    style="@style/Widget.Material3.Button.IconButton"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:insetLeft="0dp"
-                    android:insetTop="0dp"
-                    android:insetRight="0dp"
-                    android:insetBottom="0dp"
-                    app:backgroundTint="@color/white"
-                    app:cornerRadius="8dp"
-                    app:icon="@android:drawable/ic_delete"
-                    app:iconGravity="textStart"
-                    app:iconPadding="0dp"
-                    app:iconSize="20dp"
-                    app:iconTint="@color/error_red"
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:alpha="0.6"
+                        android:fontFamily="sans-serif-light"
+                        android:text="Harga"
+                        android:textColor="@color/text_tertiary"
+                        android:textSize="11sp"/>
+
+                    <TextView
+                        android:id="@+id/tvCartPrice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:fontFamily="sans-serif-black"
+                        android:text="Rp 0"
+                        android:textColor="@color/primary_green_premium"
+                        android:textSize="18sp"
+                        android:letterSpacing="0.01"/>
+                </LinearLayout>
+
+                <!-- Delete Button - Premium Style -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="42dp"
+                    android:layout_height="42dp"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="2dp"
+                    app:cardBackgroundColor="@color/white"
                     app:strokeColor="@color/error_red"
-                    app:strokeWidth="1dp" />
+                    app:strokeWidth="1.5dp">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnRemove"
+                        style="@style/Widget.Material3.Button.IconButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:insetLeft="0dp"
+                        android:insetTop="0dp"
+                        android:insetRight="0dp"
+                        android:insetBottom="0dp"
+                        app:backgroundTint="@android:color/transparent"
+                        app:icon="@android:drawable/ic_delete"
+                        app:iconGravity="textStart"
+                        app:iconPadding="0dp"
+                        app:iconSize="22dp"
+                        app:iconTint="@color/error_red"
+                        app:rippleColor="#20FF0000"/>
+                </androidx.cardview.widget.CardView>
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>

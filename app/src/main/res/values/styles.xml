@@ -103,4 +103,28 @@
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">28dp</item>
     </style>
+    <style name="CustomTextInputLayout" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        <item name="boxBackgroundMode">filled</item>
+        <item name="boxStrokeColor">@color/input_stroke_color</item>
+        <item name="boxStrokeWidth">0dp</item>
+        <item name="boxStrokeWidthFocused">2dp</item>
+        <item name="boxCornerRadiusTopStart">16dp</item>
+        <item name="boxCornerRadiusTopEnd">16dp</item>
+        <item name="boxCornerRadiusBottomStart">16dp</item>
+        <item name="boxCornerRadiusBottomEnd">16dp</item>
+        <item name="hintTextColor">@color/input_hint_color</item>
+        <item name="boxBackgroundColor">#EEFFFFFF</item>
+        <item name="android:textColorHint">#888888</item>
+        <item name="hintEnabled">true</item>
+        <item name="hintAnimationEnabled">true</item>
+    </style>
+
+    <!-- Custom EditText Style -->
+    <style name="CustomEditText">
+        <item name="android:textColor">#1A1A1A</item>
+        <item name="android:textColorHint">#999999</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:paddingTop">16dp</item>
+        <item name="android:paddingBottom">16dp</item>
+    </style>
 </resources>

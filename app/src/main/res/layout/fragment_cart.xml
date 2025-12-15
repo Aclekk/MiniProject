@@ -13,20 +13,20 @@
         android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
         app:elevation="0dp">
 
-        <!-- Header Card -->
+        <!-- Premium Header Card with Shadow -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            app:cardCornerRadius="20dp"
-            app:cardElevation="4dp">
+            android:layout_margin="20dp"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="16dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@drawable/gradient_profile_header"
                 android:orientation="vertical"
-                android:padding="20dp">
+                android:padding="28dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -34,26 +34,45 @@
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
 
-                    <TextView
+                    <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:fontFamily="sans-serif-black"
-                        android:text="🛒 Keranjang"
-                        android:textColor="@color/white"
-                        android:textSize="24sp" />
+                        android:orientation="vertical">
 
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-black"
+                            android:letterSpacing="0.02"
+                            android:text="🛒 Keranjang"
+                            android:textColor="@color/white"
+                            android:textSize="28sp"
+                            android:shadowColor="#40000000"
+                            android:shadowDx="0"
+                            android:shadowDy="2"
+                            android:shadowRadius="4"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:alpha="0.95"
+                            android:fontFamily="sans-serif"
+                            android:text="Produk pilihan Anda"
+                            android:textColor="@color/white"
+                            android:textSize="15sp" />
+                    </LinearLayout>
+
+                    <!-- Premium Badge Icon -->
+                    <ImageView
+                        android:layout_width="56dp"
+                        android:layout_height="56dp"
+                        android:src="@android:drawable/ic_menu_agenda"
+                        android:tint="#FFFFFF"
+                        android:alpha="0.2"
+                        android:contentDescription="Cart Badge"/>
                 </LinearLayout>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:alpha="0.9"
-                    android:fontFamily="sans-serif-light"
-                    android:text="Produk pilihan Anda"
-                    android:textColor="@color/white"
-                    android:textSize="14sp" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
     </com.google.android.material.appbar.AppBarLayout>
@@ -61,64 +80,34 @@
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:overScrollMode="never"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingHorizontal="16dp"
-            android:paddingBottom="140dp">
+            android:paddingHorizontal="20dp"
+            android:paddingBottom="160dp">
 
-            <!-- Shopping Cart List -->
+            <!-- Shopping Cart List with Enhanced Card -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:cardCornerRadius="20dp"
-                app:cardElevation="2dp"
+                android:layout_marginBottom="20dp"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="8dp"
                 app:strokeColor="@color/border_light"
-                app:strokeWidth="1dp">
+                app:strokeWidth="0dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:padding="20dp">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="12dp"
-                        android:fontFamily="sans-serif-medium"
-                        android:text="📦 Daftar Belanja"
-                        android:textColor="@color/primary_green_premium"
-                        android:textSize="16sp"
-                        android:textStyle="bold" />
-
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/rvCart"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:nestedScrollingEnabled="false" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Order History Section -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardCornerRadius="20dp"
-                app:cardElevation="2dp"
-                app:strokeColor="@color/border_light"
-                app:strokeWidth="1dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
+                    <!-- Section Header -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -126,30 +115,147 @@
                         android:gravity="center_vertical"
                         android:orientation="horizontal">
 
+                        <ImageView
+                            android:layout_width="28dp"
+                            android:layout_height="28dp"
+                            android:src="@android:drawable/ic_menu_agenda"
+                            android:tint="@color/primary_green_premium"
+                            android:contentDescription="Shopping List"/>
+
                         <TextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
+                            android:layout_marginStart="12dp"
                             android:fontFamily="sans-serif-medium"
-                            android:text="📋 Riwayat Pesanan"
+                            android:text="📦 Daftar Belanja"
                             android:textColor="@color/primary_green_premium"
-                            android:textSize="16sp"
+                            android:textSize="18sp"
+                            android:letterSpacing="0.01"
+                            android:textStyle="bold" />
+
+                        <!-- Item Count Badge -->
+                        <TextView
+                            android:id="@+id/tvCartCount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/circle_shadow"
+                            android:backgroundTint="@color/primary_green_premium"
+                            android:fontFamily="sans-serif-medium"
+                            android:paddingHorizontal="12dp"
+                            android:paddingVertical="4dp"
+                            android:text="0"
+                            android:textColor="@color/white"
+                            android:textSize="12sp"
+                            android:textStyle="bold"/>
+                    </LinearLayout>
+
+                    <!-- Cart Items RecyclerView -->
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rvCart"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:nestedScrollingEnabled="false"
+                        android:overScrollMode="never" />
+
+                    <!-- Empty State -->
+                    <LinearLayout
+                        android:id="@+id/layoutEmptyCart"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="32dp"
+                        android:visibility="gone">
+
+                        <ImageView
+                            android:layout_width="120dp"
+                            android:layout_height="120dp"
+                            android:src="@android:drawable/ic_menu_agenda"
+                            android:tint="@color/text_tertiary"
+                            android:alpha="0.3"
+                            android:contentDescription="Empty Cart"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="16dp"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="Keranjang Kosong"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="16sp"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:alpha="0.7"
+                            android:fontFamily="sans-serif-light"
+                            android:text="Mulai belanja sekarang!"
+                            android:textColor="@color/text_tertiary"
+                            android:textSize="13sp"/>
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Order History Section with Premium Design -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="8dp"
+                app:strokeColor="@color/border_light"
+                app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <!-- Section Header -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="20dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="28dp"
+                            android:layout_height="28dp"
+                            android:src="@android:drawable/ic_menu_recent_history"
+                            android:tint="@color/primary_green_premium"
+                            android:contentDescription="Order History"/>
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="12dp"
+                            android:fontFamily="sans-serif-medium"
+
+                            android:textColor="@color/primary_green_premium"
+                            android:textSize="18sp"
+                            android:letterSpacing="0.01"
                             android:textStyle="bold" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:alpha="0.7"
-                            android:fontFamily="sans-serif-light"
+                            android:alpha="0.8"
+                            android:fontFamily="sans-serif-medium"
                             android:text="Lihat semua →"
                             android:textColor="@color/primary_green_premium"
-                            android:textSize="12sp" />
+                            android:textSize="13sp" />
                     </LinearLayout>
 
+                    <!-- Premium Tab Layout -->
                     <com.google.android.material.tabs.TabLayout
                         android:id="@+id/tabLayoutOrders"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:layout_marginBottom="16dp"
                         android:background="@drawable/bg_category_chip"
                         app:tabBackground="@drawable/tab_selector"
                         app:tabGravity="fill"
@@ -159,26 +265,29 @@
                         app:tabRippleColor="@android:color/transparent"
                         app:tabSelectedTextColor="@color/white"
                         app:tabTextAppearance="@style/TabTextStyle"
-                        app:tabTextColor="@color/primary_green_premium" />
+                        app:tabTextColor="@color/primary_green_premium"
+                        app:tabPaddingStart="8dp"
+                        app:tabPaddingEnd="8dp"/>
 
+                    <!-- ViewPager -->
                     <androidx.viewpager2.widget.ViewPager2
                         android:id="@+id/viewPagerOrders"
                         android:layout_width="match_parent"
-                        android:layout_height="300dp"
-                        android:layout_marginTop="16dp" />
+                        android:layout_height="320dp"
+                        android:overScrollMode="never"/>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <!-- Bottom Checkout Bar -->
+    <!-- Premium Bottom Checkout Bar with Gradient -->
     <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:layout_margin="16dp"
-        app:cardCornerRadius="24dp"
-        app:cardElevation="8dp">
+        android:layout_margin="20dp"
+        app:cardCornerRadius="28dp"
+        app:cardElevation="20dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -186,50 +295,67 @@
             android:background="@drawable/gradient_profile_header"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:padding="20dp">
+            android:padding="24dp">
 
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:paddingEnd="16dp">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:alpha="0.9"
-                    android:fontFamily="sans-serif-light"
+                    android:alpha="0.95"
+                    android:fontFamily="sans-serif"
                     android:text="Total Pembayaran"
                     android:textColor="@color/white"
-                    android:textSize="12sp" />
+                    android:textSize="13sp"
+                    android:letterSpacing="0.02"/>
 
                 <TextView
                     android:id="@+id/tvTotalCart"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
+                    android:layout_marginTop="4dp"
                     android:fontFamily="sans-serif-black"
                     android:text="Rp 0"
                     android:textColor="@color/white"
-                    android:textSize="22sp" />
+                    android:textSize="26sp"
+                    android:letterSpacing="0.01"/>
             </LinearLayout>
 
+            <!-- Premium Checkout Button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnCheckout"
                 android:layout_width="wrap_content"
-                android:layout_height="56dp"
+                android:layout_height="60dp"
                 android:fontFamily="sans-serif-medium"
-                android:paddingHorizontal="28dp"
+                android:paddingHorizontal="32dp"
                 android:text="Checkout"
                 android:textAllCaps="false"
-                android:textSize="16sp"
+                android:textSize="17sp"
+                android:letterSpacing="0.02"
                 app:backgroundTint="@color/accent_yellow_premium"
-                app:cornerRadius="16dp"
-                app:elevation="0dp"
+                app:cornerRadius="18dp"
+                app:elevation="8dp"
                 app:icon="@android:drawable/ic_menu_send"
                 app:iconGravity="end"
-                app:iconPadding="8dp"
+                app:iconPadding="10dp"
+                app:iconSize="22dp"
                 app:iconTint="@color/primary_dark" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
+
+    <!-- Bottom Fade Overlay -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="140dp"
+        android:layout_gravity="bottom"
+        android:background="@drawable/bg_bottom_fade"
+        android:clickable="false"
+        android:focusable="false"
+        android:alpha="0.4"/>
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

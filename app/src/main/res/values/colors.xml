@@ -81,5 +81,17 @@
     <color name="overlay_dark">#80000000</color>
     <color name="overlay_light">#40FFFFFF</color>
     <color name="green">#4CAF50</color>
+    <!-- Input Colors -->
+    <color name="input_stroke_color">#667eea</color>
+    <color name="input_hint_color">#666666</color>
+    <color name="input_icon_color">#667eea</color>
+
+    <!-- Gradient Colors -->
+    <color name="gradient_start">#667eea</color>
+    <color name="gradient_end">#764ba2</color>
+
+    <!-- Glass Effect -->
+    <color name="glass_bg">#33FFFFFF</color>
+    <color name="glass_border">#44FFFFFF</color>
 
 </resources>
