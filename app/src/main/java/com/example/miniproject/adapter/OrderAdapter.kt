@@ -11,7 +11,6 @@ import com.example.miniproject.R
 import com.example.miniproject.data.Order
 import com.example.miniproject.util.normalizeDbStatus
 import com.example.miniproject.util.statusLabel
-import com.example.miniproject.util.sellerButtonLabel
 
 class OrderAdapter(
     var orders: MutableList<Order>,
@@ -27,8 +26,9 @@ class OrderAdapter(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): OrderViewHolder {
+        // ✅ FIX UTAMA: pakai layout SELLER yang benar
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_order_history, parent, false)
+            .inflate(R.layout.item_order, parent, false)
         return OrderViewHolder(view)
     }
 
@@ -38,7 +38,8 @@ class OrderAdapter(
         val order = orders[position]
 
         holder.tvOrderId.text = "Order #${order.id}"
-        holder.tvTotalPayment.text = "Total: Rp ${String.format("%,d", order.totalPrice.toInt())}"
+        holder.tvTotalPayment.text =
+            "Rp ${String.format("%,d", order.totalPrice.toInt())}"
 
         // ✅ Normalize status dari DB
         val dbStatus = normalizeDbStatus(order.status)
@@ -47,13 +48,13 @@ class OrderAdapter(
         holder.tvStatus.visibility = View.VISIBLE
         holder.tvStatus.text = statusLabel(dbStatus)
 
-        // ✅ Set warna background status
+        // ✅ Warna status
         when (dbStatus) {
             "pending" -> {
                 holder.tvStatus.setBackgroundResource(R.drawable.bg_status_pending)
                 holder.tvStatus.setTextColor(Color.parseColor("#F57C00"))
             }
-            "processing" -> {  // ✅ FIX: processing = dikonfirmasi (hijau)
+            "processing" -> {
                 holder.tvStatus.setBackgroundResource(R.drawable.bg_status_active)
                 holder.tvStatus.setTextColor(Color.parseColor("#4CAF50"))
             }
@@ -69,25 +70,17 @@ class OrderAdapter(
                 holder.tvStatus.setBackgroundResource(R.drawable.bg_status_cancelled)
                 holder.tvStatus.setTextColor(Color.parseColor("#D32F2F"))
             }
-            else -> {
-                holder.tvStatus.setBackgroundResource(R.drawable.bg_status_pending)
-                holder.tvStatus.setTextColor(Color.GRAY)
-            }
         }
 
-        // ✅ Show button hanya untuk seller/admin
-        val canShowButton = (
-                onActionClick != null &&
-                        holder.btnAction != null &&
-                        !role.isNullOrBlank()
-                )
+        // ✅ Button logic (TIDAK DIUBAH)
+        val canShowButton =
+            onActionClick != null && holder.btnAction != null && !role.isNullOrBlank()
 
         if (!canShowButton) {
             holder.btnAction?.visibility = View.GONE
             return
         }
 
-        // ✅ Logika button untuk SELLER/ADMIN
         when (role!!.lowercase()) {
             "seller", "admin" -> {
                 when (dbStatus) {
@@ -95,21 +88,14 @@ class OrderAdapter(
                         holder.btnAction?.visibility = View.VISIBLE
                         holder.btnAction?.text = "📦 Konfirmasi Pesanan"
                     }
-                    "processing" -> {  // ✅ FIX UTAMA: processing = show "Kirim"
+                    "processing" -> {
                         holder.btnAction?.visibility = View.VISIBLE
                         holder.btnAction?.text = "🚚 Kirim Pesanan"
                     }
-                    "shipped", "completed", "cancelled" -> {
-                        holder.btnAction?.visibility = View.GONE
-                    }
-                    else -> {
-                        holder.btnAction?.visibility = View.GONE
-                    }
+                    else -> holder.btnAction?.visibility = View.GONE
                 }
             }
-            else -> {
-                holder.btnAction?.visibility = View.GONE
-            }
+            else -> holder.btnAction?.visibility = View.GONE
         }
 
         holder.btnAction?.setOnClickListener {

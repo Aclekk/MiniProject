@@ -4,11 +4,14 @@ import android.content.Context
 import android.graphics.Rect
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.AnimationUtils
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
@@ -46,15 +49,17 @@ class ProductsFragment : Fragment() {
     private val allProducts = mutableListOf<Product>()
     private var userRole: String = "buyer"
 
-    // === CATEGORY ADAPTER ===
     private lateinit var categoryAdapter: CategoryAdapter
     private val categories = mutableListOf<Category>()
 
-    // === PROMO (ADD/DELETE) ===
     private val promoList = mutableListOf<PromoApi>()
     private lateinit var promoAdapter: PromoUrlAdapter
     private var selectedPromoUri: Uri? = null
     private var currentPromoIndex: Int = 0
+
+    // 🎨 Animation handlers
+    private val autoScrollHandler = Handler(Looper.getMainLooper())
+    private var autoScrollRunnable: Runnable? = null
 
     private val promoImagePicker =
         registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
@@ -78,22 +83,192 @@ class ProductsFragment : Fragment() {
 
         getUserData()
         setupRecyclerView()
-        setupCategoriesHorizontal() // ✅ Setup horizontal categories
+        setupCategoriesHorizontal()
         setupClickListeners()
         setupSearch()
         loadBestSellerProducts()
-        loadCategories() // ✅ Load categories data
+        loadCategories()
         loadStoreInfo()
         setupPromoCarousel()
         loadPromos()
+
+        // 🎨 START ANIMATIONS
+        startInitialAnimations()
     }
 
     override fun onResume() {
         super.onResume()
         loadBestSellerProducts()
-        loadCategories() // ✅ Reload categories
+        loadCategories()
         loadStoreInfo()
         loadPromos()
+        startAutoScrollPromo() // 🎨 Resume auto scroll
+    }
+
+    override fun onPause() {
+        super.onPause()
+        stopAutoScrollPromo() // ⛔ STOP SAAT PINDAH PAGE
+    }
+
+
+    // ================== 🎨 ANIMATIONS ==================
+
+    private fun startInitialAnimations() {
+        // Hide all views initially
+        binding.root.alpha = 0f
+
+        // 1. Fade in entire view
+        binding.root.animate()
+            .alpha(1f)
+            .setDuration(400)
+            .start()
+
+        // 2. Animate header card with slide down
+        animateHeaderCard()
+
+        // 3. Animate search bar
+        animateSearchBar()
+
+        // 4. Animate promo carousel
+        animatePromoCarousel()
+    }
+
+    private fun animateHeaderCard() {
+        binding.root.post {
+            val headerCard = (binding.root as? ViewGroup)?.getChildAt(0)
+
+
+            headerCard?.let { card ->
+                card.alpha = 0f
+                card.translationY = -100f
+
+                card.animate()
+                    .alpha(1f)
+                    .translationY(0f)
+                    .setDuration(600)
+                    .setStartDelay(100)
+                    .start()
+            }
+        }
+    }
+
+    private fun animateSearchBar() {
+        binding.root.post {
+            // Find search bar (2nd child in main layout)
+            val mainLayout = (binding.root as? ViewGroup)?.getChildAt(0) as? ViewGroup
+
+
+            val searchBar = mainLayout?.getChildAt(1)
+
+            searchBar?.let { bar ->
+                bar.alpha = 0f
+                bar.scaleX = 0.9f
+                bar.scaleY = 0.9f
+
+                bar.animate()
+                    .alpha(1f)
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .setDuration(500)
+                    .setStartDelay(200)
+                    .start()
+            }
+        }
+    }
+
+    private fun animatePromoCarousel() {
+        binding.viewPagerPromo.alpha = 0f
+        binding.viewPagerPromo.scaleX = 0.95f
+        binding.viewPagerPromo.scaleY = 0.95f
+
+        binding.viewPagerPromo.animate()
+            .alpha(1f)
+            .scaleX(1f)
+            .scaleY(1f)
+            .setDuration(600)
+            .setStartDelay(300)
+            .start()
+    }
+
+    private fun animateCategoryItems() {
+        binding.rvCategories.post {
+            for (i in 0 until binding.rvCategories.childCount) {
+                val child = binding.rvCategories.getChildAt(i)
+                child.alpha = 0f
+                child.translationX = -50f
+
+                child.animate()
+                    .alpha(1f)
+                    .translationX(0f)
+                    .setStartDelay(400 + (i * 80L))
+                    .setDuration(500)
+                    .start()
+            }
+        }
+    }
+
+    private fun animateProductGrid() {
+        binding.rvProducts.post {
+            for (i in 0 until binding.rvProducts.childCount) {
+                val child = binding.rvProducts.getChildAt(i)
+                child.alpha = 0f
+                child.translationY = 80f
+                child.scaleX = 0.9f
+                child.scaleY = 0.9f
+
+                child.animate()
+                    .alpha(1f)
+                    .translationY(0f)
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .setStartDelay(500 + (i * 60L))
+                    .setDuration(500)
+                    .start()
+            }
+        }
+    }
+
+    private fun startAutoScrollPromo() {
+        if (promoList.isEmpty()) return
+
+        stopAutoScrollPromo() // ⛔ pastikan tidak double handler
+
+        autoScrollRunnable = object : Runnable {
+            override fun run() {
+                // ✅ CEK VIEW MASIH ADA
+                if (_binding == null || !isAdded) return
+
+                val nextIndex = (currentPromoIndex + 1) % promoList.size
+                binding.viewPagerPromo.setCurrentItem(nextIndex, true)
+
+                autoScrollHandler.postDelayed(this, 4000)
+            }
+        }
+
+        autoScrollHandler.postDelayed(autoScrollRunnable!!, 4000)
+    }
+
+    private fun stopAutoScrollPromo() {
+        autoScrollRunnable?.let {
+            autoScrollHandler.removeCallbacks(it)
+        }
+        autoScrollRunnable = null
+    }
+
+
+    private fun animateButtonPress(view: View) {
+        view.animate()
+            .scaleX(0.95f)
+            .scaleY(0.95f)
+            .setDuration(100)
+            .withEndAction {
+                view.animate()
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .setDuration(100)
+                    .start()
+            }
+            .start()
     }
 
     // ================== USER DATA / ROLE ==================
@@ -124,6 +299,12 @@ class ProductsFragment : Fragment() {
                         arguments = bundle
                     }
                     parentFragmentManager.beginTransaction()
+                        .setCustomAnimations(
+                            R.anim.slide_in_right,
+                            R.anim.slide_out_left,
+                            R.anim.slide_in_left,
+                            R.anim.slide_out_right
+                        )
                         .replace(R.id.fragment_container, fragment)
                         .addToBackStack(null)
                         .commit()
@@ -134,19 +315,37 @@ class ProductsFragment : Fragment() {
         binding.rvProducts.apply {
             layoutManager = GridLayoutManager(requireContext(), 2)
             adapter = productAdapter
+
+            // 🎨 Add scroll listener for parallax effect
+            addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    super.onScrolled(recyclerView, dx, dy)
+
+                    // Animate newly visible items
+                    for (i in 0 until childCount) {
+                        val child = getChildAt(i)
+                        if (child != null && child.alpha < 1f) {
+                            child.animate()
+                                .alpha(1f)
+                                .translationY(0f)
+                                .scaleX(1f)
+                                .scaleY(1f)
+                                .setDuration(400)
+                                .start()
+                        }
+                    }
+                }
+            })
         }
     }
 
     // ================== HORIZONTAL CATEGORIES ==================
-    // ✅ Setup horizontal scroll untuk kategori
 
     private fun setupCategoriesHorizontal() {
-        // 1. Setup adapter untuk kategori
         categoryAdapter = CategoryAdapter(
             categories = categories,
             userRole = userRole,
             onItemClick = { category ->
-                // Navigate ke CategoriesFragment dengan filter
                 val bundle = Bundle().apply {
                     putInt("category_id", category.id)
                     putString("category_name", category.categoryName)
@@ -155,15 +354,20 @@ class ProductsFragment : Fragment() {
                     arguments = bundle
                 }
                 parentFragmentManager.beginTransaction()
+                    .setCustomAnimations(
+                        R.anim.slide_in_right,
+                        R.anim.slide_out_left,
+                        R.anim.slide_in_left,
+                        R.anim.slide_out_right
+                    )
                     .replace(R.id.fragment_container, fragment)
                     .addToBackStack(null)
                     .commit()
             },
-            onEditClick = null, // Tidak perlu di Home
-            onDeleteClick = null // Tidak perlu di Home
+            onEditClick = null,
+            onDeleteClick = null
         )
 
-        // 2. Setup Linear Layout Manager (HORIZONTAL)
         val layoutManager = LinearLayoutManager(
             requireContext(),
             LinearLayoutManager.HORIZONTAL,
@@ -171,16 +375,14 @@ class ProductsFragment : Fragment() {
         )
         binding.rvCategories.layoutManager = layoutManager
 
-        // 3. ✨ SMOOTH SNAP EFFECT (optional - bikin snap ke tengah saat scroll)
         val snapHelper = LinearSnapHelper()
         try {
             snapHelper.attachToRecyclerView(binding.rvCategories)
         } catch (e: IllegalStateException) {
-            // Already attached, ignore
+            // Already attached
         }
 
-        // 4. ✨ SPACING ANTAR ITEM (biar ga tempel)
-        val spacingInPixels = 16 // 16dp spacing
+        val spacingInPixels = 16
         binding.rvCategories.addItemDecoration(object : RecyclerView.ItemDecoration() {
             override fun getItemOffsets(
                 outRect: Rect,
@@ -189,44 +391,52 @@ class ProductsFragment : Fragment() {
                 state: RecyclerView.State
             ) {
                 val position = parent.getChildAdapterPosition(view)
-
-                // Spacing kanan untuk semua item
                 outRect.right = spacingInPixels
-
-                // Spacing kiri untuk item pertama (optional)
                 if (position == 0) {
                     outRect.left = spacingInPixels
                 }
             }
         })
 
-        // 5. ✨ DISABLE OVERSCROLL GLOW (biar smooth)
         binding.rvCategories.overScrollMode = View.OVER_SCROLL_NEVER
-
-        // 6. ✅ SET ADAPTER ke RecyclerView
         binding.rvCategories.adapter = categoryAdapter
+
+        // 🎨 Add scroll listener for category animations
+        binding.rvCategories.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+
+                for (i in 0 until recyclerView.childCount) {
+                    val child = recyclerView.getChildAt(i)
+                    if (child != null && child.alpha < 1f) {
+                        child.animate()
+                            .alpha(1f)
+                            .translationX(0f)
+                            .setDuration(300)
+                            .start()
+                    }
+                }
+            }
+        })
     }
 
     // ================== LOAD CATEGORIES ==================
-    // ✅ Load categories dari repository
 
     private fun loadCategories() {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                // Load categories di background thread
                 val categoryList = withContext(Dispatchers.IO) {
                     CategoryRepository.getCategories()
                 }
 
-                // Update UI di main thread
                 categories.clear()
                 categories.addAll(categoryList)
                 categoryAdapter.notifyDataSetChanged()
 
+                // 🎨 Animate categories after loading
+                animateCategoryItems()
+
                 android.util.Log.d("ProductsFragment", "✅ Categories loaded: ${categories.size} items")
-                categories.forEach {
-                    android.util.Log.d("ProductsFragment", "   - ${it.categoryName}")
-                }
 
                 if (categories.isEmpty()) {
                     Toast.makeText(requireContext(), "Belum ada kategori", Toast.LENGTH_SHORT).show()
@@ -248,12 +458,13 @@ class ProductsFragment : Fragment() {
     private fun setupClickListeners() {
         binding.swipeRefresh.setOnRefreshListener {
             loadBestSellerProducts()
-            loadCategories() // ✅ Reload categories saat refresh
+            loadCategories()
             loadStoreInfo()
             binding.swipeRefresh.isRefreshing = false
         }
 
         binding.btnFilter.setOnClickListener {
+            animateButtonPress(it)
             Toast.makeText(context, "Filter coming soon", Toast.LENGTH_SHORT).show()
         }
     }
@@ -286,6 +497,11 @@ class ProductsFragment : Fragment() {
         products.addAll(filtered)
         productAdapter.notifyDataSetChanged()
 
+        // 🎨 Animate filtered results
+        binding.rvProducts.postDelayed({
+            animateProductGrid()
+        }, 100)
+
         if (filtered.isEmpty()) {
             Toast.makeText(context, "Produk tidak ditemukan", Toast.LENGTH_SHORT).show()
         }
@@ -311,6 +527,10 @@ class ProductsFragment : Fragment() {
                     products.addAll(list)
 
                     productAdapter.notifyDataSetChanged()
+
+                    // 🎨 Animate products after loading
+                    binding.progressBar.visibility = View.GONE
+                    animateProductGrid()
                 }
             } catch (e: Exception) {
                 Toast.makeText(
@@ -318,7 +538,6 @@ class ProductsFragment : Fragment() {
                     "Gagal konek server: ${e.localizedMessage}",
                     Toast.LENGTH_LONG
                 ).show()
-            } finally {
                 binding.progressBar.visibility = View.GONE
             }
         }
@@ -333,10 +552,10 @@ class ProductsFragment : Fragment() {
                 if (response.isSuccessful && response.body()?.success == true) {
                     val settings = response.body()?.data as? Map<String, Any> ?: emptyMap()
 
-                    val appName = settings["app_name"]?.toString() ?: "namek gacor wjwje"
-                    val appTagline = settings["app_tagline"]?.toString() ?: "rachen kapten"
+                    val appName = settings["app_name"]?.toString() ?: "Niaga Tani"
+                    val appTagline = settings["app_tagline"]?.toString() ?: "Solusi Pertanian Modern"
                     val appLogo = settings["app_logo"]?.toString() ?: ""
-                    val appAddress = settings["app_address"]?.toString() ?: "ah ah h"
+                    val appAddress = settings["app_address"]?.toString() ?: "Jl. Pertanian Sejahtera No. 123"
                     val contactEmail = settings["contact_email"]?.toString() ?: "support@agrishop.com"
                     val contactPhone = settings["contact_phone"]?.toString() ?: "081234567890"
 
@@ -381,10 +600,13 @@ class ProductsFragment : Fragment() {
         )
 
         binding.btnAddPromo.setOnClickListener {
+            animateButtonPress(it)
             promoImagePicker.launch("image/*")
         }
 
         binding.btnDeletePromo.setOnClickListener {
+            animateButtonPress(it)
+
             if (promoList.isEmpty()) {
                 Toast.makeText(requireContext(), "Belum ada promo", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
@@ -406,6 +628,9 @@ class ProductsFragment : Fragment() {
                     promoList.addAll(res.body()?.data?.promos ?: emptyList())
                     promoAdapter.notifyDataSetChanged()
                     currentPromoIndex = 0
+
+                    // 🎨 Start auto scroll after loading promos
+                    startAutoScrollPromo()
                 }
             } catch (_: Exception) {}
         }
@@ -473,7 +698,9 @@ class ProductsFragment : Fragment() {
     // ================== CLEANUP ==================
 
     override fun onDestroyView() {
-        super.onDestroyView()
+        stopAutoScrollPromo() // ⛔ WAJIB SEBELUM binding null
         _binding = null
+        super.onDestroyView()
     }
+
 }
