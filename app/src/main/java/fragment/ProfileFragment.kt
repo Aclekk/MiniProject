@@ -52,34 +52,7 @@ class ProfileFragment : Fragment() {
         checkUserRole()
         setupClicks()
         loadProfile()
-
-        val prefs = requireActivity()
-            .getSharedPreferences("user_pref", Context.MODE_PRIVATE)
-        val role = prefs.getString("role", "user") ?: "user"
-
-        val isSeller = role == "seller" || role == "admin"
-
-        binding.btnViewReviews.visibility =
-            if (isSeller) View.VISIBLE else View.GONE
-
-        binding.btnViewSalesReport.visibility =
-            if (isSeller) View.VISIBLE else View.GONE
-
-        binding.btnViewReviews.setOnClickListener {
-            val frag = ReviewListFragment()
-            requireActivity().supportFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, frag)
-                .addToBackStack(null)
-                .commit()
-        }
-
-        binding.btnViewSalesReport.setOnClickListener {
-            val frag = SalesReportFragment()
-            requireActivity().supportFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, frag)
-                .addToBackStack(null)
-                .commit()
-        }
+        setupSellerButtons()
     }
 
     private fun checkUserRole() {
@@ -90,12 +63,21 @@ class ProfileFragment : Fragment() {
 
     private fun setupUIForRole() {
         if (userRole == "seller") {
+            // ✅ SELLER MODE
             binding.tvSectionTitle.text = "🏪 Informasi Toko"
             binding.btnSaveProfile.text = "💾 Simpan Profil Toko"
 
             binding.tilStoreAddress.visibility = View.VISIBLE
-            binding.btnViewReviews.visibility = View.VISIBLE
 
+            // ✅ Show seller-specific sections
+            binding.root.findViewById<View>(R.id.dividerSeller)?.visibility = View.VISIBLE
+            binding.root.findViewById<View>(R.id.sectionStoreInfo)?.visibility = View.VISIBLE
+
+            // ✅ Show seller buttons
+            binding.root.findViewById<View>(R.id.cardViewReviews)?.visibility = View.VISIBLE
+            binding.root.findViewById<View>(R.id.cardSalesReport)?.visibility = View.VISIBLE
+
+            // Enable all seller fields
             binding.etUsername.isEnabled = true
             binding.etFullName.isEnabled = true
             binding.etEmail.isEnabled = true
@@ -103,6 +85,7 @@ class ProfileFragment : Fragment() {
             binding.etAddress.isEnabled = true
             binding.etStoreAddress.isEnabled = true
 
+            // Seller-specific hints
             binding.tilUsername.hint = "📱 No WhatsApp"
             binding.tilFullName.hint = "🏪 Nama Toko"
             binding.tilEmail.hint = "📧 Email Toko"
@@ -111,14 +94,21 @@ class ProfileFragment : Fragment() {
             binding.tilStoreAddress.hint = "🏪 Alamat Toko"
 
         } else {
-            binding.tvSectionTitle.text = "Informasi Profil"
+            // ✅ BUYER MODE
+            binding.tvSectionTitle.text = "👤 Informasi Akun"
             binding.btnSaveProfile.text = "💾 Simpan Perubahan"
 
             binding.tilStoreAddress.visibility = View.GONE
-            binding.btnViewReviews.visibility = View.GONE
-            binding.btnViewSalesReport.visibility = View.GONE
 
-            // ✅ PERBAIKAN: Buyer bisa edit semua field kecuali username
+            // ✅ Hide seller-specific sections
+            binding.root.findViewById<View>(R.id.dividerSeller)?.visibility = View.GONE
+            binding.root.findViewById<View>(R.id.sectionStoreInfo)?.visibility = View.GONE
+
+            // ✅ Hide seller buttons
+            binding.root.findViewById<View>(R.id.cardViewReviews)?.visibility = View.GONE
+            binding.root.findViewById<View>(R.id.cardSalesReport)?.visibility = View.GONE
+
+            // ✅ Buyer can edit all fields except username
             binding.etUsername.isEnabled = false  // Username tidak bisa diganti
             binding.etFullName.isEnabled = true
             binding.etEmail.isEnabled = true
@@ -126,11 +116,38 @@ class ProfileFragment : Fragment() {
             binding.etAddress.isEnabled = true
             binding.etStoreAddress.isEnabled = false
 
-            binding.tilUsername.hint = "👤 Username"
-            binding.tilFullName.hint = "🙋 Nama Lengkap"
+            // Buyer-specific hints
+            binding.tilUsername.hint = "📱 Username"
+            binding.tilFullName.hint = "👨 Nama Lengkap"
             binding.tilEmail.hint = "📧 Email"
-            binding.tilPhone.hint = "📱 No Telepon"
-            binding.tilAddress.hint = "📍 Alamat"
+            binding.tilPhone.hint = "📞 No Telepon"
+            binding.tilAddress.hint = "🏠 Alamat"
+        }
+    }
+
+    private fun setupSellerButtons() {
+        val prefs = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
+        val role = prefs.getString("role", "buyer") ?: "buyer"
+
+        val isSeller = role == "seller" || role == "admin"
+
+        if (isSeller) {
+            // ✅ Setup click listeners untuk seller buttons
+            binding.root.findViewById<View>(R.id.btnViewReviews)?.setOnClickListener {
+                val frag = ReviewListFragment()
+                requireActivity().supportFragmentManager.beginTransaction()
+                    .replace(R.id.fragment_container, frag)
+                    .addToBackStack(null)
+                    .commit()
+            }
+
+            binding.root.findViewById<View>(R.id.btnViewSalesReport)?.setOnClickListener {
+                val frag = SalesReportFragment()
+                requireActivity().supportFragmentManager.beginTransaction()
+                    .replace(R.id.fragment_container, frag)
+                    .addToBackStack(null)
+                    .commit()
+            }
         }
     }
 
@@ -147,7 +164,7 @@ class ProfileFragment : Fragment() {
 
         binding.btnSaveProfile.setOnClickListener {
             if (userRole == "seller") updateStoreSettings()
-            else updateBuyerProfile()  // ✅ Ganti fungsi untuk buyer
+            else updateBuyerProfile()
         }
 
         binding.btnLogout.setOnClickListener { logout() }
@@ -303,13 +320,11 @@ class ProfileFragment : Fragment() {
             return
         }
 
-        // Ambil data dari form
         val fullName = binding.etFullName.text.toString().trim()
         val email = binding.etEmail.text.toString().trim()
         val phone = binding.etPhone.text.toString().trim()
         val address = binding.etAddress.text.toString().trim()
 
-        // Validasi
         if (fullName.isEmpty()) {
             Toast.makeText(requireContext(), "Nama lengkap tidak boleh kosong", Toast.LENGTH_SHORT).show()
             return
@@ -324,7 +339,6 @@ class ProfileFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                // Buat request body untuk text fields
                 fun createPart(value: String): RequestBody {
                     return value.toRequestBody("text/plain".toMediaTypeOrNull())
                 }
@@ -340,39 +354,23 @@ class ProfileFragment : Fragment() {
                     postalCode = null,
                     recipientName = null,
                     recipientPhone = null,
-                    profileImage = selectedImagePart  // Include foto jika ada
+                    profileImage = selectedImagePart
                 )
 
                 if (response.isSuccessful) {
                     val body = response.body()
                     if (body?.success == true && body.data != null) {
-                        Toast.makeText(
-                            requireContext(),
-                            "✅ Profil berhasil diperbarui!",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        Toast.makeText(requireContext(), "✅ Profil berhasil diperbarui!", Toast.LENGTH_SHORT).show()
                         bindProfileToUi(body.data)
-                        selectedImagePart = null  // Reset foto yang dipilih
+                        selectedImagePart = null
                     } else {
-                        Toast.makeText(
-                            requireContext(),
-                            body?.message ?: "Gagal update profil",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        Toast.makeText(requireContext(), body?.message ?: "Gagal update profil", Toast.LENGTH_SHORT).show()
                     }
                 } else {
-                    Toast.makeText(
-                        requireContext(),
-                        "Error ${response.code()}",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    Toast.makeText(requireContext(), "Error ${response.code()}", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                Toast.makeText(
-                    requireContext(),
-                    "Gagal konek: ${e.localizedMessage}",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Toast.makeText(requireContext(), "Gagal konek: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
             } finally {
                 showLoading(false)
             }
@@ -396,11 +394,7 @@ class ProfileFragment : Fragment() {
         val appAddress = binding.etStoreAddress.text.toString().trim()
 
         if (appName.isEmpty() || contactEmail.isEmpty() || contactPhone.isEmpty()) {
-            Toast.makeText(
-                requireContext(),
-                "Nama toko, email, dan telepon wajib diisi",
-                Toast.LENGTH_SHORT
-            ).show()
+            Toast.makeText(requireContext(), "Nama toko, email, dan telepon wajib diisi", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -409,27 +403,11 @@ class ProfileFragment : Fragment() {
         if (selectedImagePart != null) {
             uploadLogoFirst(token) { ok ->
                 if (ok) {
-                    updateStoreSettingsText(
-                        token,
-                        appName,
-                        contactEmail,
-                        contactPhone,
-                        appTagline,
-                        contactWhatsapp,
-                        appAddress
-                    )
+                    updateStoreSettingsText(token, appName, contactEmail, contactPhone, appTagline, contactWhatsapp, appAddress)
                 } else showLoading(false)
             }
         } else {
-            updateStoreSettingsText(
-                token,
-                appName,
-                contactEmail,
-                contactPhone,
-                appTagline,
-                contactWhatsapp,
-                appAddress
-            )
+            updateStoreSettingsText(token, appName, contactEmail, contactPhone, appTagline, contactWhatsapp, appAddress)
         }
     }
 
@@ -446,19 +424,11 @@ class ProfileFragment : Fragment() {
                     selectedImagePart = null
                     callback(true)
                 } else {
-                    Toast.makeText(
-                        requireContext(),
-                        "Gagal upload logo (${response.code()})",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    Toast.makeText(requireContext(), "Gagal upload logo (${response.code()})", Toast.LENGTH_SHORT).show()
                     callback(false)
                 }
             } catch (e: Exception) {
-                Toast.makeText(
-                    requireContext(),
-                    "Error upload: ${e.localizedMessage}",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Toast.makeText(requireContext(), "Error upload: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
                 callback(false)
             }
         }
@@ -490,25 +460,13 @@ class ProfileFragment : Fragment() {
                 )
 
                 if (response.isSuccessful && response.body()?.success == true) {
-                    Toast.makeText(
-                        requireContext(),
-                        "✅ Profil toko berhasil diperbarui!",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    Toast.makeText(requireContext(), "✅ Profil toko berhasil diperbarui!", Toast.LENGTH_LONG).show()
                     loadStoreSettings()
                 } else {
-                    Toast.makeText(
-                        requireContext(),
-                        response.body()?.message ?: "Gagal update settings",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    Toast.makeText(requireContext(), response.body()?.message ?: "Gagal update settings", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                Toast.makeText(
-                    requireContext(),
-                    "Gagal konek: ${e.localizedMessage}",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Toast.makeText(requireContext(), "Gagal konek: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
             } finally {
                 showLoading(false)
             }
@@ -540,11 +498,7 @@ class ProfileFragment : Fragment() {
                         .load(uri)
                         .placeholder(R.drawable.ic_person)
                         .into(binding.imgProfile)
-                    Toast.makeText(
-                        requireContext(),
-                        "Logo siap diupload. Klik Simpan Profil Toko",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    Toast.makeText(requireContext(), "Logo siap diupload. Klik Simpan Profil Toko", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -581,8 +535,9 @@ class ProfileFragment : Fragment() {
         binding.progressBar.visibility = if (show) View.VISIBLE else View.GONE
         binding.btnSaveProfile.isEnabled = !show
         binding.btnLogout.isEnabled = !show
-        binding.btnViewReviews.isEnabled = !show
-        binding.btnViewSalesReport.isEnabled = !show
+
+        binding.root.findViewById<View>(R.id.btnViewReviews)?.isEnabled = !show
+        binding.root.findViewById<View>(R.id.btnViewSalesReport)?.isEnabled = !show
     }
 
     override fun onDestroyView() {
