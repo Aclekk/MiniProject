@@ -71,7 +71,7 @@ class ProductAdapter(
                 Log.d("ProductAdapter", "✅ Glide loading: $imageUrl")
             } else {
                 binding.imgProduct.setImageResource(R.drawable.bg_card)
-                Log.d("ProductAdapter", "⚠️ No image URL, using placeholder")
+                Log.d("ProductAdapter", "⚠ No image URL, using placeholder")
             }
 
             // Kategori dan Stok
@@ -101,12 +101,12 @@ class ProductAdapter(
 
             // Event Listeners
             binding.btnEdit.setOnClickListener {
-                Log.d("ProductAdapter", "✏️ Edit clicked for: ${product.name}")
+                Log.d("ProductAdapter", "✏ Edit clicked for: ${product.name}")
                 onItemClick(product, "edit")
             }
 
             binding.btnDelete.setOnClickListener {
-                Log.d("ProductAdapter", "🗑️ Delete clicked for: ${product.name}")
+                Log.d("ProductAdapter", "🗑 Delete clicked for: ${product.name}")
                 onItemClick(product, "delete")
             }
 

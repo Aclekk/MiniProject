@@ -12,14 +12,12 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.animation.AnimationUtils
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.example.miniproject.R
 import com.example.miniproject.adapter.ProductAdapter
 import com.example.miniproject.data.api.ApiClient
@@ -78,60 +76,13 @@ class HomeFragment : Fragment() {
         farmToolClassifier = FarmToolClassifier(requireContext())
 
         setupUserRole()
-        setupBestSellerRecyclerView()
+        setupBestSellerRecyclerView() // ✅ NEW: Setup best seller section
         setupRecyclerView()
         loadProducts()
         setupSearch()
         setupFilter()
         setupVisualSearch()
         setupFAB()
-
-        // 🎨 START ANIMATIONS
-        startInitialAnimations()
-    }
-
-    // 🎨 NEW: Start initial animations when fragment loads
-    private fun startInitialAnimations() {
-        // Hide all views first
-        binding.root.alpha = 0f
-
-        // Fade in entire view
-        binding.root.animate()
-            .alpha(1f)
-            .setDuration(300)
-            .start()
-    }
-
-    // 🎨 NEW: Animate RecyclerView items with stagger effect
-    private fun animateRecyclerView(recyclerView: RecyclerView, startDelay: Long = 0) {
-        recyclerView.post {
-            for (i in 0 until recyclerView.childCount) {
-                val child = recyclerView.getChildAt(i)
-                child.alpha = 0f
-                child.translationY = 50f
-
-                child.animate()
-                    .alpha(1f)
-                    .translationY(0f)
-                    .setStartDelay(startDelay + (i * 50L))
-                    .setDuration(400)
-                    .start()
-            }
-        }
-    }
-
-    // 🎨 NEW: Animate FAB with bounce
-    private fun animateFAB() {
-        binding.fabAddProduct.scaleX = 0f
-        binding.fabAddProduct.scaleY = 0f
-
-        binding.fabAddProduct.animate()
-            .scaleX(1f)
-            .scaleY(1f)
-            .setStartDelay(600)
-            .setDuration(500)
-            .setInterpolator(android.view.animation.BounceInterpolator())
-            .start()
     }
 
     private fun setupUserRole() {
@@ -143,28 +94,12 @@ class HomeFragment : Fragment() {
         if (userRole == "seller") {
             binding.fabAddProduct.visibility = View.VISIBLE
             binding.fabAddProduct.setOnClickListener {
-                // 🎨 Scale animation on click
-                it.animate()
-                    .scaleX(0.9f)
-                    .scaleY(0.9f)
-                    .setDuration(100)
-                    .withEndAction {
-                        it.animate()
-                            .scaleX(1f)
-                            .scaleY(1f)
-                            .setDuration(100)
-                            .start()
-                    }
-                    .start()
-
                 val fragment = AddProductFragment()
                 parentFragmentManager.beginTransaction()
                     .replace(R.id.fragment_container, fragment)
                     .addToBackStack(null)
                     .commit()
             }
-            // 🎨 Animate FAB entrance
-            animateFAB()
         } else {
             binding.fabAddProduct.visibility = View.GONE
         }
@@ -174,13 +109,15 @@ class HomeFragment : Fragment() {
         super.onResume()
         Log.d("HomeFragment", "🔄 onResume() called, isVisualSearchActive: $isVisualSearchActive")
 
+        // ✅ Skip refresh jika baru selesai visual search
         if (!isVisualSearchActive) {
             loadProductsFromApi()
         } else {
-            Log.d("HomeFragment", "⏭️ Skipping refreshProducts() - visual search active")
+            Log.d("HomeFragment", "⏭ Skipping refreshProducts() - visual search active")
         }
     }
 
+    // ✅ NEW: Setup Best Seller RecyclerView (Horizontal)
     private fun setupBestSellerRecyclerView() {
         bestSellerAdapter = ProductAdapter(bestSellerProducts, userRole) { product, action ->
             handleProductAction(product, action)
@@ -190,25 +127,6 @@ class HomeFragment : Fragment() {
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
             adapter = bestSellerAdapter
             setHasFixedSize(true)
-
-            // 🎨 Add scroll listener for item animations
-            addOnScrollListener(object : RecyclerView.OnScrollListener() {
-                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                    super.onScrolled(recyclerView, dx, dy)
-                    // Animate newly visible items
-                    for (i in 0 until childCount) {
-                        val child = getChildAt(i)
-                        if (child != null && child.alpha < 1f) {
-                            child.animate()
-                                .alpha(1f)
-                                .scaleX(1f)
-                                .scaleY(1f)
-                                .setDuration(300)
-                                .start()
-                        }
-                    }
-                }
-            })
         }
     }
 
@@ -223,39 +141,16 @@ class HomeFragment : Fragment() {
             setHasFixedSize(true)
             clipToPadding = false
             isNestedScrollingEnabled = false
-
-            // 🎨 Add scroll listener for item animations
-            addOnScrollListener(object : RecyclerView.OnScrollListener() {
-                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                    super.onScrolled(recyclerView, dx, dy)
-                    // Animate newly visible items
-                    for (i in 0 until childCount) {
-                        val child = getChildAt(i)
-                        if (child != null && child.alpha < 1f) {
-                            child.animate()
-                                .alpha(1f)
-                                .translationY(0f)
-                                .setDuration(300)
-                                .start()
-                        }
-                    }
-                }
-            })
         }
     }
 
+    // ✅ NEW: Handle product actions (edit, delete, view, toggle_best_seller)
     private fun handleProductAction(product: Product, action: String) {
         when (action) {
             "edit" -> {
                 val bundle = Bundle().apply { putParcelable("product", product) }
                 val fragment = EditProductFragment().apply { arguments = bundle }
                 parentFragmentManager.beginTransaction()
-                    .setCustomAnimations(
-                        R.anim.slide_in_right,
-                        R.anim.slide_out_left,
-                        R.anim.slide_in_left,
-                        R.anim.slide_out_right
-                    )
                     .replace(R.id.fragment_container, fragment)
                     .addToBackStack(null)
                     .commit()
@@ -267,12 +162,6 @@ class HomeFragment : Fragment() {
                 val bundle = Bundle().apply { putParcelable("product", product) }
                 val fragment = ProductDetailFragment().apply { arguments = bundle }
                 parentFragmentManager.beginTransaction()
-                    .setCustomAnimations(
-                        R.anim.slide_in_right,
-                        R.anim.slide_out_left,
-                        R.anim.slide_in_left,
-                        R.anim.slide_out_right
-                    )
                     .replace(R.id.fragment_container, fragment)
                     .addToBackStack(null)
                     .commit()
@@ -283,6 +172,7 @@ class HomeFragment : Fragment() {
         }
     }
 
+    // ✅ NEW: Toggle Best Seller Status
     private fun toggleBestSeller(product: Product) {
         val newStatus = if (product.isBestSeller == 1) 0 else 1
         val statusText = if (newStatus == 1) "terlaris" else "biasa"
@@ -293,11 +183,13 @@ class HomeFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             try {
+                // Update via API
                 val response = ApiClient.apiService.toggleBestSeller(
                     token = "Bearer $token",
                     productId = product.id,
                     isBestSeller = newStatus
                 )
+
 
                 if (response.isSuccessful) {
                     Toast.makeText(
@@ -306,6 +198,7 @@ class HomeFragment : Fragment() {
                         Toast.LENGTH_SHORT
                     ).show()
 
+                    // ✅ Auto refresh untuk update tampilan
                     loadProductsFromApi()
                 } else {
                     Toast.makeText(
@@ -343,13 +236,20 @@ class HomeFragment : Fragment() {
                         )
 
                         if (response.isSuccessful) {
+
+                            // 🔥 PENTING: hapus dari SEMUA list
+                            displayProducts.removeAll { it.id == product.id }
+                            bestSellerProducts.removeAll { it.id == product.id }
+
+                            productAdapter.notifyDataSetChanged()
+                            bestSellerAdapter.notifyDataSetChanged()
+
                             Toast.makeText(
                                 requireContext(),
                                 "✅ Produk berhasil dihapus",
                                 Toast.LENGTH_SHORT
                             ).show()
 
-                            loadProductsFromApi()
                         } else {
                             Toast.makeText(
                                 requireContext(),
@@ -368,14 +268,16 @@ class HomeFragment : Fragment() {
 
                 dialog.dismiss()
             }
-            .setNegativeButton("Batal") { dialog, _ -> dialog.dismiss() }
+            .setNegativeButton("Batal", null)
             .show()
     }
+
 
     private fun loadProducts() {
         loadProductsFromApi()
     }
 
+    // ✅ UPDATED: Load products + separate best sellers
     private fun loadProductsFromApi() {
         if (isDisplayProductsLocked) {
             Log.d("HomeFragment", "🔒 displayProducts LOCKED - skipping API load")
@@ -398,6 +300,7 @@ class HomeFragment : Fragment() {
                 if (response.isSuccessful) {
                     val list = response.body()?.data?.products ?: emptyList()
 
+                    // ✅ Separate best sellers
                     val bestSellers = list.filter { it.isBestSeller == 1 }
                     val allProducts = list
 
@@ -406,31 +309,16 @@ class HomeFragment : Fragment() {
                     bestSellerProducts.addAll(bestSellers)
                     bestSellerAdapter.notifyDataSetChanged()
 
-                    // 🎨 Animate best seller items
-                    if (bestSellers.isNotEmpty()) {
-                        animateRecyclerView(binding.rvBestSeller, 200)
-                    }
-
                     // Update All Products section
                     displayProducts.clear()
                     displayProducts.addAll(allProducts)
                     productAdapter.notifyDataSetChanged()
 
-                    // 🎨 Animate product grid items
-                    animateRecyclerView(binding.rvHomeProducts, 400)
-
-                    // Show/Hide Best Seller section
+                    // ✅ Show/Hide Best Seller section
                     if (bestSellers.isEmpty()) {
                         binding.layoutBestSeller.visibility = View.GONE
                     } else {
                         binding.layoutBestSeller.visibility = View.VISIBLE
-                        // 🎨 Animate section appearance
-                        binding.layoutBestSeller.alpha = 0f
-                        binding.layoutBestSeller.animate()
-                            .alpha(1f)
-                            .setDuration(500)
-                            .setStartDelay(100)
-                            .start()
                     }
 
                     Log.d("HomeFragment", "✅ Loaded ${list.size} products (${bestSellers.size} best sellers)")
@@ -474,11 +362,6 @@ class HomeFragment : Fragment() {
                 }
 
                 productAdapter.updateList(filtered)
-
-                // 🎨 Animate filtered results
-                binding.rvHomeProducts.postDelayed({
-                    animateRecyclerView(binding.rvHomeProducts, 0)
-                }, 100)
             }
             override fun afterTextChanged(s: Editable?) {}
         })
@@ -486,26 +369,12 @@ class HomeFragment : Fragment() {
 
     private fun setupVisualSearch() {
         binding.btnVisualSearch.setOnClickListener {
-            // 🎨 Button press animation
-            it.animate()
-                .scaleX(0.95f)
-                .scaleY(0.95f)
-                .setDuration(100)
-                .withEndAction {
-                    it.animate()
-                        .scaleX(1f)
-                        .scaleY(1f)
-                        .setDuration(100)
-                        .start()
-                }
-                .start()
-
             showImageSourceDialog()
         }
     }
 
     private fun showImageSourceDialog() {
-        val options = arrayOf("📸 Ambil Foto", "🖼️ Pilih dari Galeri")
+        val options = arrayOf("📸 Ambil Foto", "🖼 Pilih dari Galeri")
 
         AlertDialog.Builder(requireContext())
             .setTitle("Cari Produk dengan Gambar")
@@ -596,9 +465,6 @@ class HomeFragment : Fragment() {
 
                     binding.rvHomeProducts.scrollToPosition(0)
 
-                    // 🎨 Animate search results
-                    animateRecyclerView(binding.rvHomeProducts, 0)
-
                     binding.rvHomeProducts.postDelayed({
                         isVisualSearchActive = false
                         isDisplayProductsLocked = false
@@ -640,20 +506,6 @@ class HomeFragment : Fragment() {
 
     private fun setupFilter() {
         binding.btnFilterHome.setOnClickListener {
-            // 🎨 Button press animation
-            it.animate()
-                .scaleX(0.95f)
-                .scaleY(0.95f)
-                .setDuration(100)
-                .withEndAction {
-                    it.animate()
-                        .scaleX(1f)
-                        .scaleY(1f)
-                        .setDuration(100)
-                        .start()
-                }
-                .start()
-
             val sliderView = layoutInflater.inflate(R.layout.dialog_price_filter, null)
             val slider = sliderView.findViewById<RangeSlider>(R.id.sliderPrice)
 
@@ -677,12 +529,6 @@ class HomeFragment : Fragment() {
                     }
 
                     productAdapter.updateList(filtered)
-
-                    // 🎨 Animate filtered results
-                    binding.rvHomeProducts.postDelayed({
-                        animateRecyclerView(binding.rvHomeProducts, 0)
-                    }, 100)
-
                     dialog.dismiss()
                 }
                 .setNegativeButton("Tampilkan Semua") { dialog, _ ->
