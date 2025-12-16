@@ -92,7 +92,6 @@ class ProfileFragment : Fragment() {
         if (userRole == "seller") {
             binding.tvSectionTitle.text = "🏪 Informasi Toko"
             binding.btnSaveProfile.text = "💾 Simpan Profil Toko"
-            binding.tvPhotoLabel.text = "📷 Ketuk untuk mengganti logo toko"
 
             binding.tilStoreAddress.visibility = View.VISIBLE
             binding.btnViewReviews.visibility = View.VISIBLE
@@ -104,34 +103,34 @@ class ProfileFragment : Fragment() {
             binding.etAddress.isEnabled = true
             binding.etStoreAddress.isEnabled = true
 
-            binding.tilUsername.hint = "No WhatsApp"
-            binding.tilFullName.hint = "Nama Toko"
-            binding.tilEmail.hint = "Email Toko"
-            binding.tilPhone.hint = "No Telepon Toko"
-            binding.tilAddress.hint = "Tagline/Deskripsi Toko"
-            binding.tilStoreAddress.hint = "Alamat Toko"
+            binding.tilUsername.hint = "📱 No WhatsApp"
+            binding.tilFullName.hint = "🏪 Nama Toko"
+            binding.tilEmail.hint = "📧 Email Toko"
+            binding.tilPhone.hint = "📱 No Telepon Toko"
+            binding.tilAddress.hint = "✨ Tagline/Deskripsi Toko"
+            binding.tilStoreAddress.hint = "🏪 Alamat Toko"
 
         } else {
-            binding.tvSectionTitle.text = "📋 Informasi Profil"
-            binding.btnSaveProfile.text = "💾 Simpan Foto Profil"
-            binding.tvPhotoLabel.text = "📷 Ketuk untuk mengganti foto"
+            binding.tvSectionTitle.text = "Informasi Profil"
+            binding.btnSaveProfile.text = "💾 Simpan Perubahan"
 
             binding.tilStoreAddress.visibility = View.GONE
             binding.btnViewReviews.visibility = View.GONE
             binding.btnViewSalesReport.visibility = View.GONE
 
-            binding.etUsername.isEnabled = false
-            binding.etFullName.isEnabled = false
-            binding.etEmail.isEnabled = false
-            binding.etPhone.isEnabled = false
-            binding.etAddress.isEnabled = false
+            // ✅ PERBAIKAN: Buyer bisa edit semua field kecuali username
+            binding.etUsername.isEnabled = false  // Username tidak bisa diganti
+            binding.etFullName.isEnabled = true
+            binding.etEmail.isEnabled = true
+            binding.etPhone.isEnabled = true
+            binding.etAddress.isEnabled = true
             binding.etStoreAddress.isEnabled = false
 
-            binding.tilUsername.hint = "Username"
-            binding.tilFullName.hint = "Nama Lengkap"
-            binding.tilEmail.hint = "Email"
-            binding.tilPhone.hint = "No Telepon"
-            binding.tilAddress.hint = "Alamat"
+            binding.tilUsername.hint = "👤 Username"
+            binding.tilFullName.hint = "🙋 Nama Lengkap"
+            binding.tilEmail.hint = "📧 Email"
+            binding.tilPhone.hint = "📱 No Telepon"
+            binding.tilAddress.hint = "📍 Alamat"
         }
     }
 
@@ -148,7 +147,7 @@ class ProfileFragment : Fragment() {
 
         binding.btnSaveProfile.setOnClickListener {
             if (userRole == "seller") updateStoreSettings()
-            else updateProfilePhotoOnly()
+            else updateBuyerProfile()  // ✅ Ganti fungsi untuk buyer
         }
 
         binding.btnLogout.setOnClickListener { logout() }
@@ -295,6 +294,91 @@ class ProfileFragment : Fragment() {
         }
     }
 
+    private fun updateBuyerProfile() {
+        val prefs = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
+        val token = prefs.getString("token", null)
+
+        if (token.isNullOrEmpty()) {
+            Toast.makeText(requireContext(), "Token hilang", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // Ambil data dari form
+        val fullName = binding.etFullName.text.toString().trim()
+        val email = binding.etEmail.text.toString().trim()
+        val phone = binding.etPhone.text.toString().trim()
+        val address = binding.etAddress.text.toString().trim()
+
+        // Validasi
+        if (fullName.isEmpty()) {
+            Toast.makeText(requireContext(), "Nama lengkap tidak boleh kosong", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        if (email.isEmpty()) {
+            Toast.makeText(requireContext(), "Email tidak boleh kosong", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        showLoading(true)
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                // Buat request body untuk text fields
+                fun createPart(value: String): RequestBody {
+                    return value.toRequestBody("text/plain".toMediaTypeOrNull())
+                }
+
+                val response = ApiClient.apiService.updateProfile(
+                    token = "Bearer $token",
+                    fullName = createPart(fullName),
+                    email = createPart(email),
+                    phone = if (phone.isNotEmpty()) createPart(phone) else null,
+                    address = if (address.isNotEmpty()) createPart(address) else null,
+                    city = null,
+                    province = null,
+                    postalCode = null,
+                    recipientName = null,
+                    recipientPhone = null,
+                    profileImage = selectedImagePart  // Include foto jika ada
+                )
+
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    if (body?.success == true && body.data != null) {
+                        Toast.makeText(
+                            requireContext(),
+                            "✅ Profil berhasil diperbarui!",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        bindProfileToUi(body.data)
+                        selectedImagePart = null  // Reset foto yang dipilih
+                    } else {
+                        Toast.makeText(
+                            requireContext(),
+                            body?.message ?: "Gagal update profil",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                } else {
+                    Toast.makeText(
+                        requireContext(),
+                        "Error ${response.code()}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(
+                    requireContext(),
+                    "Gagal konek: ${e.localizedMessage}",
+                    Toast.LENGTH_SHORT
+                ).show()
+            } finally {
+                showLoading(false)
+            }
+        }
+    }
+
     private fun updateStoreSettings() {
         val prefs = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
         val token = prefs.getString("token", null)
@@ -416,76 +500,6 @@ class ProfileFragment : Fragment() {
                     Toast.makeText(
                         requireContext(),
                         response.body()?.message ?: "Gagal update settings",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            } catch (e: Exception) {
-                Toast.makeText(
-                    requireContext(),
-                    "Gagal konek: ${e.localizedMessage}",
-                    Toast.LENGTH_SHORT
-                ).show()
-            } finally {
-                showLoading(false)
-            }
-        }
-    }
-
-    private fun updateProfilePhotoOnly() {
-        val prefs = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
-        val token = prefs.getString("token", null)
-
-        if (token.isNullOrEmpty()) {
-            Toast.makeText(requireContext(), "Token hilang", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        if (selectedImagePart == null) {
-            Toast.makeText(requireContext(), "Pilih foto dulu", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        fun emptyPart(): RequestBody? = null
-
-        showLoading(true)
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val response = ApiClient.apiService.updateProfile(
-                    token = "Bearer $token",
-                    fullName = emptyPart(),
-                    email = emptyPart(),
-                    phone = emptyPart(),
-                    address = emptyPart(),
-                    city = emptyPart(),
-                    province = emptyPart(),
-                    postalCode = emptyPart(),
-                    recipientName = emptyPart(),
-                    recipientPhone = emptyPart(),
-                    profileImage = selectedImagePart
-                )
-
-                if (response.isSuccessful) {
-                    val body = response.body()
-                    if (body?.success == true && body.data != null) {
-                        Toast.makeText(
-                            requireContext(),
-                            "✅ Foto profil berhasil diperbarui!",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        bindProfileToUi(body.data)
-                        selectedImagePart = null
-                    } else {
-                        Toast.makeText(
-                            requireContext(),
-                            body?.message ?: "Gagal update",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                } else {
-                    Toast.makeText(
-                        requireContext(),
-                        "Error ${response.code()}",
                         Toast.LENGTH_SHORT
                     ).show()
                 }
