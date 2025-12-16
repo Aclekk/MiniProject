@@ -375,7 +375,7 @@
                         app:spanCount="2" />
                 </LinearLayout>
 
-                <!-- 📍 PREMIUM FOOTER -->
+                <!-- 📍 PREMIUM FOOTER - CENTERED TEXT -->
                 <androidx.cardview.widget.CardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -421,13 +421,14 @@
                             android:gravity="center"
                             android:layout_marginBottom="20dp" />
 
-                        <!-- Contact Info Cards -->
+                        <!-- ✅ Contact Info Cards - CENTERED -->
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="vertical"
                             android:background="@drawable/bg_contact_info"
-                            android:padding="16dp">
+                            android:padding="16dp"
+                            android:gravity="center">
 
                             <TextView
                                 android:id="@+id/tvAboutAddress"
@@ -437,6 +438,7 @@
                                 android:textSize="13sp"
                                 android:textColor="#444444"
                                 android:layout_marginBottom="8dp"
+                                android:gravity="center"
                                 android:drawablePadding="8dp" />
 
                             <TextView
@@ -447,6 +449,7 @@
                                 android:textSize="13sp"
                                 android:textColor="#444444"
                                 android:layout_marginBottom="8dp"
+                                android:gravity="center"
                                 android:drawablePadding="8dp" />
 
                             <TextView
@@ -456,6 +459,7 @@
                                 android:text="📧 support@agrishop.com"
                                 android:textSize="13sp"
                                 android:textColor="#444444"
+                                android:gravity="center"
                                 android:drawablePadding="8dp" />
                         </LinearLayout>
 
