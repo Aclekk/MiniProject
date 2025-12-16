@@ -10,7 +10,6 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.miniproject.R
 import com.example.miniproject.adapter.CategoryAdapter
@@ -37,7 +36,6 @@ class CategoriesFragment : Fragment() {
 
     private var userRole = ""
 
-    // ✅ Flag untuk track loading state
     private var categoriesLoaded = false
     private var productsLoaded = false
 
@@ -59,14 +57,11 @@ class CategoriesFragment : Fragment() {
         getUserData()
         setupRecyclerViews()
         setupClickListeners()
-
-        // ✅ LOAD DATA - products dan categories parallel
         loadCategoriesAndProducts()
     }
 
     override fun onResume() {
         super.onResume()
-        // Reset flags
         categoriesLoaded = false
         productsLoaded = false
         loadCategoriesAndProducts()
@@ -79,16 +74,12 @@ class CategoriesFragment : Fragment() {
         val sharedPref = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
         userRole = sharedPref.getString("role", "buyer") ?: "buyer"
 
-        // ✅ FAB hanya untuk seller
-        if (userRole == "seller") {
-            binding.fabAddCategory.visibility = View.VISIBLE
-        } else {
-            binding.fabAddCategory.visibility = View.GONE
-        }
+        binding.fabAddCategory.visibility =
+            if (userRole == "seller") View.VISIBLE else View.GONE
     }
 
     // =========================
-    // RECYCLER SETUP
+    // RECYCLER SETUP (FIX UTAMA DI SINI)
     // =========================
     private fun setupRecyclerViews() {
         categoryAdapter = CategoryAdapter(
@@ -105,7 +96,8 @@ class CategoriesFragment : Fragment() {
             }
         )
 
-        binding.rvCategories.layoutManager = GridLayoutManager(requireContext(), 2)
+        // ✅ FIX FINAL: 1 BARIS = 1 CARD
+        binding.rvCategories.layoutManager = LinearLayoutManager(requireContext())
         binding.rvCategories.adapter = categoryAdapter
 
         productAdapter = ProductAdapter(products, userRole) { product, action ->
@@ -135,8 +127,7 @@ class CategoriesFragment : Fragment() {
                         .setPositiveButton("Hapus") { dialog, _ ->
                             val success = ProductDataSource.deleteProduct(product)
                             if (success) {
-                                Toast.makeText(context, "✅ Produk dihapus", Toast.LENGTH_SHORT)
-                                    .show()
+                                Toast.makeText(context, "✅ Produk dihapus", Toast.LENGTH_SHORT).show()
                                 productsLoaded = false
                                 loadCategoriesAndProducts()
                                 categories.find { it.id == product.categoryId }?.let {
@@ -173,39 +164,26 @@ class CategoriesFragment : Fragment() {
     }
 
     // =========================
-    // ✅ LOAD CATEGORIES & PRODUCTS BERSAMAAN
+    // LOAD DATA
     // =========================
     private fun loadCategoriesAndProducts() {
         viewLifecycleOwner.lifecycleScope.launch {
-            // Launch both in parallel
             launch { loadCategories() }
             launch { loadProducts() }
         }
     }
 
-    // =========================
-    // LOAD CATEGORIES DARI API
-    // =========================
     private fun loadCategories() {
         viewLifecycleOwner.lifecycleScope.launch {
             val repoCategories = CategoryRepository.getCategories()
-
             categories.clear()
             categories.addAll(repoCategories)
             categoryAdapter.notifyDataSetChanged()
-
             categoriesLoaded = true
-
-            android.util.Log.d("CategoriesFragment", "✅ Categories loaded: ${categories.size}")
-
-            // ✅ CEK APAKAH SUDAH BISA HANDLE ARGUMENTS
             checkAndHandleArguments()
         }
     }
 
-    // =========================
-    // LOAD PRODUCTS VIA API
-    // =========================
     private fun loadProducts() {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
@@ -219,24 +197,11 @@ class CategoriesFragment : Fragment() {
                 )
 
                 if (response.isSuccessful && response.body()?.success == true) {
-                    val body = response.body()
-                    val list = body?.data?.products ?: emptyList()
-
+                    val list = response.body()?.data?.products ?: emptyList()
                     allProducts.clear()
                     allProducts.addAll(list)
-
                     productsLoaded = true
-
-                    android.util.Log.d("CategoriesFragment", "✅ Products loaded: ${allProducts.size}")
-
-                    // ✅ CEK APAKAH SUDAH BISA HANDLE ARGUMENTS
                     checkAndHandleArguments()
-                } else {
-                    Toast.makeText(
-                        requireContext(),
-                        "Gagal load produk: ${response.code()}",
-                        Toast.LENGTH_SHORT
-                    ).show()
                 }
             } catch (e: Exception) {
                 Toast.makeText(
@@ -248,83 +213,33 @@ class CategoriesFragment : Fragment() {
         }
     }
 
-    // =========================
-    // ✅ CEK & HANDLE ARGUMENTS (HANYA JIKA KEDUA DATA SUDAH LOADED)
-    // =========================
     private fun checkAndHandleArguments() {
-        // ✅ TUNGGU SAMPAI CATEGORIES DAN PRODUCTS SELESAI DIMUAT
-        if (!categoriesLoaded || !productsLoaded) {
-            android.util.Log.d("CategoriesFragment", "⏳ Waiting... Categories: $categoriesLoaded, Products: $productsLoaded")
-            return
-        }
-
-        if (categories.isEmpty() || allProducts.isEmpty()) {
-            android.util.Log.d("CategoriesFragment", "⚠️ Data empty. Categories: ${categories.size}, Products: ${allProducts.size}")
-            return
-        }
+        if (!categoriesLoaded || !productsLoaded) return
 
         val argId = arguments?.getInt("category_id", -1) ?: -1
         val argName = arguments?.getString("category_name")
 
-        android.util.Log.d("CategoriesFragment", "🔍 Arguments - ID: $argId, Name: $argName")
+        val preselect = categories.find { it.id == argId }
+            ?: categories.find { it.categoryName.equals(argName, true) }
 
-        // Cek apakah ada argumen yang valid
-        if (argId != -1 || !argName.isNullOrBlank()) {
-            val preselect = categories.find { it.id == argId }
-                ?: categories.find { it.categoryName.equals(argName, ignoreCase = true) }
-
-            if (preselect != null) {
-                android.util.Log.d("CategoriesFragment", "✅ Found category: ${preselect.categoryName} (ID: ${preselect.id})")
-
-                // Tunggu view selesai render
-                view?.post {
-                    showProductsForCategory(preselect)
-
-                    // Scroll ke kategori yang dipilih
-                    val idx = categories.indexOf(preselect)
-                    if (idx >= 0) {
-                        binding.rvCategories.scrollToPosition(idx)
-                    }
-                }
-
-                // ✅ CLEAR ARGUMENTS setelah diproses
-                arguments?.clear()
-            } else {
-                android.util.Log.d("CategoriesFragment", "❌ Category not found")
+        preselect?.let {
+            view?.post {
+                showProductsForCategory(it)
+                binding.rvCategories.scrollToPosition(categories.indexOf(it))
             }
+            arguments?.clear()
         }
     }
 
-    // =========================
-    // FILTER & TAMPILKAN PER KATEGORI
-    // =========================
     private fun showProductsForCategory(category: Category) {
-        android.util.Log.d("CategoriesFragment", "🔍 Filtering products for category: ${category.categoryName} (ID: ${category.id})")
-        android.util.Log.d("CategoriesFragment", "📦 Total products available: ${allProducts.size}")
-
         binding.tvCategoryTitle.text = "Produk di ${category.categoryName}"
         binding.llProductsSection.visibility = View.VISIBLE
 
-        val filteredProducts = allProducts.filter { it.categoryId == category.id }
-
-        android.util.Log.d("CategoriesFragment", "✅ Filtered products: ${filteredProducts.size}")
-        filteredProducts.forEach {
-            android.util.Log.d("CategoriesFragment", "  - ${it.name} (CategoryID: ${it.categoryId})")
-        }
-
+        val filtered = allProducts.filter { it.categoryId == category.id }
         products.clear()
-        products.addAll(filteredProducts)
+        products.addAll(filtered)
         productAdapter.notifyDataSetChanged()
 
-        if (products.isEmpty()) {
-            Toast.makeText(
-                requireContext(),
-                "Belum ada produk di ${category.categoryName}",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
-
-        // ✅ Smooth scroll ke section produk
         binding.nestedScrollView.post {
             binding.nestedScrollView.smoothScrollTo(0, binding.llProductsSection.top)
         }
@@ -343,13 +258,10 @@ class CategoriesFragment : Fragment() {
             .commit()
     }
 
-    // =========================
-    // DELETE CATEGORY VIA API
-    // =========================
     private fun deleteCategory(category: Category) {
         AlertDialog.Builder(requireContext())
             .setTitle("Hapus Kategori")
-            .setMessage("Yakin ingin menghapus kategori '${category.categoryName}'? Semua produk dalam kategori ini juga akan terhapus.")
+            .setMessage("Yakin ingin menghapus kategori '${category.categoryName}'?")
             .setPositiveButton("Hapus") { dialog, _ ->
                 viewLifecycleOwner.lifecycleScope.launch {
                     val success = CategoryRepository.deleteCategory(category.id)
@@ -359,19 +271,11 @@ class CategoriesFragment : Fragment() {
                         productsLoaded = false
                         loadCategoriesAndProducts()
                         binding.llProductsSection.visibility = View.GONE
-                    } else {
-                        Toast.makeText(
-                            context,
-                            "❌ Gagal menghapus kategori",
-                            Toast.LENGTH_SHORT
-                        ).show()
                     }
                     dialog.dismiss()
                 }
             }
-            .setNegativeButton("Batal") { dialog, _ ->
-                dialog.dismiss()
-            }
+            .setNegativeButton("Batal") { dialog, _ -> dialog.dismiss() }
             .show()
     }
 

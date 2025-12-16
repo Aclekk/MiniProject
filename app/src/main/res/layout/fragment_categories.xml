@@ -18,7 +18,7 @@
 
         <com.google.android.material.appbar.CollapsingToolbarLayout
             android:layout_width="match_parent"
-            android:layout_height="200dp"
+            android:layout_height="96dp"
             app:layout_scrollFlags="scroll|exitUntilCollapsed"
             app:contentScrim="#2E7D32">
 
@@ -141,16 +141,15 @@
                     android:background="?attr/selectableItemBackgroundBorderless" />
             </LinearLayout>
 
-            <!-- 🧱 GRID -->
+            <!-- ✅ LIST (1 kolom, bukan GRID) -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvCategories"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingHorizontal="12dp"
+                android:paddingHorizontal="0dp"
                 android:clipToPadding="false"
                 android:nestedScrollingEnabled="false"
-                app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
-                app:spanCount="2"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                 tools:listitem="@layout/item_category" />
 
             <!-- 📦 PRODUCTS SECTION (TETAP SAMA) -->
