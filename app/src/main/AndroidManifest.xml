@@ -90,6 +90,7 @@
         </provider>
 
         <!-- 🟢 Firebase Messaging Service (pastikan packagenya benar) -->
+        android:networkSecurityConfig="@xml/network_security_config"
 
 
     </application>

@@ -3,7 +3,6 @@ package com.example.miniproject.data.model
 import android.os.Parcelable
 import com.squareup.moshi.Json
 import kotlinx.parcelize.Parcelize
-
 // =====================
 // Base Response
 // =====================
@@ -248,3 +247,12 @@ data class AddReviewRequest(
     @Json(name = "is_anonymous") val isAnonymous: Int = 0
 )
 
+data class WaterQualityResponse(
+    val success: Boolean,
+    val quality: String?,
+    val confidence: Double?,
+    @Json(name = "raw_prediction")
+    val rawPrediction: String?,
+    val probabilities: Map<String, Double>?,
+    val error: String?
+)

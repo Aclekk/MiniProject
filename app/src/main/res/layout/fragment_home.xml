@@ -84,12 +84,13 @@
                     android:layout_width="52dp"
                     android:layout_height="52dp"
                     android:background="@drawable/bg_camera_button"
-                    android:contentDescription="Cari dengan Foto"
+                    android:contentDescription="Analisis Kualitas Air"
                     android:padding="10dp"
                     android:src="@android:drawable/ic_menu_camera"
                     app:tint="#FFFFFF"
                     android:scaleType="centerInside"
                     android:layout_marginEnd="4dp" />
+
 
                 <View
                     android:layout_width="1dp"

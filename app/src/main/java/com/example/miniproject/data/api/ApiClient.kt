@@ -7,12 +7,12 @@ import retrofit2.converter.moshi.MoshiConverterFactory
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import java.util.concurrent.TimeUnit
-import com.example.miniproject.data.api.ApiClient
 
 object ApiClient {
 
     // ✅ PENTING: Ganti dengan IP komputer Anda yang menjalankan PHP server
-    private const val BASE_URL = "http://192.168.100.7/agritools_api/"
+    private const val BASE_URL = "http://192.168.100.18/agritools_api/"
+    private const val ML_BASE_URL = "http://192.168.100.18:5000/"
 
     private val moshi: Moshi = Moshi.Builder()
         .add(KotlinJsonAdapterFactory())
@@ -29,6 +29,9 @@ object ApiClient {
         .writeTimeout(30, TimeUnit.SECONDS)
         .build()
 
+    // =========================
+    // Main API Retrofit (PHP)
+    // =========================
     private val retrofit: Retrofit by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
@@ -41,7 +44,25 @@ object ApiClient {
         retrofit.create(ApiService::class.java)
     }
 
-    // ✅ FIX: Return String NON-NULLABLE dan handle empty case
+    // =========================
+    // ✅ ML API Retrofit (Flask)
+    // =========================
+    private val mlRetrofit: Retrofit by lazy {
+        Retrofit.Builder()
+            .baseUrl(ML_BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .build()
+    }
+
+    // ✅ Service untuk endpoint Flask /predict
+    val waterQualityService: WaterQualityApiService by lazy {
+        mlRetrofit.create(WaterQualityApiService::class.java)
+    }
+
+    // =========================
+    // Existing helper (UNCHANGED)
+    // =========================
     fun getImageUrl(imagePath: String?): String {
         // Kalau null atau empty, return placeholder
         if (imagePath.isNullOrEmpty()) {
@@ -54,7 +75,6 @@ object ApiClient {
         }
 
         // Gabungkan BASE_URL dengan path relatif
-        // contoh: "uploads/products/product_123.jpg" -> "http://192.168.100.18/agritools_api/uploads/products/product_123.jpg"
         return BASE_URL + imagePath
     }
 }

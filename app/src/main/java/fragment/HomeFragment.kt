@@ -1,6 +1,6 @@
 package com.example.miniproject.fragment
 
-import android.app.AlertDialog
+import androidx.appcompat.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -22,7 +22,7 @@ import com.example.miniproject.R
 import com.example.miniproject.adapter.ProductAdapter
 import com.example.miniproject.data.api.ApiClient
 import com.example.miniproject.databinding.FragmentHomeBinding
-import com.example.miniproject.ml.FarmToolClassifier
+import com.example.miniproject.ml.WaterQualityClassifier
 import com.example.miniproject.model.Product
 import com.google.android.material.slider.RangeSlider
 import kotlinx.coroutines.launch
@@ -37,25 +37,24 @@ class HomeFragment : Fragment() {
 
     private val displayProducts = mutableListOf<Product>()
     private val bestSellerProducts = mutableListOf<Product>()
+    private val allProductsBackup = mutableListOf<Product>() // ✅ Backup untuk reset
 
     private var userRole = "user"
 
-    // 🆕 ML Classifier
-    private lateinit var farmToolClassifier: FarmToolClassifier
+    // ✅ Water Quality Classifier
+    private lateinit var waterQualityClassifier: WaterQualityClassifier
 
-    // 🆕 Flag untuk skip onResume refresh setelah visual search
-    private var isVisualSearchActive = false
-
-    // 🆕 LOCK untuk prevent refresh saat visual search
+    // Flags untuk prevent refresh
+    private var isWaterCheckActive = false
     private var isDisplayProductsLocked = false
 
-    // 🆕 Image picker launcher
+    // Image picker launcher
     private val pickImageLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == android.app.Activity.RESULT_OK) {
             result.data?.data?.let { imageUri ->
-                performVisualSearch(imageUri)
+                performWaterQualityCheck(imageUri)
             }
         }
     }
@@ -72,16 +71,16 @@ class HomeFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // 🆕 Initialize ML Classifier
-        farmToolClassifier = FarmToolClassifier(requireContext())
+        // ✅ Initialize Water Quality ML Classifier
+        waterQualityClassifier = WaterQualityClassifier(requireContext())
 
         setupUserRole()
-        setupBestSellerRecyclerView() // ✅ NEW: Setup best seller section
+        setupBestSellerRecyclerView()
         setupRecyclerView()
         loadProducts()
         setupSearch()
         setupFilter()
-        setupVisualSearch()
+        setupWaterQualityButton()
         setupFAB()
     }
 
@@ -107,17 +106,15 @@ class HomeFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        Log.d("HomeFragment", "🔄 onResume() called, isVisualSearchActive: $isVisualSearchActive")
+        Log.d("HomeFragment", "🔄 onResume() called, isWaterCheckActive: $isWaterCheckActive")
 
-        // ✅ Skip refresh jika baru selesai visual search
-        if (!isVisualSearchActive) {
+        if (!isWaterCheckActive) {
             loadProductsFromApi()
         } else {
-            Log.d("HomeFragment", "⏭ Skipping refreshProducts() - visual search active")
+            Log.d("HomeFragment", "⏭ Skipping refresh - water check active")
         }
     }
 
-    // ✅ NEW: Setup Best Seller RecyclerView (Horizontal)
     private fun setupBestSellerRecyclerView() {
         bestSellerAdapter = ProductAdapter(bestSellerProducts, userRole) { product, action ->
             handleProductAction(product, action)
@@ -144,7 +141,6 @@ class HomeFragment : Fragment() {
         }
     }
 
-    // ✅ NEW: Handle product actions (edit, delete, view, toggle_best_seller)
     private fun handleProductAction(product: Product, action: String) {
         when (action) {
             "edit" -> {
@@ -155,9 +151,7 @@ class HomeFragment : Fragment() {
                     .addToBackStack(null)
                     .commit()
             }
-            "delete" -> {
-                deleteProduct(product)
-            }
+            "delete" -> deleteProduct(product)
             "view" -> {
                 val bundle = Bundle().apply { putParcelable("product", product) }
                 val fragment = ProductDetailFragment().apply { arguments = bundle }
@@ -166,53 +160,33 @@ class HomeFragment : Fragment() {
                     .addToBackStack(null)
                     .commit()
             }
-            "toggle_best_seller" -> {
-                toggleBestSeller(product)
-            }
+            "toggle_best_seller" -> toggleBestSeller(product)
         }
     }
 
-    // ✅ NEW: Toggle Best Seller Status
     private fun toggleBestSeller(product: Product) {
         val newStatus = if (product.isBestSeller == 1) 0 else 1
         val statusText = if (newStatus == 1) "terlaris" else "biasa"
 
-        val sharedPref = requireContext()
-            .getSharedPreferences("user_pref", Context.MODE_PRIVATE)
+        val sharedPref = requireContext().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
         val token = sharedPref.getString("token", "") ?: ""
 
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                // Update via API
                 val response = ApiClient.apiService.toggleBestSeller(
                     token = "Bearer $token",
                     productId = product.id,
                     isBestSeller = newStatus
                 )
 
-
                 if (response.isSuccessful) {
-                    Toast.makeText(
-                        requireContext(),
-                        "✅ Produk ditandai sebagai $statusText",
-                        Toast.LENGTH_SHORT
-                    ).show()
-
-                    // ✅ Auto refresh untuk update tampilan
+                    Toast.makeText(requireContext(), "✅ Produk ditandai sebagai $statusText", Toast.LENGTH_SHORT).show()
                     loadProductsFromApi()
                 } else {
-                    Toast.makeText(
-                        requireContext(),
-                        "❌ Gagal update status: ${response.code()}",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    Toast.makeText(requireContext(), "❌ Gagal update status: ${response.code()}", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                Toast.makeText(
-                    requireContext(),
-                    "❌ Error: ${e.localizedMessage}",
-                    Toast.LENGTH_LONG
-                ).show()
+                Toast.makeText(requireContext(), "❌ Error: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
                 Log.e("HomeFragment", "Error toggle best seller: ${e.message}")
             }
         }
@@ -224,8 +198,7 @@ class HomeFragment : Fragment() {
             .setMessage("Yakin ingin menghapus ${product.name}?")
             .setPositiveButton("Hapus") { dialog, _ ->
 
-                val sharedPref = requireContext()
-                    .getSharedPreferences("user_pref", Context.MODE_PRIVATE)
+                val sharedPref = requireContext().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
                 val token = sharedPref.getString("token", "") ?: ""
 
                 viewLifecycleOwner.lifecycleScope.launch {
@@ -236,33 +209,19 @@ class HomeFragment : Fragment() {
                         )
 
                         if (response.isSuccessful) {
-
-                            // 🔥 PENTING: hapus dari SEMUA list
                             displayProducts.removeAll { it.id == product.id }
                             bestSellerProducts.removeAll { it.id == product.id }
+                            allProductsBackup.removeAll { it.id == product.id }
 
                             productAdapter.notifyDataSetChanged()
                             bestSellerAdapter.notifyDataSetChanged()
 
-                            Toast.makeText(
-                                requireContext(),
-                                "✅ Produk berhasil dihapus",
-                                Toast.LENGTH_SHORT
-                            ).show()
-
+                            Toast.makeText(requireContext(), "✅ Produk berhasil dihapus", Toast.LENGTH_SHORT).show()
                         } else {
-                            Toast.makeText(
-                                requireContext(),
-                                "❌ Gagal hapus: ${response.code()}",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                            Toast.makeText(requireContext(), "❌ Gagal hapus: ${response.code()}", Toast.LENGTH_SHORT).show()
                         }
                     } catch (e: Exception) {
-                        Toast.makeText(
-                            requireContext(),
-                            "❌ Error: ${e.localizedMessage}",
-                            Toast.LENGTH_LONG
-                        ).show()
+                        Toast.makeText(requireContext(), "❌ Error: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
                     }
                 }
 
@@ -272,21 +231,15 @@ class HomeFragment : Fragment() {
             .show()
     }
 
-
     private fun loadProducts() {
         loadProductsFromApi()
     }
 
-    // ✅ UPDATED: Load products + separate best sellers
     private fun loadProductsFromApi() {
         if (isDisplayProductsLocked) {
             Log.d("HomeFragment", "🔒 displayProducts LOCKED - skipping API load")
             return
         }
-
-        val sharedPref = requireContext()
-            .getSharedPreferences("user_pref", Context.MODE_PRIVATE)
-        val token = sharedPref.getString("token", "") ?: ""
 
         viewLifecycleOwner.lifecycleScope.launch {
             try {
@@ -300,9 +253,12 @@ class HomeFragment : Fragment() {
                 if (response.isSuccessful) {
                     val list = response.body()?.data?.products ?: emptyList()
 
-                    // ✅ Separate best sellers
                     val bestSellers = list.filter { it.isBestSeller == 1 }
                     val allProducts = list
+
+                    // Update backup
+                    allProductsBackup.clear()
+                    allProductsBackup.addAll(allProducts)
 
                     // Update Best Seller section
                     bestSellerProducts.clear()
@@ -314,27 +270,15 @@ class HomeFragment : Fragment() {
                     displayProducts.addAll(allProducts)
                     productAdapter.notifyDataSetChanged()
 
-                    // ✅ Show/Hide Best Seller section
-                    if (bestSellers.isEmpty()) {
-                        binding.layoutBestSeller.visibility = View.GONE
-                    } else {
-                        binding.layoutBestSeller.visibility = View.VISIBLE
-                    }
+                    // Show/Hide Best Seller section
+                    binding.layoutBestSeller.visibility = if (bestSellers.isEmpty()) View.GONE else View.VISIBLE
 
                     Log.d("HomeFragment", "✅ Loaded ${list.size} products (${bestSellers.size} best sellers)")
                 } else {
-                    Toast.makeText(
-                        requireContext(),
-                        "Gagal load produk: ${response.code()}",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    Toast.makeText(requireContext(), "Gagal load produk: ${response.code()}", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                Toast.makeText(
-                    requireContext(),
-                    "Gagal konek server: ${e.localizedMessage}",
-                    Toast.LENGTH_LONG
-                ).show()
+                Toast.makeText(requireContext(), "Gagal konek server: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
                 Log.e("HomeFragment", "Error loading products: ${e.message}")
             }
         }
@@ -352,9 +296,9 @@ class HomeFragment : Fragment() {
                 val query = s.toString().lowercase().trim()
 
                 val filtered = if (query.isEmpty()) {
-                    displayProducts
+                    allProductsBackup
                 } else {
-                    displayProducts.filter {
+                    allProductsBackup.filter {
                         it.name.lowercase().contains(query) ||
                                 it.categoryName?.lowercase()?.contains(query) == true ||
                                 it.description?.lowercase()?.contains(query) == true
@@ -367,31 +311,26 @@ class HomeFragment : Fragment() {
         })
     }
 
-    private fun setupVisualSearch() {
+    private fun setupWaterQualityButton() {
         binding.btnVisualSearch.setOnClickListener {
-            showImageSourceDialog()
+            showWaterCheckDialog()
         }
     }
 
-    private fun showImageSourceDialog() {
-        val options = arrayOf("📸 Ambil Foto", "🖼 Pilih dari Galeri")
-
+    private fun showWaterCheckDialog() {
         AlertDialog.Builder(requireContext())
-            .setTitle("Cari Produk dengan Gambar")
-            .setItems(options) { dialog, which ->
-                when (which) {
-                    0 -> openCamera()
-                    1 -> openGallery()
-                }
-                dialog.dismiss()
+            .setTitle("🌊 Analisis Kualitas Air")
+            .setMessage("Upload foto air (sawah/kolam/irigasi) untuk mendapat rekomendasi produk yang tepat")
+            .setIcon(R.drawable.ic_water)
+            .setPositiveButton("📸 Ambil Foto") { _, _ ->
+                Toast.makeText(context, "📸 Kamera segera hadir!", Toast.LENGTH_SHORT).show()
+                openGallery()
+            }
+            .setNeutralButton("🖼 Galeri") { _, _ ->
+                openGallery()
             }
             .setNegativeButton("Batal", null)
             .show()
-    }
-
-    private fun openCamera() {
-        Toast.makeText(requireContext(), "📸 Fitur kamera akan segera hadir!", Toast.LENGTH_SHORT).show()
-        openGallery()
     }
 
     private fun openGallery() {
@@ -399,108 +338,166 @@ class HomeFragment : Fragment() {
         pickImageLauncher.launch(intent)
     }
 
-    private fun performVisualSearch(imageUri: Uri) {
+    private fun performWaterQualityCheck(imageUri: Uri) {
         try {
-            Log.d("HomeFragment", "🔍 Starting visual search...")
-            Toast.makeText(requireContext(), "🤖 Menganalisis gambar...", Toast.LENGTH_SHORT).show()
+            Log.d("HomeFragment", "🌊 Starting water quality analysis...")
+            Toast.makeText(requireContext(), "🤖 Menganalisis kualitas air...", Toast.LENGTH_SHORT).show()
 
-            val predictions = farmToolClassifier.classifyImage(imageUri)
+            viewLifecycleOwner.lifecycleScope.launch {
+                try {
+                    val result = waterQualityClassifier.analyzeWater(imageUri)
 
-            Log.d("HomeFragment", "✅ ML Predictions: $predictions")
-
-            if (predictions.isEmpty()) {
-                Log.d("HomeFragment", "❌ No predictions returned from ML")
-                Toast.makeText(
-                    requireContext(),
-                    "❌ Tidak dapat mengenali produk dalam gambar",
-                    Toast.LENGTH_SHORT
-                ).show()
-                isVisualSearchActive = false
-                isDisplayProductsLocked = false
-                return
-            }
-
-            Log.d("HomeFragment", "📦 Total products in list: ${displayProducts.size}")
-
-            val matchedProducts = displayProducts.filter { product ->
-                val productName = product.name.lowercase()
-                val categoryName = product.categoryName?.lowercase() ?: ""
-                val description = product.description?.lowercase() ?: ""
-
-                val matched = predictions.any { prediction ->
-                    productName.contains(prediction) ||
-                            categoryName.contains(prediction) ||
-                            description.contains(prediction)
-                }
-
-                if (matched) {
-                    Log.d("HomeFragment", "✅ Matched: ${product.name} (prediction: ${predictions.joinToString()})")
-                }
-
-                matched
-            }
-
-            Log.d("HomeFragment", "🎯 Total matched products: ${matchedProducts.size}")
-
-            if (matchedProducts.isNotEmpty()) {
-                Log.d("HomeFragment", "✅ Updating UI with ${matchedProducts.size} products")
-
-                isDisplayProductsLocked = true
-                isVisualSearchActive = true
-
-                displayProducts.clear()
-                displayProducts.addAll(matchedProducts)
-
-                Log.d("HomeFragment", "📋 displayProducts updated: ${displayProducts.map { it.name }}")
-                Log.d("HomeFragment", "📋 displayProducts size NOW: ${displayProducts.size}")
-
-                productAdapter.notifyDataSetChanged()
-
-                Log.d("HomeFragment", "✅ notifyDataSetChanged() called, adapter size: ${productAdapter.itemCount}")
-
-                binding.rvHomeProducts.post {
-                    Log.d("HomeFragment", "🔄 Post-scroll started...")
-                    Log.d("HomeFragment", "📊 displayProducts size in post: ${displayProducts.size}")
-                    Log.d("HomeFragment", "📊 Adapter itemCount in post: ${productAdapter.itemCount}")
-
-                    binding.rvHomeProducts.scrollToPosition(0)
-
-                    binding.rvHomeProducts.postDelayed({
-                        isVisualSearchActive = false
+                    if (result == null) {
+                        Toast.makeText(
+                            requireContext(),
+                            "❌ Gagal menganalisis gambar.\n" +
+                                    "Pastikan:\n" +
+                                    "1. Flask server running di http://192.168.100.18:5000\n" +
+                                    "2. HP & PC di WiFi yang sama\n" +
+                                    "3. Firewall allows port 5000",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        isWaterCheckActive = false
                         isDisplayProductsLocked = false
-                        Log.d("HomeFragment", "🚩 Visual search flags reset (unlocked)")
-                    }, 2000)
+                        return@launch
+                    }
+
+                    Log.d("HomeFragment", "✅ ML Result: ${result.quality} (${result.confidence})")
+                    Log.d("HomeFragment", "   Probabilities: ${result.probabilities}")
+
+                    // ✅ FIX: kalau backend bilang ragu/tidak valid, JANGAN filter.
+                    if (result.quality == "Tidak Valid" || result.quality == "Tidak Yakin") {
+                        Toast.makeText(
+                            requireContext(),
+                            "⚠️ Foto tidak cukup jelas / bukan air.\nMenampilkan semua produk.",
+                            Toast.LENGTH_LONG
+                        ).show()
+
+                        isWaterCheckActive = false
+                        isDisplayProductsLocked = false
+
+                        // reset list ke semua produk
+                        displayProducts.clear()
+                        displayProducts.addAll(allProductsBackup)
+                        productAdapter.notifyDataSetChanged()
+
+                        return@launch
+                    }
+
+                    showWaterQualityResult(result)
+                    filterProductsByWaterQuality(result.quality)
+
+                } catch (e: Exception) {
+                    Log.e("HomeFragment", "❌ Error in coroutine: ${e.message}")
+                    e.printStackTrace()
+                    isWaterCheckActive = false
+                    isDisplayProductsLocked = false
+                    Toast.makeText(requireContext(), "❌ Error: ${e.message}", Toast.LENGTH_LONG).show()
                 }
-
-                Toast.makeText(
-                    requireContext(),
-                    "✅ Ditemukan ${matchedProducts.size} produk serupa!",
-                    Toast.LENGTH_LONG
-                ).show()
-
-                binding.etSearchHome.setText("")
-
-            } else {
-                Log.d("HomeFragment", "❌ No products matched the predictions")
-                isVisualSearchActive = false
-                isDisplayProductsLocked = false
-                Toast.makeText(
-                    requireContext(),
-                    "❌ Produk tidak ditemukan. Coba gambar lain!",
-                    Toast.LENGTH_SHORT
-                ).show()
             }
 
         } catch (e: Exception) {
-            Log.e("HomeFragment", "❌ Error in visual search: ${e.message}")
+            Log.e("HomeFragment", "❌ Error in water check: ${e.message}")
             e.printStackTrace()
-            isVisualSearchActive = false
+            isWaterCheckActive = false
             isDisplayProductsLocked = false
+            Toast.makeText(requireContext(), "❌ Gagal memproses gambar: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun showWaterQualityResult(result: WaterQualityClassifier.WaterQualityResult) {
+        val emoji = when (result.quality) {
+            "Jernih" -> "✅"
+            "Keruh" -> "⚠️"
+            "Tercemar" -> "❌"
+            else -> "ℹ️"
+        }
+
+        val confidence = (result.confidence * 100).toInt()
+
+        AlertDialog.Builder(requireContext())
+            .setTitle("$emoji Hasil Analisis Kualitas Air")
+            .setMessage(
+                """
+                Kualitas: ${result.quality}
+                Tingkat Kepercayaan: $confidence%
+                
+                ${result.recommendation}
+                
+                Produk yang direkomendasikan akan ditampilkan di bawah.
+            """.trimIndent()
+            )
+            .setPositiveButton("Lihat Produk Rekomendasi") { dialog, _ ->
+                dialog.dismiss()
+                binding.rvHomeProducts.smoothScrollToPosition(0)
+            }
+            .setNegativeButton("Tampilkan Semua Produk") { dialog, _ ->
+                isDisplayProductsLocked = false
+                isWaterCheckActive = false
+                displayProducts.clear()
+                displayProducts.addAll(allProductsBackup)
+                productAdapter.notifyDataSetChanged()
+                dialog.dismiss()
+            }
+            .setCancelable(false)
+            .show()
+    }
+
+    // ✅ helper normalize (bikin matching ga gampang gagal)
+    private fun norm(s: String): String {
+        return s.lowercase()
+            .replace(Regex("[^a-z0-9 ]"), " ")
+            .replace(Regex("\\s+"), " ")
+            .trim()
+    }
+
+    private fun filterProductsByWaterQuality(quality: String) {
+        isDisplayProductsLocked = true
+        isWaterCheckActive = true
+
+        val keywords = waterQualityClassifier.getRecommendedKeywords(quality)
+        Log.d("HomeFragment", "🎯 Filtering by keywords: $keywords")
+
+        val matchedProducts = allProductsBackup.filter { product ->
+            val productName = norm(product.name)
+            val description = norm(product.description ?: "")
+
+            keywords.any { keyword ->
+                val k = norm(keyword)
+                productName.contains(k) || description.contains(k)
+            }
+        }
+
+        Log.d("HomeFragment", "🎯 Total matched products: ${matchedProducts.size}")
+
+        if (matchedProducts.isNotEmpty()) {
+            displayProducts.clear()
+            displayProducts.addAll(matchedProducts)
+            productAdapter.notifyDataSetChanged()
+
+            binding.rvHomeProducts.scrollToPosition(0)
+
             Toast.makeText(
                 requireContext(),
-                "❌ Gagal memproses gambar: ${e.message}",
+                "✅ Menampilkan ${matchedProducts.size} produk yang cocok untuk air ${quality.lowercase()}",
+                Toast.LENGTH_LONG
+            ).show()
+
+            binding.rvHomeProducts.postDelayed({
+                isWaterCheckActive = false
+            }, 3000)
+
+        } else {
+            Toast.makeText(
+                requireContext(),
+                "ℹ️ Belum ada produk yang cocok. Menampilkan semua produk.",
                 Toast.LENGTH_SHORT
             ).show()
+            isWaterCheckActive = false
+            isDisplayProductsLocked = false
+            displayProducts.clear()
+            displayProducts.addAll(allProductsBackup)
+            productAdapter.notifyDataSetChanged()
         }
     }
 
@@ -509,12 +506,18 @@ class HomeFragment : Fragment() {
             val sliderView = layoutInflater.inflate(R.layout.dialog_price_filter, null)
             val slider = sliderView.findViewById<RangeSlider>(R.id.sliderPrice)
 
-            val minPrice = displayProducts.minOfOrNull { it.price } ?: 0.0
-            val maxPrice = displayProducts.maxOfOrNull { it.price } ?: 10000000.0
+            val sourceList = if (displayProducts.isEmpty()) allProductsBackup else displayProducts
 
-            slider.valueFrom = minPrice.toFloat()
-            slider.valueTo = maxPrice.toFloat()
-            slider.setValues(minPrice.toFloat(), maxPrice.toFloat())
+            val minPrice = sourceList.minOfOrNull { it.price } ?: 0.0
+            val maxPrice = sourceList.maxOfOrNull { it.price } ?: 10000000.0
+
+            val stepSize = 50000f
+            val roundedMin = ((minPrice / stepSize).toInt() * stepSize).toFloat()
+            val roundedMax = ((maxPrice / stepSize).toInt() * stepSize + stepSize).toFloat()
+
+            slider.valueFrom = roundedMin
+            slider.valueTo = roundedMax
+            slider.setValues(roundedMin, roundedMax)
 
             AlertDialog.Builder(requireContext())
                 .setTitle("Filter Harga")
@@ -524,14 +527,18 @@ class HomeFragment : Fragment() {
                     val minVal = values[0].toInt()
                     val maxVal = values[1].toInt()
 
-                    val filtered = displayProducts.filter {
+                    val filtered = sourceList.filter {
                         it.price.toInt() in minVal..maxVal
                     }
 
                     productAdapter.updateList(filtered)
+
+                    Toast.makeText(requireContext(), "✅ Ditampilkan ${filtered.size} produk", Toast.LENGTH_SHORT).show()
                     dialog.dismiss()
                 }
                 .setNegativeButton("Tampilkan Semua") { dialog, _ ->
+                    isDisplayProductsLocked = false
+                    isWaterCheckActive = false
                     loadProductsFromApi()
                     dialog.dismiss()
                 }
@@ -540,6 +547,7 @@ class HomeFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        waterQualityClassifier.close()
         super.onDestroyView()
         _binding = null
     }

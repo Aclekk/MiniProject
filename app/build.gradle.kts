@@ -50,6 +50,20 @@ android {
 }
 
 dependencies {
+    // ✅ Retrofit & OkHttp (kalau belum ada)
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-moshi:2.9.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+// ✅ Moshi (kalau belum ada)
+    implementation("com.squareup.moshi:moshi:1.15.0")
+    implementation("com.squareup.moshi:moshi-kotlin:1.15.0")
+// ✅ Coroutines (kalau belum ada)
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+// ✅ Lifecycle (kalau belum ada)
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2")
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.13.0")
@@ -101,6 +115,9 @@ dependencies {
 
     // OkHttp Logging (untuk debug API)
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+    implementation("org.tensorflow:tensorflow-lite-task-vision:0.4.0")
+    implementation("org.tensorflow:tensorflow-lite-support:0.4.0")
+    implementation("org.tensorflow:tensorflow-lite-gpu:2.9.0")
     // ✅ Firebase
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.messaging)

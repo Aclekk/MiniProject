@@ -330,4 +330,19 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Body request: Map<String, String>
     ): Response<BaseResponse<Any>>
+
+    @Multipart
+    @POST("http://192.168.100.18:5000/predict")
+    suspend fun predictWaterQuality(
+        @Part image: MultipartBody.Part
+    ): Response<WaterQualityApiResponse>
+
+    // Data class (tambahkan di file yang sama atau terpisah)
+    data class WaterQualityApiResponse(
+        val success: Boolean,
+        val quality: String,
+        val confidence: Float,
+        val raw_prediction: String,
+        val probabilities: Map<String, Float>? = null
+    )
 }
