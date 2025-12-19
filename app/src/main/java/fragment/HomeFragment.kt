@@ -15,17 +15,23 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.miniproject.R
 import com.example.miniproject.adapter.ProductAdapter
 import com.example.miniproject.data.api.ApiClient
+import com.example.miniproject.data.repository.ProductRepository
 import com.example.miniproject.databinding.FragmentHomeBinding
 import com.example.miniproject.ml.WaterQualityClassifier
 import com.example.miniproject.model.Product
+import com.example.miniproject.viewmodel.ProductsViewModel
+import com.example.miniproject.viewmodel.ProductsViewModelFactory
 import com.google.android.material.slider.RangeSlider
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
+
 
 class HomeFragment : Fragment() {
 
@@ -47,6 +53,9 @@ class HomeFragment : Fragment() {
     // Flags untuk prevent refresh
     private var isWaterCheckActive = false
     private var isDisplayProductsLocked = false
+
+    // ✅ MVVM: ViewModel
+    private lateinit var viewModel: ProductsViewModel
 
     // Image picker launcher
     private val pickImageLauncher = registerForActivityResult(
@@ -75,9 +84,14 @@ class HomeFragment : Fragment() {
         waterQualityClassifier = WaterQualityClassifier(requireContext())
 
         setupUserRole()
+        setupViewModel() // ✅ MVVM init
         setupBestSellerRecyclerView()
         setupRecyclerView()
+        setupObservers() // ✅ observe data dari VM
+
+        // ✅ Trigger load pertama kali
         loadProducts()
+
         setupSearch()
         setupFilter()
         setupWaterQualityButton()
@@ -85,8 +99,53 @@ class HomeFragment : Fragment() {
     }
 
     private fun setupUserRole() {
-        val sharedPreferences = requireContext().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
+        val sharedPreferences =
+            requireContext().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
         userRole = sharedPreferences.getString("role", "user") ?: "user"
+    }
+
+    // ✅ MVVM init
+    private fun setupViewModel() {
+        val repository = ProductRepository(ApiClient.apiService)
+        val factory = ProductsViewModelFactory(repository)
+        viewModel = ViewModelProvider(this, factory)[ProductsViewModel::class.java]
+    }
+
+    // ✅ Observe LiveData dari ViewModel
+    private fun setupObservers() {
+        viewModel.products.observe(viewLifecycleOwner) { list ->
+            // Kalau sedang water check & lock, jangan override list user
+            if (isDisplayProductsLocked) {
+                Log.d("HomeFragment", "🔒 LOCKED - skip update from ViewModel")
+                return@observe
+            }
+
+            val bestSellers = list.filter { it.isBestSeller == 1 }
+
+            // Update backup
+            allProductsBackup.clear()
+            allProductsBackup.addAll(list)
+
+            // Update Best Seller section
+            bestSellerProducts.clear()
+            bestSellerProducts.addAll(bestSellers)
+            bestSellerAdapter.notifyDataSetChanged()
+
+            // Update All Products section
+            displayProducts.clear()
+            displayProducts.addAll(list)
+            productAdapter.notifyDataSetChanged()
+
+            // Show/Hide Best Seller section
+            binding.layoutBestSeller.visibility =
+                if (bestSellers.isEmpty()) View.GONE else View.VISIBLE
+
+            Log.d(
+                "HomeFragment",
+                "✅ VM delivered ${list.size} products (${bestSellers.size} best sellers)"
+            )
+        }
+
     }
 
     private fun setupFAB() {
@@ -109,7 +168,8 @@ class HomeFragment : Fragment() {
         Log.d("HomeFragment", "🔄 onResume() called, isWaterCheckActive: $isWaterCheckActive")
 
         if (!isWaterCheckActive) {
-            loadProductsFromApi()
+            // ✅ MVVM: refresh via VM
+            viewModel.loadProducts()
         } else {
             Log.d("HomeFragment", "⏭ Skipping refresh - water check active")
         }
@@ -121,7 +181,8 @@ class HomeFragment : Fragment() {
         }
 
         binding.rvBestSeller.apply {
-            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+            layoutManager =
+                LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
             adapter = bestSellerAdapter
             setHasFixedSize(true)
         }
@@ -151,7 +212,9 @@ class HomeFragment : Fragment() {
                     .addToBackStack(null)
                     .commit()
             }
+
             "delete" -> deleteProduct(product)
+
             "view" -> {
                 val bundle = Bundle().apply { putParcelable("product", product) }
                 val fragment = ProductDetailFragment().apply { arguments = bundle }
@@ -160,70 +223,42 @@ class HomeFragment : Fragment() {
                     .addToBackStack(null)
                     .commit()
             }
+
             "toggle_best_seller" -> toggleBestSeller(product)
         }
     }
 
+    // ✅ MVVM: toggle best seller via ViewModel
     private fun toggleBestSeller(product: Product) {
-        val newStatus = if (product.isBestSeller == 1) 0 else 1
-        val statusText = if (newStatus == 1) "terlaris" else "biasa"
-
         val sharedPref = requireContext().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
         val token = sharedPref.getString("token", "") ?: ""
 
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val response = ApiClient.apiService.toggleBestSeller(
-                    token = "Bearer $token",
-                    productId = product.id,
-                    isBestSeller = newStatus
-                )
+        viewModel.toggleBestSeller(
+            token = "Bearer $token",
+            productId = product.id!!,
+            currentStatus = product.isBestSeller ?: 0
 
-                if (response.isSuccessful) {
-                    Toast.makeText(requireContext(), "✅ Produk ditandai sebagai $statusText", Toast.LENGTH_SHORT).show()
-                    loadProductsFromApi()
-                } else {
-                    Toast.makeText(requireContext(), "❌ Gagal update status: ${response.code()}", Toast.LENGTH_SHORT).show()
-                }
-            } catch (e: Exception) {
-                Toast.makeText(requireContext(), "❌ Error: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
-                Log.e("HomeFragment", "Error toggle best seller: ${e.message}")
-            }
-        }
+        )
+
+
     }
 
+    // ✅ MVVM: delete via ViewModel
     private fun deleteProduct(product: Product) {
         AlertDialog.Builder(requireContext())
             .setTitle("Hapus Produk")
             .setMessage("Yakin ingin menghapus ${product.name}?")
             .setPositiveButton("Hapus") { dialog, _ ->
-
-                val sharedPref = requireContext().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
+                val sharedPref =
+                    requireContext().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
                 val token = sharedPref.getString("token", "") ?: ""
 
-                viewLifecycleOwner.lifecycleScope.launch {
-                    try {
-                        val response = ApiClient.apiService.deleteProduct(
-                            token = "Bearer $token",
-                            productId = product.id
-                        )
+                viewModel.deleteProduct(
+                    token = "Bearer $token",
+                    productId = product.id!!
+                )
 
-                        if (response.isSuccessful) {
-                            displayProducts.removeAll { it.id == product.id }
-                            bestSellerProducts.removeAll { it.id == product.id }
-                            allProductsBackup.removeAll { it.id == product.id }
 
-                            productAdapter.notifyDataSetChanged()
-                            bestSellerAdapter.notifyDataSetChanged()
-
-                            Toast.makeText(requireContext(), "✅ Produk berhasil dihapus", Toast.LENGTH_SHORT).show()
-                        } else {
-                            Toast.makeText(requireContext(), "❌ Gagal hapus: ${response.code()}", Toast.LENGTH_SHORT).show()
-                        }
-                    } catch (e: Exception) {
-                        Toast.makeText(requireContext(), "❌ Error: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
-                    }
-                }
 
                 dialog.dismiss()
             }
@@ -232,61 +267,16 @@ class HomeFragment : Fragment() {
     }
 
     private fun loadProducts() {
-        loadProductsFromApi()
+        // ✅ MVVM: trigger load from ViewModel
+        viewModel.loadProducts()
     }
 
-    private fun loadProductsFromApi() {
-        if (isDisplayProductsLocked) {
-            Log.d("HomeFragment", "🔒 displayProducts LOCKED - skipping API load")
-            return
-        }
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val response = ApiClient.apiService.getProducts(
-                    page = 1,
-                    limit = 50,
-                    categoryId = null,
-                    search = null
-                )
-
-                if (response.isSuccessful) {
-                    val list = response.body()?.data?.products ?: emptyList()
-
-                    val bestSellers = list.filter { it.isBestSeller == 1 }
-                    val allProducts = list
-
-                    // Update backup
-                    allProductsBackup.clear()
-                    allProductsBackup.addAll(allProducts)
-
-                    // Update Best Seller section
-                    bestSellerProducts.clear()
-                    bestSellerProducts.addAll(bestSellers)
-                    bestSellerAdapter.notifyDataSetChanged()
-
-                    // Update All Products section
-                    displayProducts.clear()
-                    displayProducts.addAll(allProducts)
-                    productAdapter.notifyDataSetChanged()
-
-                    // Show/Hide Best Seller section
-                    binding.layoutBestSeller.visibility = if (bestSellers.isEmpty()) View.GONE else View.VISIBLE
-
-                    Log.d("HomeFragment", "✅ Loaded ${list.size} products (${bestSellers.size} best sellers)")
-                } else {
-                    Toast.makeText(requireContext(), "Gagal load produk: ${response.code()}", Toast.LENGTH_SHORT).show()
-                }
-            } catch (e: Exception) {
-                Toast.makeText(requireContext(), "Gagal konek server: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
-                Log.e("HomeFragment", "Error loading products: ${e.message}")
-            }
-        }
-    }
-
+    // ================== SEARCH ==================
     private fun setupSearch() {
         binding.etSearchHome.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun afterTextChanged(s: Editable?) {}
+
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 if (isDisplayProductsLocked) {
                     Log.d("HomeFragment", "🔒 displayProducts LOCKED - skipping search")
@@ -307,10 +297,10 @@ class HomeFragment : Fragment() {
 
                 productAdapter.updateList(filtered)
             }
-            override fun afterTextChanged(s: Editable?) {}
         })
     }
 
+    // ================== WATER QUALITY ==================
     private fun setupWaterQualityButton() {
         binding.btnVisualSearch.setOnClickListener {
             showWaterCheckDialog()
@@ -343,6 +333,7 @@ class HomeFragment : Fragment() {
             Log.d("HomeFragment", "🌊 Starting water quality analysis...")
             Toast.makeText(requireContext(), "🤖 Menganalisis kualitas air...", Toast.LENGTH_SHORT).show()
 
+            // Water quality masih di Fragment (boleh dulu)
             viewLifecycleOwner.lifecycleScope.launch {
                 try {
                     val result = waterQualityClassifier.analyzeWater(imageUri)
@@ -365,7 +356,6 @@ class HomeFragment : Fragment() {
                     Log.d("HomeFragment", "✅ ML Result: ${result.quality} (${result.confidence})")
                     Log.d("HomeFragment", "   Probabilities: ${result.probabilities}")
 
-                    // ✅ FIX: kalau backend bilang ragu/tidak valid, JANGAN filter.
                     if (result.quality == "Tidak Valid" || result.quality == "Tidak Yakin") {
                         Toast.makeText(
                             requireContext(),
@@ -376,7 +366,6 @@ class HomeFragment : Fragment() {
                         isWaterCheckActive = false
                         isDisplayProductsLocked = false
 
-                        // reset list ke semua produk
                         displayProducts.clear()
                         displayProducts.addAll(allProductsBackup)
                         productAdapter.notifyDataSetChanged()
@@ -443,7 +432,6 @@ class HomeFragment : Fragment() {
             .show()
     }
 
-    // ✅ helper normalize (bikin matching ga gampang gagal)
     private fun norm(s: String): String {
         return s.lowercase()
             .replace(Regex("[^a-z0-9 ]"), " ")
@@ -501,6 +489,7 @@ class HomeFragment : Fragment() {
         }
     }
 
+    // ================== FILTER HARGA ==================
     private fun setupFilter() {
         binding.btnFilterHome.setOnClickListener {
             val sliderView = layoutInflater.inflate(R.layout.dialog_price_filter, null)
@@ -539,7 +528,7 @@ class HomeFragment : Fragment() {
                 .setNegativeButton("Tampilkan Semua") { dialog, _ ->
                     isDisplayProductsLocked = false
                     isWaterCheckActive = false
-                    loadProductsFromApi()
+                    viewModel.loadProducts() // ✅ refresh via VM
                     dialog.dismiss()
                 }
                 .show()
