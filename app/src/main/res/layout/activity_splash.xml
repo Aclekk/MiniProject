@@ -6,15 +6,70 @@
     android:background="@drawable/niagatanii"
     tools:context=".SplashActivity">
 
-    <!-- Loading spinner di bawah tengah -->
-    <ProgressBar
-        android:id="@+id/progressBarSplash"
-        style="?android:attr/progressBarStyleLarge"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:layout_centerHorizontal="true"
+    <!-- Overlay gradient untuk depth -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/splash_gradient_overlay"
+        android:alpha="0.3" />
+
+    <!-- Container tengah untuk logo & tagline -->
+    <LinearLayout
+        android:id="@+id/centerContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="32dp"/>
+
+    <!-- Loading container di bottom -->
+    <LinearLayout
+        android:id="@+id/loadingContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:layout_marginBottom="60dp"
-        android:indeterminate="true"
-        android:indeterminateTint="@color/primary_green_premium" />
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="80dp"
+        android:orientation="vertical"
+        android:gravity="center">
+
+        <!-- Progress bar dengan custom style -->
+
+        <!-- Loading text -->
+        <ProgressBar
+            android:id="@+id/progressBarSplash"
+            style="?android:attr/progressBarStyle"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:indeterminate="true"
+            android:indeterminateTint="@color/white"
+            android:indeterminateTintMode="src_atop" />
+
+        <TextView
+            android:id="@+id/tvLoading"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Memuat..."
+            android:textSize="12sp"
+            android:textColor="@color/white"
+            android:fontFamily="sans-serif-light"
+            android:alpha="0.8" />
+    </LinearLayout>
+
+    <!-- Version text di corner -->
+    <TextView
+        android:id="@+id/tvVersion"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
+        android:layout_margin="16dp"
+        android:text="v1.0.0"
+        android:textSize="10sp"
+        android:textColor="@color/white"
+        android:alpha="0.5"
+        tools:ignore="HardcodedText,RtlCompat" />
+
 </RelativeLayout>
