@@ -6,24 +6,23 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.miniproject.R
 import com.example.miniproject.adapter.OrderHistoryAdapter
 import com.example.miniproject.data.CartManager
 import com.example.miniproject.data.Order
 import com.example.miniproject.data.api.ApiClient
-import com.example.miniproject.data.mapper.toOrderModel
 import com.example.miniproject.databinding.FragmentActiveOrdersBinding
 import com.example.miniproject.firebase.MyFirebaseMessagingService
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import com.example.miniproject.viewmodel.OrderViewModel
+import com.example.miniproject.viewmodel.OrderViewModelFactory
 
 class ActiveOrdersFragment : Fragment() {
 
@@ -32,6 +31,9 @@ class ActiveOrdersFragment : Fragment() {
 
     private lateinit var adapter: OrderHistoryAdapter
     private val orders: MutableList<Order> = mutableListOf()
+
+    // ✅ MVVM: ViewModel
+    private lateinit var orderViewModel: OrderViewModel
 
     // ✅ BroadcastReceiver untuk auto-refresh
     private val refreshReceiver = object : BroadcastReceiver() {
@@ -54,6 +56,9 @@ class ActiveOrdersFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // ✅ MVVM: Initialize ViewModel
+        setupViewModel()
+
         adapter = OrderHistoryAdapter(
             orders = orders,
             onOrderClick = { order ->
@@ -73,6 +78,39 @@ class ActiveOrdersFragment : Fragment() {
 
         fetchBuyerOrders()
     }
+
+    // ================== MVVM SETUP ==================
+
+    private fun setupViewModel() {
+        val factory = OrderViewModelFactory(ApiClient.apiService)
+        orderViewModel = ViewModelProvider(this, factory)[OrderViewModel::class.java]
+        setupObservers()
+    }
+
+    private fun setupObservers() {
+        // Observe buyer orders
+        orderViewModel.buyerOrders.observe(viewLifecycleOwner) { orderList ->
+            orders.clear()
+            orders.addAll(orderList)
+            adapter.notifyDataSetChanged()
+
+            // ✅ PENTING: sync ke CartManager untuk OrderDetailFragment
+            CartManager.orders.clear()
+            CartManager.orders.addAll(orderList)
+
+            Log.d("ActiveOrdersFragment", "✅ VM delivered ${orderList.size} orders")
+        }
+
+        // Observe error messages
+        orderViewModel.errorMessage.observe(viewLifecycleOwner) { error ->
+            error?.let {
+                Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
+                orderViewModel.clearError()
+            }
+        }
+    }
+
+    // ================== LIFECYCLE & BROADCAST RECEIVER ==================
 
     override fun onStart() {
         super.onStart()
@@ -103,6 +141,8 @@ class ActiveOrdersFragment : Fragment() {
         fetchBuyerOrders()
     }
 
+    // ================== FETCH ORDERS (MVVM) ==================
+
     private fun fetchBuyerOrders() {
         val prefs = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
         val token = prefs.getString("token", null)
@@ -112,41 +152,11 @@ class ActiveOrdersFragment : Fragment() {
             return
         }
 
-        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val resp = ApiClient.apiService.getBuyerOrders(
-                    token = "Bearer $token",
-                    status = null
-                )
-
-                withContext(Dispatchers.Main) {
-                    if (resp.isSuccessful) {
-                        val body = resp.body()
-                        if (body?.success == true && body.data != null) {
-                            val mapped = body.data.map { it.toOrderModel() }
-
-                            orders.clear()
-                            orders.addAll(mapped)
-                            adapter.notifyDataSetChanged()
-
-                            // ✅ PENTING: sync ke CartManager untuk OrderDetailFragment
-                            CartManager.orders.clear()
-                            CartManager.orders.addAll(mapped)
-                        } else {
-                            Toast.makeText(requireContext(), body?.message ?: "Gagal memuat pesanan buyer", Toast.LENGTH_SHORT).show()
-                        }
-                    } else {
-                        val err = resp.errorBody()?.string()
-                        Toast.makeText(requireContext(), "HTTP ${resp.code()}: ${err ?: "error"}", Toast.LENGTH_LONG).show()
-                    }
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(requireContext(), "Error: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
-                }
-            }
-        }
+        // ✅ MVVM: Fetch via ViewModel
+        orderViewModel.fetchBuyerOrders(token, status = null)
     }
+
+    // ================== CLEANUP ==================
 
     override fun onDestroyView() {
         super.onDestroyView()

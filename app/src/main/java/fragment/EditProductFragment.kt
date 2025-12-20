@@ -14,7 +14,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
-import com.example.miniproject.data.CategoryRepository
+import com.example.miniproject.data.repository.CategoryRepository
 import com.example.miniproject.data.api.ApiClient
 import com.example.miniproject.databinding.FragmentEditProductBinding
 import com.example.miniproject.model.Product

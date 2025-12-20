@@ -8,13 +8,14 @@ import android.os.Handler
 import android.os.Looper
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.animation.AnimationUtils
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -25,18 +26,17 @@ import com.example.miniproject.R
 import com.example.miniproject.adapter.CategoryAdapter
 import com.example.miniproject.adapter.ProductAdapter
 import com.example.miniproject.adapter.PromoUrlAdapter
-import com.example.miniproject.data.CategoryRepository
 import com.example.miniproject.data.api.ApiClient
 import com.example.miniproject.databinding.FragmentProductsBinding
 import com.example.miniproject.model.Category
 import com.example.miniproject.model.Product
 import com.example.miniproject.data.model.PromoApi
-import kotlinx.coroutines.Dispatchers
+import com.example.miniproject.viewmodel.HomeViewModel
+import com.example.miniproject.viewmodel.HomeViewModelFactory
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import okhttp3.MultipartBody
-import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
 
 class ProductsFragment : Fragment() {
@@ -56,6 +56,9 @@ class ProductsFragment : Fragment() {
     private lateinit var promoAdapter: PromoUrlAdapter
     private var selectedPromoUri: Uri? = null
     private var currentPromoIndex: Int = 0
+
+    // ✅ MVVM: ViewModel
+    private lateinit var homeViewModel: HomeViewModel
 
     // 🎨 Animation handlers
     private val autoScrollHandler = Handler(Looper.getMainLooper())
@@ -81,15 +84,20 @@ class ProductsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // ✅ MVVM: Initialize ViewModel FIRST
+        setupViewModel()
+
         getUserData()
         setupRecyclerView()
         setupCategoriesHorizontal()
         setupClickListeners()
         setupSearch()
+        setupPromoCarousel()
+
+        // ✅ MVVM: Load data via ViewModel
         loadBestSellerProducts()
         loadCategories()
         loadStoreInfo()
-        setupPromoCarousel()
         loadPromos()
 
         // 🎨 START ANIMATIONS
@@ -102,41 +110,129 @@ class ProductsFragment : Fragment() {
         loadCategories()
         loadStoreInfo()
         loadPromos()
-        startAutoScrollPromo() // 🎨 Resume auto scroll
+        startAutoScrollPromo()
     }
 
     override fun onPause() {
         super.onPause()
-        stopAutoScrollPromo() // ⛔ STOP SAAT PINDAH PAGE
+        stopAutoScrollPromo()
     }
 
+    // ================== MVVM SETUP ==================
+
+    private fun setupViewModel() {
+        val factory = HomeViewModelFactory(ApiClient.apiService)
+        homeViewModel = ViewModelProvider(this, factory)[HomeViewModel::class.java]
+        setupObservers()
+    }
+
+    private fun setupObservers() {
+        // Observe products
+        homeViewModel.products.observe(viewLifecycleOwner) { productList ->
+            allProducts.clear()
+            allProducts.addAll(productList)
+
+            products.clear()
+            products.addAll(productList)
+
+            productAdapter.notifyDataSetChanged()
+
+            // 🎨 Animate products after loading
+            binding.progressBar.visibility = View.GONE
+            animateProductGrid()
+
+            Log.d("ProductsFragment", "✅ VM delivered ${productList.size} products")
+        }
+
+        // Observe categories
+        homeViewModel.categories.observe(viewLifecycleOwner) { categoryList ->
+            categories.clear()
+            categories.addAll(categoryList)
+            categoryAdapter.notifyDataSetChanged()
+
+            // 🎨 Animate categories after loading
+            animateCategoryItems()
+
+            Log.d("ProductsFragment", "✅ VM delivered ${categoryList.size} categories")
+
+            if (categoryList.isEmpty()) {
+                Toast.makeText(requireContext(), "Belum ada kategori", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        // Observe store info
+        homeViewModel.storeInfo.observe(viewLifecycleOwner) { storeData ->
+            binding.tvStoreName.text = "🌾 ${storeData.appName}"
+            binding.tvStoreTagline.text = storeData.appTagline
+
+            if (storeData.appLogo.isNotEmpty()) {
+                val logoUrl = ApiClient.getImageUrl(storeData.appLogo)
+                Glide.with(this@ProductsFragment)
+                    .load(logoUrl)
+                    .placeholder(R.drawable.ic_person)
+                    .error(R.drawable.ic_person)
+                    .into(binding.imgStoreLogo)
+            } else {
+                binding.imgStoreLogo.setImageResource(R.drawable.ic_person)
+            }
+
+            binding.tvAboutTagline.text = storeData.appTagline
+            binding.tvAboutAddress.text = "📍 ${storeData.appAddress}"
+            binding.tvAboutPhone.text = "📞 ${storeData.contactPhone}"
+            binding.tvAboutEmail.text = "📧 ${storeData.contactEmail}"
+        }
+
+        // Observe promos
+        homeViewModel.promos.observe(viewLifecycleOwner) { promoList ->
+            this.promoList.clear()
+            this.promoList.addAll(promoList)
+            promoAdapter.notifyDataSetChanged()
+            currentPromoIndex = 0
+
+            // 🎨 Start auto scroll after loading promos
+            startAutoScrollPromo()
+        }
+
+        // Observe loading state
+        homeViewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
+            binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
+        }
+
+        // Observe error messages
+        homeViewModel.errorMessage.observe(viewLifecycleOwner) { error ->
+            error?.let {
+                Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
+                homeViewModel.clearError()
+            }
+        }
+
+        // Observe success messages
+        homeViewModel.successMessage.observe(viewLifecycleOwner) { message ->
+            message?.let {
+                Toast.makeText(requireContext(), it, Toast.LENGTH_SHORT).show()
+                homeViewModel.clearSuccess()
+            }
+        }
+    }
 
     // ================== 🎨 ANIMATIONS ==================
 
     private fun startInitialAnimations() {
-        // Hide all views initially
         binding.root.alpha = 0f
 
-        // 1. Fade in entire view
         binding.root.animate()
             .alpha(1f)
             .setDuration(400)
             .start()
 
-        // 2. Animate header card with slide down
         animateHeaderCard()
-
-        // 3. Animate search bar
         animateSearchBar()
-
-        // 4. Animate promo carousel
         animatePromoCarousel()
     }
 
     private fun animateHeaderCard() {
         binding.root.post {
             val headerCard = (binding.root as? ViewGroup)?.getChildAt(0)
-
 
             headerCard?.let { card ->
                 card.alpha = 0f
@@ -154,10 +250,7 @@ class ProductsFragment : Fragment() {
 
     private fun animateSearchBar() {
         binding.root.post {
-            // Find search bar (2nd child in main layout)
             val mainLayout = (binding.root as? ViewGroup)?.getChildAt(0) as? ViewGroup
-
-
             val searchBar = mainLayout?.getChildAt(1)
 
             searchBar?.let { bar ->
@@ -231,11 +324,10 @@ class ProductsFragment : Fragment() {
     private fun startAutoScrollPromo() {
         if (promoList.isEmpty()) return
 
-        stopAutoScrollPromo() // ⛔ pastikan tidak double handler
+        stopAutoScrollPromo()
 
         autoScrollRunnable = object : Runnable {
             override fun run() {
-                // ✅ CEK VIEW MASIH ADA
                 if (_binding == null || !isAdded) return
 
                 val nextIndex = (currentPromoIndex + 1) % promoList.size
@@ -254,7 +346,6 @@ class ProductsFragment : Fragment() {
         }
         autoScrollRunnable = null
     }
-
 
     private fun animateButtonPress(view: View) {
         view.animate()
@@ -316,12 +407,10 @@ class ProductsFragment : Fragment() {
             layoutManager = GridLayoutManager(requireContext(), 2)
             adapter = productAdapter
 
-            // 🎨 Add scroll listener for parallax effect
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                     super.onScrolled(recyclerView, dx, dy)
 
-                    // Animate newly visible items
                     for (i in 0 until childCount) {
                         val child = getChildAt(i)
                         if (child != null && child.alpha < 1f) {
@@ -401,7 +490,6 @@ class ProductsFragment : Fragment() {
         binding.rvCategories.overScrollMode = View.OVER_SCROLL_NEVER
         binding.rvCategories.adapter = categoryAdapter
 
-        // 🎨 Add scroll listener for category animations
         binding.rvCategories.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 super.onScrolled(recyclerView, dx, dy)
@@ -420,46 +508,15 @@ class ProductsFragment : Fragment() {
         })
     }
 
-    // ================== LOAD CATEGORIES ==================
-
-    private fun loadCategories() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val categoryList = withContext(Dispatchers.IO) {
-                    CategoryRepository.getCategories()
-                }
-
-                categories.clear()
-                categories.addAll(categoryList)
-                categoryAdapter.notifyDataSetChanged()
-
-                // 🎨 Animate categories after loading
-                animateCategoryItems()
-
-                android.util.Log.d("ProductsFragment", "✅ Categories loaded: ${categories.size} items")
-
-                if (categories.isEmpty()) {
-                    Toast.makeText(requireContext(), "Belum ada kategori", Toast.LENGTH_SHORT).show()
-                }
-
-            } catch (e: Exception) {
-                android.util.Log.e("ProductsFragment", "❌ Error loading categories: ${e.message}")
-                Toast.makeText(
-                    requireContext(),
-                    "Gagal load kategori: ${e.localizedMessage}",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        }
-    }
-
     // ================== CLICK LISTENERS ==================
 
     private fun setupClickListeners() {
         binding.swipeRefresh.setOnRefreshListener {
-            loadBestSellerProducts()
-            loadCategories()
-            loadStoreInfo()
+            // ✅ MVVM: Refresh all data via ViewModel
+            homeViewModel.loadBestSellerProducts()
+            homeViewModel.loadCategories()
+            homeViewModel.loadStoreInfo()
+            homeViewModel.loadPromos()
             binding.swipeRefresh.isRefreshing = false
         }
 
@@ -497,7 +554,6 @@ class ProductsFragment : Fragment() {
         products.addAll(filtered)
         productAdapter.notifyDataSetChanged()
 
-        // 🎨 Animate filtered results
         binding.rvProducts.postDelayed({
             animateProductGrid()
         }, 100)
@@ -507,81 +563,26 @@ class ProductsFragment : Fragment() {
         }
     }
 
-    // ================== LOAD BEST SELLERS ==================
+    // ================== LOAD DATA (MVVM) ==================
 
     private fun loadBestSellerProducts() {
-        binding.progressBar.visibility = View.VISIBLE
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val response = ApiClient.apiService.getBestSellerProducts()
-
-                if (response.isSuccessful) {
-                    val body = response.body()
-                    val list = body?.data?.products ?: emptyList()
-
-                    allProducts.clear()
-                    allProducts.addAll(list)
-
-                    products.clear()
-                    products.addAll(list)
-
-                    productAdapter.notifyDataSetChanged()
-
-                    // 🎨 Animate products after loading
-                    binding.progressBar.visibility = View.GONE
-                    animateProductGrid()
-                }
-            } catch (e: Exception) {
-                Toast.makeText(
-                    requireContext(),
-                    "Gagal konek server: ${e.localizedMessage}",
-                    Toast.LENGTH_LONG
-                ).show()
-                binding.progressBar.visibility = View.GONE
-            }
-        }
+        // ✅ MVVM: Trigger load from ViewModel
+        homeViewModel.loadBestSellerProducts()
     }
 
-    // ================== LOAD STORE INFO ==================
+    private fun loadCategories() {
+        // ✅ MVVM: Trigger load from ViewModel
+        homeViewModel.loadCategories()
+    }
 
     private fun loadStoreInfo() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val response = ApiClient.apiService.getSettings()
-                if (response.isSuccessful && response.body()?.success == true) {
-                    val settings = response.body()?.data as? Map<String, Any> ?: emptyMap()
+        // ✅ MVVM: Trigger load from ViewModel
+        homeViewModel.loadStoreInfo()
+    }
 
-                    val appName = settings["app_name"]?.toString() ?: "Niaga Tani"
-                    val appTagline = settings["app_tagline"]?.toString() ?: "Solusi Pertanian Modern"
-                    val appLogo = settings["app_logo"]?.toString() ?: ""
-                    val appAddress = settings["app_address"]?.toString() ?: "Jl. Pertanian Sejahtera No. 123"
-                    val contactEmail = settings["contact_email"]?.toString() ?: "support@agrishop.com"
-                    val contactPhone = settings["contact_phone"]?.toString() ?: "081234567890"
-
-                    binding.tvStoreName.text = "🌾 $appName"
-                    binding.tvStoreTagline.text = appTagline
-
-                    if (appLogo.isNotEmpty()) {
-                        val logoUrl = ApiClient.getImageUrl(appLogo)
-                        Glide.with(this@ProductsFragment)
-                            .load(logoUrl)
-                            .placeholder(R.drawable.ic_person)
-                            .error(R.drawable.ic_person)
-                            .into(binding.imgStoreLogo)
-                    } else {
-                        binding.imgStoreLogo.setImageResource(R.drawable.ic_person)
-                    }
-
-                    binding.tvAboutTagline.text = appTagline
-                    binding.tvAboutAddress.text = "📍 $appAddress"
-                    binding.tvAboutPhone.text = "📞 $contactPhone"
-                    binding.tvAboutEmail.text = "📧 $contactEmail"
-                }
-            } catch (e: Exception) {
-                android.util.Log.e("ProductsFragment", "❌ Error loading store info: ${e.message}")
-            }
-        }
+    private fun loadPromos() {
+        // ✅ MVVM: Trigger load from ViewModel
+        homeViewModel.loadPromos()
     }
 
     // ================== PROMO (ADD/DELETE) ==================
@@ -619,23 +620,6 @@ class ProductsFragment : Fragment() {
         }
     }
 
-    private fun loadPromos() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val res = ApiClient.apiService.getActivePromos()
-                if (res.isSuccessful && res.body()?.success == true) {
-                    promoList.clear()
-                    promoList.addAll(res.body()?.data?.promos ?: emptyList())
-                    promoAdapter.notifyDataSetChanged()
-                    currentPromoIndex = 0
-
-                    // 🎨 Start auto scroll after loading promos
-                    startAutoScrollPromo()
-                }
-            } catch (_: Exception) {}
-        }
-    }
-
     private fun uploadPromo(uri: Uri) {
         val pref = requireContext().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
         val token = pref.getString("token", null) ?: run {
@@ -654,14 +638,9 @@ class ProductsFragment : Fragment() {
                 val body = file.asRequestBody("image/*".toMediaTypeOrNull())
                 val part = MultipartBody.Part.createFormData("image", file.name, body)
 
-                val res = ApiClient.apiService.uploadPromo("Bearer $token", part)
-                if (res.isSuccessful && res.body()?.success == true) {
-                    Toast.makeText(requireContext(), "Promo berhasil ditambahkan", Toast.LENGTH_SHORT).show()
-                    loadPromos()
-                } else {
-                    val err = res.errorBody()?.string()
-                    Toast.makeText(requireContext(), "Gagal tambah promo: ${res.code()} $err", Toast.LENGTH_LONG).show()
-                }
+                // ✅ MVVM: Upload via ViewModel
+                homeViewModel.uploadPromo(token, part)
+
             } catch (e: Exception) {
                 Toast.makeText(requireContext(), e.message ?: "Error upload", Toast.LENGTH_LONG).show()
             }
@@ -675,32 +654,15 @@ class ProductsFragment : Fragment() {
             return
         }
 
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val res = ApiClient.apiService.deletePromo(
-                    authHeader = "Bearer $token",
-                    body = mapOf("id" to promoId)
-                )
-
-                if (res.isSuccessful && res.body()?.success == true) {
-                    Toast.makeText(requireContext(), "Promo berhasil dihapus", Toast.LENGTH_SHORT).show()
-                    loadPromos()
-                } else {
-                    val err = res.errorBody()?.string()
-                    Toast.makeText(requireContext(), "Gagal hapus promo: ${res.code()} $err", Toast.LENGTH_LONG).show()
-                }
-            } catch (e: Exception) {
-                Toast.makeText(requireContext(), e.message ?: "Error delete", Toast.LENGTH_LONG).show()
-            }
-        }
+        // ✅ MVVM: Delete via ViewModel
+        homeViewModel.deletePromo(token, promoId)
     }
 
     // ================== CLEANUP ==================
 
     override fun onDestroyView() {
-        stopAutoScrollPromo() // ⛔ WAJIB SEBELUM binding null
+        stopAutoScrollPromo()
         _binding = null
         super.onDestroyView()
     }
-
 }

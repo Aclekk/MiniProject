@@ -6,24 +6,23 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.miniproject.R
 import com.example.miniproject.adapter.OrderAdapter
 import com.example.miniproject.data.Order
 import com.example.miniproject.data.api.ApiClient
-import com.example.miniproject.data.mapper.toOrderModel
 import com.example.miniproject.databinding.FragmentAdminOrderListBinding
 import com.example.miniproject.firebase.MyFirebaseMessagingService
 import com.example.miniproject.util.nextStatusForSeller
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import com.example.miniproject.viewmodel.OrderViewModel
+import com.example.miniproject.viewmodel.OrderViewModelFactory
 
 class AdminOrderListFragment : Fragment() {
 
@@ -32,6 +31,9 @@ class AdminOrderListFragment : Fragment() {
 
     private lateinit var orderAdapter: OrderAdapter
     private val orders: MutableList<Order> = mutableListOf()
+
+    // ✅ MVVM: ViewModel (SHARED dengan ActiveOrders)
+    private lateinit var orderViewModel: OrderViewModel
 
     private val refreshReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -55,9 +57,47 @@ class AdminOrderListFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // ✅ MVVM: Initialize ViewModel
+        setupViewModel()
+
         setupRecyclerView()
         fetchSellerOrders()
     }
+
+    // ================== MVVM SETUP ==================
+
+    private fun setupViewModel() {
+        val factory = OrderViewModelFactory(ApiClient.apiService)
+        orderViewModel = ViewModelProvider(this, factory)[OrderViewModel::class.java]
+        setupObservers()
+    }
+
+    private fun setupObservers() {
+        // Observe seller orders
+        orderViewModel.sellerOrders.observe(viewLifecycleOwner) { orderList ->
+            orderAdapter.replaceAll(orderList)
+            Log.d("AdminOrderListFragment", "✅ VM delivered ${orderList.size} orders")
+        }
+
+        // Observe success messages
+        orderViewModel.successMessage.observe(viewLifecycleOwner) { message ->
+            message?.let {
+                Toast.makeText(requireContext(), it, Toast.LENGTH_SHORT).show()
+                orderViewModel.clearSuccess()
+            }
+        }
+
+        // Observe error messages
+        orderViewModel.errorMessage.observe(viewLifecycleOwner) { error ->
+            error?.let {
+                Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
+                orderViewModel.clearError()
+            }
+        }
+    }
+
+    // ================== LIFECYCLE & BROADCAST RECEIVER ==================
 
     override fun onStart() {
         super.onStart()
@@ -85,6 +125,8 @@ class AdminOrderListFragment : Fragment() {
         super.onResume()
         fetchSellerOrders()
     }
+
+    // ================== RECYCLERVIEW SETUP ==================
 
     private fun setupRecyclerView() {
         binding.rvAdminOrders.layoutManager = LinearLayoutManager(requireContext())
@@ -125,91 +167,37 @@ class AdminOrderListFragment : Fragment() {
         binding.rvAdminOrders.adapter = orderAdapter
     }
 
+    // ================== FETCH & UPDATE ORDERS (MVVM) ==================
+
     private fun fetchSellerOrders() {
         val prefs = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
         val token = prefs.getString("token", null) ?: return
 
-        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val resp = ApiClient.apiService.getSellerOrders(token = "Bearer $token")
-                withContext(Dispatchers.Main) {
-                    if (resp.isSuccessful) {
-                        val body = resp.body()
-                        if (body?.success == true && body.data != null) {
-                            val mapped = body.data.map { it.toOrderModel() }
-                            orderAdapter.replaceAll(mapped)
-                        } else {
-                            Toast.makeText(
-                                requireContext(),
-                                body?.message ?: "Gagal memuat pesanan",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    } else {
-                        Toast.makeText(
-                            requireContext(),
-                            "HTTP ${resp.code()}",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                        requireContext(),
-                        "Error: ${e.localizedMessage}",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-            }
-        }
+        // ✅ MVVM: Fetch via ViewModel
+        orderViewModel.fetchSellerOrders(token)
     }
 
     private fun updateOrderStatusToServer(order: Order, nextStatusDb: String) {
         val prefs = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
         val token = prefs.getString("token", null) ?: return
 
-        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val payload = mapOf(
-                    "order_id" to order.id.toString(),
-                    "status" to nextStatusDb
-                )
+        // ✅ MVVM: Update status via ViewModel
+        orderViewModel.updateOrderStatus(
+            token = token,
+            orderId = order.id,
+            nextStatus = nextStatusDb,
+            onSuccess = {
+                // Update local order object
+                order.status = nextStatusDb
+                orderAdapter.notifyDataSetChanged()
 
-                val resp = ApiClient.apiService.updateOrderStatus(
-                    token = "Bearer $token",
-                    body = payload
-                )
-
-                withContext(Dispatchers.Main) {
-                    if (resp.isSuccessful && resp.body()?.success == true) {
-                        order.status = nextStatusDb
-                        orderAdapter.notifyDataSetChanged()
-                        fetchSellerOrders()
-                        Toast.makeText(
-                            requireContext(),
-                            "Status berhasil diupdate!",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    } else {
-                        Toast.makeText(
-                            requireContext(),
-                            "Gagal update status",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                        requireContext(),
-                        "Error: ${e.localizedMessage}",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
+                // Refresh list from server
+                fetchSellerOrders()
             }
-        }
+        )
     }
+
+    // ================== CLEANUP ==================
 
     override fun onDestroyView() {
         super.onDestroyView()

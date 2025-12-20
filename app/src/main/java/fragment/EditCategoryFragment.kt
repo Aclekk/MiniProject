@@ -7,7 +7,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import com.example.miniproject.data.CategoryRepository
+import com.example.miniproject.data.repository.CategoryRepository
 import com.example.miniproject.databinding.FragmentEditCategoryBinding
 import kotlinx.coroutines.launch
 

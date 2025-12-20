@@ -1,7 +1,7 @@
 package com.example.miniproject
 
 import android.app.Application
-import com.example.miniproject.data.CategoryRepository
+import com.example.miniproject.data.repository.CategoryRepository
 import com.example.miniproject.data.ProductDataSource
 
 class MyApplication : Application() {

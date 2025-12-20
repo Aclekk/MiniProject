@@ -1,15 +1,12 @@
-package com.example.miniproject.data
+package com.example.miniproject.data.repository
 
 import android.content.Context
 import android.util.Log
 import com.example.miniproject.R
 import com.example.miniproject.data.api.ApiClient
+import com.example.miniproject.model.Category
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-
-// Alias untuk membedakan model API & UI
-import com.example.miniproject.data.model.Category as ApiCategory
-import com.example.miniproject.model.Category as UiCategory
 
 object CategoryRepository {
 
@@ -24,7 +21,7 @@ object CategoryRepository {
     // =========================================================
     //  GET CATEGORIES  (dipanggil sinkron dari banyak tempat)
     // =========================================================
-    fun getCategories(): List<UiCategory> {
+    fun getCategories(): List<Category> {
         return try {
             runBlocking(Dispatchers.IO) {
                 val response = ApiClient.apiService.getCategories()
@@ -46,11 +43,11 @@ object CategoryRepository {
                     return@runBlocking emptyList()
                 }
 
-                val apiCategories: List<ApiCategory> =
+                val apiCategories: List<com.example.miniproject.data.model.Category> =
                     body.data?.categories ?: emptyList()
 
                 apiCategories.map { apiCat ->
-                    UiCategory(
+                    Category(
                         id = apiCat.id,
                         categoryName = apiCat.name,
                         createdAt = apiCat.createdAt ?: "",

@@ -11,6 +11,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.example.miniproject.R
@@ -18,6 +19,8 @@ import com.example.miniproject.WelcomeActivity
 import com.example.miniproject.data.api.ApiClient
 import com.example.miniproject.data.model.ProfileData
 import com.example.miniproject.databinding.FragmentProfileBinding
+import com.example.miniproject.viewmodel.ProfileViewModel
+import com.example.miniproject.viewmodel.ProfileViewModelFactory
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
@@ -31,6 +34,9 @@ class ProfileFragment : Fragment() {
 
     private var selectedImagePart: MultipartBody.Part? = null
     private var userRole: String = "buyer"
+
+    // ✅ MVVM: ViewModel
+    private lateinit var profileViewModel: ProfileViewModel
 
     companion object {
         private const val REQ_PICK_IMAGE = 101
@@ -49,11 +55,57 @@ class ProfileFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // ✅ MVVM: Initialize ViewModel
+        setupViewModel()
+
         checkUserRole()
         setupClicks()
         loadProfile()
         setupSellerButtons()
     }
+
+    // ================== MVVM SETUP ==================
+
+    private fun setupViewModel() {
+        val factory = ProfileViewModelFactory(ApiClient.apiService)
+        profileViewModel = ViewModelProvider(this, factory)[ProfileViewModel::class.java]
+        setupObservers()
+    }
+
+    private fun setupObservers() {
+        // Observe profile data (BUYER)
+        profileViewModel.profileData.observe(viewLifecycleOwner) { data ->
+            bindProfileToUi(data)
+        }
+
+        // Observe store settings (SELLER)
+        profileViewModel.storeSettings.observe(viewLifecycleOwner) { settings ->
+            bindStoreSettingsToUi(settings)
+        }
+
+        // Observe loading state
+        profileViewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
+            showLoading(isLoading)
+        }
+
+        // Observe error messages
+        profileViewModel.errorMessage.observe(viewLifecycleOwner) { error ->
+            error?.let {
+                Toast.makeText(requireContext(), it, Toast.LENGTH_SHORT).show()
+                profileViewModel.clearError()
+            }
+        }
+
+        // Observe success messages
+        profileViewModel.successMessage.observe(viewLifecycleOwner) { message ->
+            message?.let {
+                Toast.makeText(requireContext(), it, Toast.LENGTH_SHORT).show()
+                profileViewModel.clearSuccess()
+            }
+        }
+    }
+
+    // ================== USER ROLE & UI SETUP ==================
 
     private fun checkUserRole() {
         val prefs = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
@@ -151,6 +203,8 @@ class ProfileFragment : Fragment() {
         }
     }
 
+    // ================== CLICK LISTENERS ==================
+
     private fun setupClicks() {
         binding.cardProfile.setOnClickListener {
             if (userRole == "seller") openGallery(REQ_PICK_LOGO)
@@ -170,54 +224,27 @@ class ProfileFragment : Fragment() {
         binding.btnLogout.setOnClickListener { logout() }
     }
 
+    // ================== LOAD PROFILE (MVVM) ==================
+
     private fun loadProfile() {
-        if (userRole == "seller") loadStoreSettings() else loadUserProfile()
-    }
+        if (userRole == "seller") {
+            // ✅ MVVM: Load via ViewModel
+            profileViewModel.loadStoreSettings()
+        } else {
+            // ✅ MVVM: Load via ViewModel
+            val prefs = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
+            val token = prefs.getString("token", null)
 
-    private fun loadUserProfile() {
-        val prefs = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
-        val token = prefs.getString("token", null)
-
-        if (token.isNullOrEmpty()) {
-            Toast.makeText(requireContext(), "Belum login", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        showLoading(true)
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val response = ApiClient.apiService.getProfile("Bearer $token")
-
-                if (response.isSuccessful) {
-                    val body = response.body()
-                    if (body?.success == true && body.data != null) {
-                        bindProfileToUi(body.data)
-                    } else {
-                        Toast.makeText(
-                            requireContext(),
-                            body?.message ?: "Gagal memuat profil",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                } else {
-                    Toast.makeText(
-                        requireContext(),
-                        "Error ${response.code()}",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            } catch (e: Exception) {
-                Toast.makeText(
-                    requireContext(),
-                    "Gagal konek: ${e.localizedMessage}",
-                    Toast.LENGTH_SHORT
-                ).show()
-            } finally {
-                showLoading(false)
+            if (token.isNullOrEmpty()) {
+                Toast.makeText(requireContext(), "Belum login", Toast.LENGTH_SHORT).show()
+                return
             }
+
+            profileViewModel.loadUserProfile(token)
         }
     }
+
+    // ================== BIND DATA TO UI ==================
 
     private fun bindProfileToUi(data: ProfileData) {
         val user = data.user
@@ -255,44 +282,6 @@ class ProfileFragment : Fragment() {
             .into(binding.imgProfile)
     }
 
-    private fun loadStoreSettings() {
-        showLoading(true)
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val response = ApiClient.apiService.getSettings()
-
-                if (response.isSuccessful) {
-                    val body = response.body()
-                    if (body?.success == true && body.data != null) {
-                        @Suppress("UNCHECKED_CAST")
-                        bindStoreSettingsToUi(body.data as Map<String, Any>)
-                    } else {
-                        Toast.makeText(
-                            requireContext(),
-                            "Gagal memuat settings toko",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                } else {
-                    Toast.makeText(
-                        requireContext(),
-                        "Error ${response.code()}",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            } catch (e: Exception) {
-                Toast.makeText(
-                    requireContext(),
-                    "Gagal konek: ${e.localizedMessage}",
-                    Toast.LENGTH_SHORT
-                ).show()
-            } finally {
-                showLoading(false)
-            }
-        }
-    }
-
     private fun bindStoreSettingsToUi(settings: Map<String, Any>) {
         binding.etFullName.setText(settings["app_name"]?.toString() ?: "")
         binding.etEmail.setText(settings["contact_email"]?.toString() ?: "")
@@ -310,6 +299,8 @@ class ProfileFragment : Fragment() {
                 .into(binding.imgProfile)
         }
     }
+
+    // ================== UPDATE PROFILE (MVVM) ==================
 
     private fun updateBuyerProfile() {
         val prefs = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
@@ -335,46 +326,22 @@ class ProfileFragment : Fragment() {
             return
         }
 
-        showLoading(true)
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                fun createPart(value: String): RequestBody {
-                    return value.toRequestBody("text/plain".toMediaTypeOrNull())
-                }
-
-                val response = ApiClient.apiService.updateProfile(
-                    token = "Bearer $token",
-                    fullName = createPart(fullName),
-                    email = createPart(email),
-                    phone = if (phone.isNotEmpty()) createPart(phone) else null,
-                    address = if (address.isNotEmpty()) createPart(address) else null,
-                    city = null,
-                    province = null,
-                    postalCode = null,
-                    recipientName = null,
-                    recipientPhone = null,
-                    profileImage = selectedImagePart
-                )
-
-                if (response.isSuccessful) {
-                    val body = response.body()
-                    if (body?.success == true && body.data != null) {
-                        Toast.makeText(requireContext(), "✅ Profil berhasil diperbarui!", Toast.LENGTH_SHORT).show()
-                        bindProfileToUi(body.data)
-                        selectedImagePart = null
-                    } else {
-                        Toast.makeText(requireContext(), body?.message ?: "Gagal update profil", Toast.LENGTH_SHORT).show()
-                    }
-                } else {
-                    Toast.makeText(requireContext(), "Error ${response.code()}", Toast.LENGTH_SHORT).show()
-                }
-            } catch (e: Exception) {
-                Toast.makeText(requireContext(), "Gagal konek: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
-            } finally {
-                showLoading(false)
-            }
+        fun createPart(value: String): RequestBody {
+            return value.toRequestBody("text/plain".toMediaTypeOrNull())
         }
+
+        // ✅ MVVM: Update via ViewModel
+        profileViewModel.updateBuyerProfile(
+            token = token,
+            fullName = createPart(fullName),
+            email = createPart(email),
+            phone = if (phone.isNotEmpty()) createPart(phone) else null,
+            address = if (address.isNotEmpty()) createPart(address) else null,
+            profileImage = selectedImagePart
+        )
+
+        // Clear selected image after update
+        selectedImagePart = null
     }
 
     private fun updateStoreSettings() {
@@ -398,80 +365,24 @@ class ProfileFragment : Fragment() {
             return
         }
 
-        showLoading(true)
-
+        // ✅ MVVM: Upload logo first if exists
         if (selectedImagePart != null) {
-            uploadLogoFirst(token) { ok ->
-                if (ok) {
-                    updateStoreSettingsText(token, appName, contactEmail, contactPhone, appTagline, contactWhatsapp, appAddress)
-                } else showLoading(false)
+            profileViewModel.uploadStoreLogo(token, selectedImagePart!!) {
+                // After logo uploaded, update settings
+                profileViewModel.updateStoreSettings(
+                    token, appName, contactEmail, contactPhone, appTagline, contactWhatsapp, appAddress
+                )
+                selectedImagePart = null
             }
         } else {
-            updateStoreSettingsText(token, appName, contactEmail, contactPhone, appTagline, contactWhatsapp, appAddress)
+            // ✅ MVVM: Update settings directly
+            profileViewModel.updateStoreSettings(
+                token, appName, contactEmail, contactPhone, appTagline, contactWhatsapp, appAddress
+            )
         }
     }
 
-    private fun uploadLogoFirst(token: String, callback: (Boolean) -> Unit) {
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val response = ApiClient.apiService.uploadStoreLogo(
-                    token = "Bearer $token",
-                    logo = selectedImagePart!!
-                )
-
-                if (response.isSuccessful && response.body()?.success == true) {
-                    Toast.makeText(requireContext(), "Logo berhasil diupload", Toast.LENGTH_SHORT).show()
-                    selectedImagePart = null
-                    callback(true)
-                } else {
-                    Toast.makeText(requireContext(), "Gagal upload logo (${response.code()})", Toast.LENGTH_SHORT).show()
-                    callback(false)
-                }
-            } catch (e: Exception) {
-                Toast.makeText(requireContext(), "Error upload: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
-                callback(false)
-            }
-        }
-    }
-
-    private fun updateStoreSettingsText(
-        token: String,
-        appName: String,
-        contactEmail: String,
-        contactPhone: String,
-        appTagline: String,
-        contactWhatsapp: String,
-        appAddress: String
-    ) {
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val requestBody = mapOf(
-                    "app_name" to appName,
-                    "contact_email" to contactEmail,
-                    "contact_phone" to contactPhone,
-                    "app_tagline" to appTagline,
-                    "contact_whatsapp" to contactWhatsapp,
-                    "app_address" to appAddress
-                )
-
-                val response = ApiClient.apiService.updateSettings(
-                    token = "Bearer $token",
-                    request = requestBody
-                )
-
-                if (response.isSuccessful && response.body()?.success == true) {
-                    Toast.makeText(requireContext(), "✅ Profil toko berhasil diperbarui!", Toast.LENGTH_LONG).show()
-                    loadStoreSettings()
-                } else {
-                    Toast.makeText(requireContext(), response.body()?.message ?: "Gagal update settings", Toast.LENGTH_SHORT).show()
-                }
-            } catch (e: Exception) {
-                Toast.makeText(requireContext(), "Gagal konek: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
-            } finally {
-                showLoading(false)
-            }
-        }
-    }
+    // ================== IMAGE PICKER ==================
 
     private fun openGallery(requestCode: Int) {
         val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
@@ -520,6 +431,8 @@ class ProfileFragment : Fragment() {
         )
     }
 
+    // ================== LOGOUT ==================
+
     private fun logout() {
         val prefs = requireActivity().getSharedPreferences("user_pref", Context.MODE_PRIVATE)
         prefs.edit().clear().apply()
@@ -531,6 +444,8 @@ class ProfileFragment : Fragment() {
         startActivity(intent)
     }
 
+    // ================== LOADING STATE ==================
+
     private fun showLoading(show: Boolean) {
         binding.progressBar.visibility = if (show) View.VISIBLE else View.GONE
         binding.btnSaveProfile.isEnabled = !show
@@ -539,6 +454,8 @@ class ProfileFragment : Fragment() {
         binding.root.findViewById<View>(R.id.btnViewReviews)?.isEnabled = !show
         binding.root.findViewById<View>(R.id.btnViewSalesReport)?.isEnabled = !show
     }
+
+    // ================== CLEANUP ==================
 
     override fun onDestroyView() {
         super.onDestroyView()

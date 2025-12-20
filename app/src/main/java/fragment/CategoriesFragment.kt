@@ -14,7 +14,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.miniproject.R
 import com.example.miniproject.adapter.CategoryAdapter
 import com.example.miniproject.adapter.ProductAdapter
-import com.example.miniproject.data.CategoryRepository
+import com.example.miniproject.data.repository.CategoryRepository
 import com.example.miniproject.data.ProductDataSource
 import com.example.miniproject.data.api.ApiClient
 import com.example.miniproject.databinding.FragmentCategoriesBinding
